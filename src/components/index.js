@@ -1,3 +1,4 @@
 import Sidebar from "./Sidebar";
+import Searchbar from "./Searchbar";
 
-export { Sidebar };
+export { Sidebar, Searchbar };
