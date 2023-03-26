@@ -1,4 +1,4 @@
-import { ArtistCard } from "../components";
+import { ArtistCard, Error, Loader } from "../components";
 import { useGetSongsQuery } from "../redux/services/shazam";
 
 const Artists = () => {
@@ -6,11 +6,9 @@ const Artists = () => {
     genreListId: "genre-global-chart-1",
   });
 
-  if (isFetching) {
-    return <div className="h-screen text-white">Now Loading...</div>;
-  }
+  if (isFetching) return <Loader title="Loading artists..." />;
 
-  if (error) return "Something went wrong...";
+  if (error) return <Error />;
 
   return (
     <div className="flex flex-col">

@@ -7,5 +7,7 @@ import DetailsHeader from './DetailsHeader';
 import SongBar from './SongBar';
 import RelatedSongs from './RelatedSongs';
 import SongPlay from './songplay';
+import Loader from './Loader';
+import Error from './Error';
 
-export { Sidebar, Searchbar, SongCard, TopPlay, ArtistCard, DetailsHeader, SongBar, RelatedSongs, SongPlay };
+export { Sidebar, Searchbar, SongCard, TopPlay, ArtistCard, DetailsHeader, SongBar, RelatedSongs, SongPlay, Loader, Error };
