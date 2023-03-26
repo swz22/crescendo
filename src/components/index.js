@@ -6,5 +6,6 @@ import ArtistCard from "./ArtistCard";
 import DetailsHeader from './DetailsHeader';
 import SongBar from './SongBar';
 import RelatedSongs from './RelatedSongs';
+import SongPlay from './songplay';
 
-export { Sidebar, Searchbar, SongCard, TopPlay, ArtistCard, DetailsHeader, SongBar, RelatedSongs };
+export { Sidebar, Searchbar, SongCard, TopPlay, ArtistCard, DetailsHeader, SongBar, RelatedSongs, SongPlay };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   HashtagIcon,
@@ -18,10 +18,9 @@ const links = [
 
 const Sidebar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
     <>
-      <div className="h-screen md:flex hidden flex-col w-[240px] py-10 px-4 bg-[#191624]">
+      <div className="md:flex hidden flex-col w-[240px] py-10 px-4 bg-[#191624]">
         <div className="mt-4 flex flex-col">
           {links.map((item) => (
             <NavLink
@@ -73,6 +72,7 @@ const Sidebar = () => {
               }`}
             >
               <item.icon className="w-6 h-6 mr-2" />
+
               {item.name}
             </NavLink>
           ))}
