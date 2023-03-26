@@ -1,6 +1,6 @@
 import { Searchbar, Sidebar, TopPlay } from "./components";
 import { Route, Routes } from "react-router-dom";
-import { Artists, ArtistDetails, Home } from "./pages";
+import { Artists, ArtistDetails, Home, SongDetails } from "./pages";
 
 const App = () => (
   <div className="flex">
@@ -13,6 +13,7 @@ const App = () => (
             <Route path="/" element={<Home />} />
             <Route path="/artists" element={<Artists />} />
             <Route path="/artists/:id" element={<ArtistDetails />} />
+            <Route path="/songs/:songid" element={<SongDetails />} />
           </Routes>
         </div>
         <TopPlay />
