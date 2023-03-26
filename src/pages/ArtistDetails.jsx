@@ -1,7 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { DetailsHeader, RelatedSongs } from "../components";
-
+import { DetailsHeader, Error, Loader, RelatedSongs } from "../components";
 import {
   useFetchArtistDetailsQuery,
   useGetSongDetailsQuery,
@@ -20,11 +19,10 @@ const ArtistDetails = () => {
     error,
   } = useFetchArtistDetailsQuery(artistId);
 
-  if (isFetchinSongDetails || isFetchingArtistDetails) {
-    return <div className="h-screen text-white">loading...</div>;
-  }
+  if (isFetchinSongDetails || isFetchingArtistDetails)
+    return <Loader title="Loading artist details..." />;
 
-  if (error) return "Something went wrong...";
+  if (error) return <Error />;
 
   const handlePauseClick = () => {
     dispatch(playPause(false));
