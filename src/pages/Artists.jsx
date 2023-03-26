@@ -12,10 +12,10 @@ const Artists = () => {
 
   return (
     <div className="flex flex-col">
-      <h2 className="font-bold text-3xl text-white text-left">
+      <h2 className="font-bold text-3xl text-white text-left mt-4 mb-10">
         Discover top artists
       </h2>
-      <div className="mt-6 flex flex-wrap gap-8">
+      <div className="flex flex-wrap gap-8">
         {data?.tracks.map((track) => (
           <ArtistCard key={track.key} track={track} />
         ))}
