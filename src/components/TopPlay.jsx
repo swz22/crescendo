@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { FaPauseCircle, FaPlayCircle } from "react-icons/fa";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper";
+import PlayPause from "./PlayPause";
 import { playPause, setActiveSong } from "../redux/features/playerSlice";
 import { useGetTopChartsQuery } from "../redux/services/shazamCore";
 import "swiper/css";
@@ -37,19 +37,13 @@ const TopChartCard = ({
         </Link>
       </div>
     </div>
-    {isPlaying && activeSong.title === song.title ? (
-      <FaPauseCircle
-        size={25}
-        className="text-gray-300"
-        onClick={handlePauseClick}
-      />
-    ) : (
-      <FaPlayCircle
-        size={25}
-        className="text-gray-300"
-        onClick={handlePlayClick}
-      />
-    )}
+    <PlayPause
+      isPlaying={isPlaying}
+      activeSong={activeSong}
+      song={song}
+      handlePause={handlePauseClick}
+      handlePlay={handlePlayClick}
+    />
   </div>
 );
 
@@ -57,7 +51,6 @@ const TopPlay = () => {
   const dispatch = useDispatch();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
   const { data } = useGetTopChartsQuery();
-
   const topPlays = data?.slice(0, 5);
 
   const handlePauseClick = () => {
