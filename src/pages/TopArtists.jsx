@@ -1,7 +1,7 @@
 import { ArtistCard, Error, Loader } from "../components";
 import { useGetSongsQuery } from "../redux/services/shazam";
 
-const Artists = () => {
+const TopArtists = () => {
   const { data, isFetching, error } = useGetSongsQuery({
     genreListId: "genre-global-chart-1",
   });
@@ -24,4 +24,4 @@ const Artists = () => {
   );
 };
 
-export default Artists;
+export default TopArtists;

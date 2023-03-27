@@ -16,7 +16,11 @@ const TopChartCard = ({
   handlePauseClick,
   handlePlayClick,
 }) => (
-  <div className="w-full flex flex-row items-center hover:bg-[#4c426e] py-2 p-4 rounded-lg cursor-pointer">
+  <div
+    className={`w-full flex flex-row items-center hover:bg-[#4c426e] ${
+      activeSong?.title === song?.title ? "bg-[#4c426e]" : "bg-transparent"
+    } py-2 p-4 rounded-lg cursor-pointer mb-2`}
+  >
     <h3 className="font-bold text-base text-white mr-3">{i + 1}.</h3>
     <div className="flex-1 flex flex-row justify-between items-center">
       <img
@@ -34,9 +38,17 @@ const TopChartCard = ({
       </div>
     </div>
     {isPlaying && activeSong.title === song.title ? (
-      <FaPauseCircle size={25} onClick={handlePauseClick} />
+      <FaPauseCircle
+        size={25}
+        className="text-gray-300"
+        onClick={handlePauseClick}
+      />
     ) : (
-      <FaPlayCircle size={25} onClick={handlePlayClick} />
+      <FaPlayCircle
+        size={25}
+        className="text-gray-300"
+        onClick={handlePlayClick}
+      />
     )}
   </div>
 );
@@ -53,7 +65,7 @@ const TopPlay = () => {
   };
 
   const handlePlayClick = (song, i) => {
-    dispatch(setActiveSong({ song, topPlays, i }));
+    dispatch(setActiveSong({ song, data, i }));
     dispatch(playPause(true));
   };
 
@@ -85,7 +97,7 @@ const TopPlay = () => {
       <div className="w-full flex flex-col mt-8">
         <div className="flex flex-row justify-between items-center">
           <h2 className="text-white font-bold text-2xl">Top Artists</h2>
-          <Link to="/artists">
+          <Link to="/top-artists">
             <p className="text-gray-300 text-base cursor-pointer">See more</p>
           </Link>
         </div>
