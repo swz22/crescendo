@@ -21,9 +21,12 @@ const Discover = () => {
   return (
     <div className="flex flex-col">
       <div className="w-full flex justify-between items-center sm:flex-row flex-col mt-4 mb-10">
-        <h2 className="font-bold text-3xl text-white text-left">
-          Discover {genreTitle}
+        <div className="text-white">
+        <h2 className="font-bold text-3xl text-left text-white"> 
+        ♫ Discover {genreTitle} Music ♫
         </h2>
+        <div className="font-xs mt-2"> *Click an artist's name to view details. Click a song title to view lyrics. Use the dropdown menu to filer by genre* </div>
+      </div>
 
         <select
           onChange={(e) => dispatch(selectGenreListId(e.target.value))}
