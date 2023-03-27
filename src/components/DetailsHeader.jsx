@@ -8,7 +8,7 @@ const DetailsHeader = ({ artistId, artistData, songData }) => (
         alt="profile"
         src={
           artistId
-            ? artistData?.artists[artistId].attributes?.artwork?.url
+            ? artistData?.attributes?.artwork?.url
                 .replace("{w}", "500")
                 .replace("{h}", "500")
             : songData?.images?.coverart
@@ -17,9 +17,7 @@ const DetailsHeader = ({ artistId, artistData, songData }) => (
       />
       <div className="ml-5">
         <p className="font-bold sm:text-3xl text-xl text-white">
-          {artistId
-            ? artistData?.artists[artistId].attributes?.name
-            : songData?.title}
+          {artistId ? artistData?.attributes?.name : songData?.title}
         </p>
         {!artistId && (
           <Link to={`/artists/${songData?.artists[0]?.adamid}`}>
@@ -28,7 +26,7 @@ const DetailsHeader = ({ artistId, artistData, songData }) => (
         )}
         <p className="text-base text-gray-400 mt-2">
           {artistId
-            ? artistData?.artists[artistId].attributes?.genreNames[0]
+            ? artistData?.attributes?.genreNames[0]
             : songData?.genres?.primary}
         </p>
       </div>
