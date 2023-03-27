@@ -29,9 +29,7 @@ const TopChartCard = ({
           <p className="text-xl font-bold text-white">{song?.title}</p>
         </Link>
         <Link to={`/artists/${song?.artists[0].adamid}`}>
-          <p className="text-base text-gray-300 truncate mt-1">
-            {song?.subtitle}
-          </p>
+          <p className="text-base text-gray-300 mt-1">{song?.subtitle}</p>
         </Link>
       </div>
     </div>
@@ -87,7 +85,7 @@ const TopPlay = () => {
       <div className="w-full flex flex-col mt-8">
         <div className="flex flex-row justify-between items-center">
           <h2 className="text-white font-bold text-2xl">Top Artists</h2>
-          <Link to="/top-charts">
+          <Link to="/artists">
             <p className="text-gray-300 text-base cursor-pointer">See more</p>
           </Link>
         </div>
@@ -99,12 +97,12 @@ const TopPlay = () => {
           centeredSlides
           centeredSlidesBounds
           modules={[FreeMode]}
-          className="h-auto w-full my-4"
+          className="mt-4"
         >
           {topPlays?.slice(0, 5).map((artist) => (
             <SwiperSlide
               key={artist?.key}
-              style={{ width: 80 }}
+              style={{ width: "25%", height: "auto" }}
               className="shadow-lg rounded-full animate-slideright"
             >
               <Link to={`/artists/${artist?.artists[0].adamid}`}>

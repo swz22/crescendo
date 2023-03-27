@@ -20,7 +20,7 @@ const Search = () => {
         Showing results for <span className="font-black">{searchTerm}</span>
       </h2>
 
-      <div className="flex flex-wrap gap-8">
+      <div className="flex flex-wrap sm:justify-start justify-center gap-8">
         {songs.map((song, i) => (
           <SongCard
             key={song.key}
