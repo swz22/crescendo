@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaPauseCircle, FaPlayCircle } from "react-icons/fa";
+import PlayPause from "./PlayPause";
 
 const SongBar = ({
   song,
@@ -43,19 +43,15 @@ const SongBar = ({
         </p>
       </div>
     </div>
-    {artistId ? null : isPlaying && activeSong?.title === song?.title ? (
-      <FaPauseCircle
-        size={25}
-        className="text-gray-300"
-        onClick={handlePauseClick}
+    {!artistId ? (
+      <PlayPause
+        isPlaying={isPlaying}
+        activeSong={activeSong}
+        song={song}
+        handlePause={handlePauseClick}
+        handlePlay={() => handlePlayClick(song, i)}
       />
-    ) : (
-      <FaPlayCircle
-        size={25}
-        className="text-gray-300"
-        onClick={() => handlePlayClick(song, i)}
-      />
-    )}
+    ) : null}
   </div>
 );
 
