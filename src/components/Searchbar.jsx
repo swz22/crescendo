@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { SearchIcon } from "@heroicons/react/solid";
+import { FiSearch } from "react-icons/fi";
 
 const Searchbar = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
     navigate(`/search/${searchTerm}`);
   };
 
@@ -20,10 +22,9 @@ const Searchbar = () => {
         Search all files
       </label>
       <div className="flex flex-row justify-start items-center">
-        <SearchIcon aria-hidden="true" className="w-5 h-5 ml-4" />
+        <FiSearch aria-hidden="true" className="w-5 h-5 ml-4" />
         <input
           name="search-field"
-          autoComplete="off"
           id="search-field"
           className="flex-1 bg-transparent border-none placeholder-gray-500 outline-none text-base text-white p-4"
           placeholder="Search"
