@@ -30,11 +30,11 @@ const SongBar = ({
             <p className="text-xl font-bold text-white">{song?.title}</p>
           </Link>
         ) : (
-          <p className="text-xl font-bold text-white truncate">
+          <p className="text-xl font-bold text-white">
             {song?.attributes?.name}
           </p>
         )}
-        <p className="text-base text-gray-300 truncate mt-1">
+        <p className="text-base text-gray-300 mt-1">
           {artistId ? song?.attributes?.albumName : song?.subtitle}
         </p>
       </div>
@@ -42,7 +42,7 @@ const SongBar = ({
     {artistId ? null : isPlaying && activeSong?.title === song?.title ? (
       <FaPauseCircle size={25} onClick={handlePauseClick} />
     ) : (
-      <FaPlayCircle size={25} onClick={handlePlayClick} />
+      <FaPlayCircle size={25} onClick={() => handlePlayClick(song, i)} />
     )}
   </div>
 );
