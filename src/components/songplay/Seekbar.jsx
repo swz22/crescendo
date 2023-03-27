@@ -8,11 +8,11 @@ const Seekbar = ({ value, min, max, onInput, setSeekTime, appTime }) => {
       <button
         type="button"
         onClick={() => setSeekTime(appTime - 5)}
-        className="hidden lg:mr-4 lg:block"
+        className="hidden lg:mr-4 lg:block text-white"
       >
         -
       </button>
-      <p>{value === 0 ? "0:00" : getTime(value)}</p>
+      <p className="text-white">{value === 0 ? "0:00" : getTime(value)}</p>
       <input
         type="range"
         step="any"
@@ -22,11 +22,11 @@ const Seekbar = ({ value, min, max, onInput, setSeekTime, appTime }) => {
         onInput={onInput}
         className="md:block w-24 md:w-56 2xl:w-96 h-1 mx-4 2xl:mx-6 rounded-lg"
       />
-      <p>{max === 0 ? "0:00" : getTime(max)}</p>
+      <p className="text-white">{max === 0 ? "0:00" : getTime(max)}</p>
       <button
         type="button"
         onClick={() => setSeekTime(appTime + 5)}
-        className="hidden lg:ml-4 lg:block"
+        className="hidden lg:ml-4 lg:block text-white"
       >
         +
       </button>

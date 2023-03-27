@@ -1,9 +1,17 @@
 import Home from "./Home";
-import Artists from "./Artists";
-import ArtistDetails from './ArtistDetails';
-import CountryTracks from './CountryTracks';
-import Search from './Search';
-import SongDetails from './SongDetails';
-import TopCharts from './TopCharts';
+import TopArtists from "./TopArtists";
+import ArtistDetails from "./ArtistDetails";
+import SongDetails from "./SongDetails";
+import Search from "./Search";
+import TopCharts from "./TopCharts";
+import AroundYou from "./AroundYou";
 
-export { Home, Artists, ArtistDetails, Search, SongDetails, TopCharts, CountryTracks };
+export {
+  Home,
+  Search,
+  TopArtists,
+  ArtistDetails,
+  SongDetails,
+  TopCharts,
+  AroundYou,
+};

@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { FaPauseCircle, FaPlayCircle } from "react-icons/fa";
-
 import { playPause, setActiveSong } from "../redux/features/playerSlice";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
@@ -20,11 +19,13 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           {isPlaying && activeSong?.title === song.title ? (
             <FaPauseCircle
               size={35}
+              className="text-gray-300"
               onClick={() => dispatch(playPause(false))}
             />
           ) : (
             <FaPlayCircle
               size={35}
+              className="text-gray-300"
               onClick={() => {
                 dispatch(setActiveSong({ song, data, i }));
                 dispatch(playPause(true));
@@ -46,7 +47,9 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         <p className="text-sm truncate text-gray-300 mt-1">
           <Link
             to={
-              song.artists ? `/artists/${song?.artists[0]?.adamid}` : "/artists"
+              song.artists
+                ? `/artists/${song?.artists[0]?.adamid}`
+                : "/top-artists"
             }
           >
             {song.subtitle}
