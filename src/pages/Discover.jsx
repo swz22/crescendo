@@ -25,7 +25,7 @@ const Discover = () => {
         <h2 className="font-bold text-3xl text-left text-white"> 
         ♫ Discover {genreTitle} Music ♫
         </h2>
-        <div className="font-xs mt-2"> *Click an artist's name to view details. Click a song title to view lyrics. Use the dropdown menu to filer by genre* </div>
+        <div className="font-xs mt-2"> * Click an artist's name to view details. Click a song title to view lyrics. Use the dropdown menu to filer by genre. * </div>
       </div>
 
         <select
