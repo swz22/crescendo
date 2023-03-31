@@ -1,9 +1,8 @@
-
 <h1 align="center">
   <br>
-  <a href="https://crescendo-music.netlify.app/"><img src="https://raw.githubusercontent.com/swz22/crescendo/02cf987e438cb366d1ef65537e62c5d97930c00d/src/assets/logo.svg" alt="Crescendo" width="200"></a>
+  <a href="https://crescendo-music.netlify.app/"><img src="https://raw.githubusercontent.com/swz22/crescendo/02cf987e438cb366d1ef65537e62c5d97930c00d/src/assets/logo2.svg" alt="Crescendo" width="200"></a>
   <br>
-  Crescendo Music App
+  ♫ Crescendo Music App ♫
   <br>
 </h1>
 
@@ -26,12 +25,12 @@
 
 ## Key Features
 
-* Play music using the built-in music player.
-* Music player includes pause, skip, repeat, and shuffle play functionality.
-* Discover new music, view top charts, and view top artists.
-* Search for a specific song or filter music by genre.
-* View related songs for any artist.
-* View lyrics for any song.
+- Play music using the built-in music player.
+- Music player includes pause, skip, repeat, and shuffle play functionality.
+- Discover new music, view top charts, and view top artists.
+- Search for a specific song or filter music by genre.
+- View related songs for any artist.
+- View lyrics for any song.
 
 ## How To Use
 
