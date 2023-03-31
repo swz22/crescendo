@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://crescendo-music.netlify.app/"><img src="https://raw.githubusercontent.com/swz22/crescendo/02cf987e438cb366d1ef65537e62c5d97930c00d/src/assets/logo2.svg" alt="Crescendo" width="200"></a>
+  <a href="https://crescendo-music.netlify.app/"><img src="https://raw.githubusercontent.com/swz22/crescendo/5eabb8e4176fa7575f1524ea0e89b639055e9dae/src/assets/logo2.svg" alt="Crescendo" width="200"></a>
   <br>
   ♫ Crescendo Music App ♫
   <br>
