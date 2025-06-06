@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Error, Loader, SongCard } from "../components";
 import { selectGenreListId } from "../redux/features/playerSlice";
-import { useGetSongsByGenreQuery } from "../redux/services/shazamCore";
+import { useGetSongsBySearchQuery } from "../redux/services/shazamCore";
 import { genres } from "../assets/constants";
 
 const Discover = () => {
@@ -9,31 +9,23 @@ const Discover = () => {
   const { genreListId } = useSelector((state) => state.player);
   const { activeSong, isPlaying } = useSelector((state) => state.player);
   
-  // Log the genre being requested
-  console.log('Requesting genre:', genreListId || "genre-global-chart-1");
+  // Get the genre title to use as search term
+  const genreTitle = genres.find(({ value }) => value === genreListId)?.title || 'Pop';
   
-  // Use the genre ID directly
-  const { data, isFetching, error } = useGetSongsByGenreQuery(
-    genreListId || "genre-global-chart-1"
-  );
-
-  // Enhanced debugging
-  console.log('API Response:', { data, isFetching, error });
-  
-  if (error) {
-    console.error('API Error:', error);
-  }
+  // Use search API instead of charts API since charts are returning no data
+  const { data, isFetching, error } = useGetSongsBySearchQuery(genreTitle.toLowerCase());
 
   if (isFetching) return <Loader title="Loading songs..." />;
 
   if (error) return <Error />;
 
-  const genreTitle = genres.find(({ value }) => value === genreListId)?.title || 'Pop';
-  
-  // Extract tracks from the response - check different possible structures
-  const songs = data?.tracks || data?.data || data || [];
+  // Extract songs from search results
+  const songs = data?.tracks?.hits?.map(hit => ({
+    ...hit.track,
+    key: hit.track?.key || hit.track?.hub?.actions?.[0]?.id
+  })) || [];
 
-  console.log('Genre songs data:', data);
+  console.log('Search data:', data);
   console.log('Extracted songs:', songs);
 
   return (
@@ -44,7 +36,7 @@ const Discover = () => {
             ♫ Discover {genreTitle} Music ♫
           </h2>
           <div className="font-xs mt-2"> 
-            * Click an artist's name to view details. Click a song title to view lyrics. Use the dropdown menu to filter by genre. * 
+            * Using search results for genre discovery since charts API is currently unavailable * 
           </div>
         </div>
 
@@ -65,7 +57,7 @@ const Discover = () => {
         {songs.length > 0 ? (
           songs.map((song, i) => (
             <SongCard
-              key={song?.key || song?.id || i}
+              key={song?.key || i}
               song={song}
               isPlaying={isPlaying}
               activeSong={activeSong}
@@ -74,7 +66,7 @@ const Discover = () => {
             />
           ))
         ) : (
-          <p className="text-gray-300 text-2xl">No songs found for this genre</p>
+          <p className="text-gray-300 text-2xl">No songs found for {genreTitle}</p>
         )}
       </div>
     </div>

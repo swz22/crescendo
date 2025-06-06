@@ -14,24 +14,46 @@ export const shazamCoreApi = createApi({
   endpoints: (builder) => ({
     getTopCharts: builder.query({ 
       query: () => "charts/track",
-      // Cache for 1 hour
+      transformResponse: (response) => {
+        console.log('TopCharts raw response:', response);
+        return response;
+      },
       keepUnusedDataFor: 3600,
     }),
     getChartsList: builder.query({
       query: () => "charts/list",
-      // Cache for 24 hours
+      transformResponse: (response) => {
+        console.log('ChartsList raw response:', response);
+        return response;
+      },
       keepUnusedDataFor: 86400,
     }),
     getSongsByGenre: builder.query({
-      query: (genreListId) => `charts/track?listId=${genreListId}&pageSize=20&startFrom=0`,
+      query: (genreListId) => {
+        const url = `charts/track?listId=${genreListId}&pageSize=20&startFrom=0`;
+        console.log('Genre request URL:', url);
+        return url;
+      },
+      transformResponse: (response) => {
+        console.log('Genre raw response:', response);
+        return response;
+      },
       keepUnusedDataFor: 3600,
     }),
     getSongsByCountry: builder.query({
       query: (countryCode) => `charts/track?listId=${countryCode}&pageSize=20&startFrom=0`,
+      transformResponse: (response) => {
+        console.log('Country raw response:', response);
+        return response;
+      },
       keepUnusedDataFor: 3600,
     }),
     getSongsBySearch: builder.query({
       query: (searchTerm) => `search?term=${searchTerm}&locale=en-US&offset=0&limit=5`,
+      transformResponse: (response) => {
+        console.log('Search raw response:', response);
+        return response;
+      },
       keepUnusedDataFor: 3600,
     }),
     getArtistDetails: builder.query({
