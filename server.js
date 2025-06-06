@@ -2,13 +2,14 @@ import express from "express";
 import cors from "cors";
 import axios from "axios";
 import dotenv from "dotenv";
-import searchAndGetLinks from "spotify-preview-finder";
+import searchAndGetLinks from 'spotify-preview-finder';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Preview URL cache
 const previewCache = new Map();
 
 app.use(cors());
@@ -17,7 +18,9 @@ app.use(express.json());
 let accessToken = null;
 let tokenExpiry = null;
 
+// Get Spotify access token
 const getSpotifyToken = async () => {
+  // Return cached token if still valid
   if (accessToken && tokenExpiry && Date.now() < tokenExpiry) {
     return accessToken;
   }
@@ -48,6 +51,7 @@ const getSpotifyToken = async () => {
   }
 };
 
+// Spotify API proxy
 app.use("/api/spotify", async (req, res) => {
   try {
     const token = await getSpotifyToken();
@@ -76,31 +80,64 @@ app.use("/api/spotify", async (req, res) => {
   }
 });
 
+// Health check
 app.get("/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
-app.get("/api/preview/:trackId", async (req, res) => {
+// Preview endpoint
+app.get('/api/preview/:trackId', async (req, res) => {
   try {
     const trackId = req.params.trackId;
-    console.log("Fetching preview for track:", trackId);
-
+    console.log('Fetching preview for track:', trackId);
+    
+    // Check cache first
     if (previewCache.has(trackId)) {
-      console.log("Returning cached preview for:", trackId);
+      console.log('Returning cached preview for:', trackId);
       return res.json({ preview_url: previewCache.get(trackId) });
     }
-
-    if (matchingResult.previewUrls && matchingResult.previewUrls.length > 0) {
-      const previewUrl = matchingResult.previewUrls[0];
-      console.log("Found preview URL:", previewUrl);
-      previewCache.set(trackId, previewUrl);
-      res.json({ preview_url: previewUrl });
+    
+    // Get track details from Spotify
+    const token = await getSpotifyToken();
+    const trackResponse = await axios.get(
+      `https://api.spotify.com/v1/tracks/${trackId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    
+    const trackName = trackResponse.data.name;
+    const artistName = trackResponse.data.artists[0].name;
+    console.log(`Searching for: ${trackName} by ${artistName}`);
+    
+    // Search using track name and artist
+    const result = await searchAndGetLinks(`${trackName} ${artistName}`);
+    
+    if (result.success && result.results && result.results.length > 0) {
+      // Find the result that matches our track
+      const matchingResult = result.results.find(r => 
+        r.spotifyUrl && r.spotifyUrl.includes(trackId)
+      ) || result.results[0];
+      
+      if (matchingResult.previewUrls && matchingResult.previewUrls.length > 0) {
+        const previewUrl = matchingResult.previewUrls[0];
+        console.log('Found preview URL:', previewUrl);
+        
+        // Cache it
+        previewCache.set(trackId, previewUrl);
+        
+        res.json({ preview_url: previewUrl });
+      } else {
+        res.status(404).json({ error: 'No preview URL found' });
+      }
     } else {
-      res.status(404).json({ error: "No preview URL found" });
+      res.status(404).json({ error: 'No results found' });
     }
   } catch (error) {
-    console.error("Preview fetch error:", error);
-    res.status(404).json({ error: "Preview not found" });
+    console.error('Preview fetch error:', error);
+    res.status(404).json({ error: 'Preview not found' });
   }
 });
 
