@@ -1,10 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const adaptTrackData = (track) => {
-  if (!track.preview_url) {
-    console.log("No preview URL for track:", track.name);
-  }
-
   return {
     key: track.id,
     title: track.name,
