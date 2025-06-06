@@ -5,9 +5,20 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper";
 import PlayPause from "./PlayPause";
 import { playPause, setActiveSong } from "../redux/features/playerSlice";
-import { useGetTopChartsQuery } from "../redux/services/shazamCore";
+import { useGetTopChartsQuery } from "../redux/services/spotifyCore";
 import "swiper/css";
 import "swiper/css/free-mode";
+
+const fetchPreviewUrl = async (trackId) => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/preview/${trackId}`);
+    const data = await response.json();
+    return data.preview_url;
+  } catch (error) {
+    console.error('Failed to fetch preview URL:', error);
+    return null;
+  }
+};
 
 const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick }) => (
   <div
@@ -22,9 +33,7 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
         <Link to={`/songs/${song.key}`}>
           <p className="text-xl font-bold text-white">{song?.title}</p>
         </Link>
-        <Link to={`/artists/${song?.artists?.[0]?.adamid}`}>
-          <p className="text-base text-gray-300 mt-1">{song?.subtitle}</p>
-        </Link>
+        <p className="text-base text-gray-300 mt-1">{song?.subtitle}</p>
       </div>
     </div>
     <PlayPause
@@ -40,24 +49,58 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
 const TopPlay = () => {
   const dispatch = useDispatch();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const { data } = useGetTopChartsQuery();
+  const { data, isFetching, error } = useGetTopChartsQuery();
   const divRef = useRef(null);
 
   useEffect(() => {
-    divRef.current.scrollIntoView({ behavior: "smooth" });
-  });
+    if (divRef.current) {
+      divRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
 
-  const tracks = data?.tracks || data?.properties?.tracks || data || [];
-  const topPlays = tracks.slice(0, 5);
+  const topPlays = data?.slice(0, 5) || [];
 
   const handlePauseClick = () => {
     dispatch(playPause(false));
   };
 
-  const handlePlayClick = (song, i) => {
-    dispatch(setActiveSong({ song, data: tracks, i }));
-    dispatch(playPause(true));
-  };
+const handlePlayClick = async (song, i) => {
+  console.log('Play clicked, song data:', song);
+  console.log('Song preview_url:', song.preview_url);
+  
+  // If no preview URL, fetch it
+  if (!song.preview_url && song.key) {
+    console.log('Fetching preview URL for:', song.title);
+    const previewUrl = await fetchPreviewUrl(song.key);
+    
+    if (previewUrl) {
+      // Update the song object with the preview URL
+      song = { ...song, preview_url: previewUrl, url: previewUrl };
+      console.log('Got preview URL:', previewUrl);
+    }
+  }
+  
+  dispatch(setActiveSong({ song, data, i }));
+  dispatch(playPause(true));
+};
+
+  if (isFetching) {
+    return (
+      <div className="xl:ml-6 ml-0 xl:mb-0 mb-6 flex-1 xl:max-w-[500px] max-w-full flex flex-col">
+        <div className="w-full h-20 bg-gray-800 animate-pulse rounded-lg mb-4" />
+        <div className="w-full h-20 bg-gray-800 animate-pulse rounded-lg mb-4" />
+        <div className="w-full h-20 bg-gray-800 animate-pulse rounded-lg mb-4" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="xl:ml-6 ml-0 xl:mb-0 mb-6 flex-1 xl:max-w-[500px] max-w-full flex flex-col">
+        <p className="text-gray-400">Error loading top tracks</p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -66,7 +109,7 @@ const TopPlay = () => {
     >
       <div className="w-full flex flex-col">
         <div className="flex flex-row justify-between items-center">
-          <h2 className="text-white font-bold text-2xl">Top Charts</h2>
+          <h2 className="text-white font-bold text-2xl">Top Tracks</h2>
           <Link to="/top-charts">
             <p className="text-gray-300 text-base cursor-pointer">See more</p>
           </Link>
@@ -104,19 +147,17 @@ const TopPlay = () => {
           modules={[FreeMode]}
           className="mt-4"
         >
-          {topPlays?.slice(0, 5).map((song) => (
+          {topPlays?.map((album, i) => (
             <SwiperSlide
-              key={song?.key}
+              key={album?.key || i}
               style={{ width: "25%", height: "auto" }}
               className="shadow-lg rounded-full animate-slideright"
             >
-              <Link to={`/artists/${song?.artists?.[0]?.adamid}`}>
-                <img
-                  src={song?.images?.background}
-                  alt="Name"
-                  className="rounded-full w-full object-cover"
-                />
-              </Link>
+              <img
+                src={album?.images?.coverart}
+                alt={album?.title}
+                className="rounded-full w-full object-cover"
+              />
             </SwiperSlide>
           ))}
         </Swiper>

@@ -1,6 +1,6 @@
 import { useSelector } from "react-redux";
 import { Error, Loader, SongCard } from "../components";
-import { useGetSongsBySearchQuery } from "../redux/services/shazamCore";
+import { useGetSongsBySearchQuery } from "../redux/services/spotifyCore";
 
 const TopCharts = () => {
   // Use search for "trending" or "top hits" since charts endpoint returns no data

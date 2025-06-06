@@ -1,13 +1,23 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from "react";
 
-const Player = ({ activeSong, isPlaying, volume, seekTime, onEnded, onTimeUpdate, onLoadedData, repeat, songUrl }) => {
+const Player = ({
+  activeSong,
+  isPlaying,
+  volume,
+  seekTime,
+  onEnded,
+  onTimeUpdate,
+  onLoadedData,
+  repeat,
+  songUrl,
+}) => {
   const ref = useRef(null);
-  
+
   // Handle play/pause
   if (ref.current) {
     if (isPlaying) {
       ref.current.play().catch((error) => {
-        console.error('Error playing audio:', error);
+        console.error("Error playing audio:", error);
       });
     } else {
       ref.current.pause();
@@ -36,8 +46,9 @@ const Player = ({ activeSong, isPlaying, volume, seekTime, onEnded, onTimeUpdate
       onTimeUpdate={onTimeUpdate}
       onLoadedData={onLoadedData}
       onError={(e) => {
-        console.error('Audio playback error:', e);
-        console.log('Failed URL:', songUrl);
+        console.error("Audio playback error:", e);
+        console.log("Failed URL:", songUrl);
+        console.log("Active Song:", activeSong);
       }}
     />
   );
