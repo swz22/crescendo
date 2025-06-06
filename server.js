@@ -12,6 +12,10 @@ const PORT = process.env.PORT || 3001;
 // Preview URL cache
 const previewCache = new Map();
 
+// API response cache
+const apiCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 app.use(cors());
 app.use(express.json());
 
@@ -51,8 +55,28 @@ const getSpotifyToken = async () => {
   }
 };
 
-// Spotify API proxy
-app.use("/api/spotify", async (req, res) => {
+// Cache middleware for Spotify API
+const cacheMiddleware = (req, res, next) => {
+  const cacheKey = req.originalUrl;
+  const cached = apiCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log('Returning cached response for:', cacheKey);
+    return res.json(cached.data);
+  }
+  
+  // Override res.json to cache the response
+  const originalJson = res.json.bind(res);
+  res.json = function(data) {
+    apiCache.set(cacheKey, { data, timestamp: Date.now() });
+    return originalJson(data);
+  };
+  
+  next();
+};
+
+// Spotify API proxy with caching
+app.use("/api/spotify", cacheMiddleware, async (req, res) => {
   try {
     const token = await getSpotifyToken();
     const spotifyPath = req.originalUrl.replace("/api/spotify/", "");
@@ -139,6 +163,22 @@ app.get('/api/preview/:trackId', async (req, res) => {
     console.error('Preview fetch error:', error);
     res.status(404).json({ error: 'Preview not found' });
   }
+});
+
+// Optional: Clear cache endpoint for development
+app.get('/api/cache/clear', (req, res) => {
+  apiCache.clear();
+  previewCache.clear();
+  res.json({ message: 'Cache cleared' });
+});
+
+// Optional: Cache stats endpoint
+app.get('/api/cache/stats', (req, res) => {
+  res.json({
+    apiCache: apiCache.size,
+    previewCache: previewCache.size,
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.listen(PORT, () => {

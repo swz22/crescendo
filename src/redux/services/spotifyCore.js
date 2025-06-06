@@ -1,4 +1,3 @@
-// src/redux/services/spotifyCore.js
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const adaptTrackData = (track) => {
@@ -51,6 +50,8 @@ export const spotifyCoreApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:3001/api/spotify",
   }),
+  keepUnusedDataFor: 300, // 5 minutes
+  refetchOnMountOrArgChange: false,
   endpoints: (builder) => ({
     searchMulti: builder.query({
       query: (searchTerm) =>
@@ -85,7 +86,6 @@ getTopCharts: builder.query({
   transformResponse: (response) => {
     const artists = response.artists?.items?.map(artist => ({
       ...adaptArtistData(artist),
-      // Ensure we have the coverart field for ArtistCard
       coverart: artist.images?.[0]?.url || ''
     })) || [];
     return artists;
