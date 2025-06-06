@@ -3,7 +3,8 @@ import TopArtists from "./TopArtists";
 import ArtistDetails from "./ArtistDetails";
 import SongDetails from "./SongDetails";
 import Search from "./Search";
-import TopCharts from "./TopCharts";
+import NewReleases from "./NewReleases";
+import CommunityPlaylists from "./CommunityPlaylists";
 
 export {
   Discover,
@@ -11,5 +12,6 @@ export {
   TopArtists,
   ArtistDetails,
   SongDetails,
-  TopCharts,
+  NewReleases,
+  CommunityPlaylists,
 };

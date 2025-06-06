@@ -7,7 +7,8 @@ import {
   Discover,
   Search,
   SongDetails,
-  TopCharts,
+  NewReleases,
+  CommunityPlaylists,
 } from "./pages";
 
 const App = () => {
@@ -23,7 +24,8 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Discover />} />
               <Route path="/top-artists" element={<TopArtists />} />
-              <Route path="/top-charts" element={<TopCharts />} />
+              <Route path="/new-releases" element={<NewReleases />} />
+              <Route path="/playlists" element={<CommunityPlaylists />} />
               <Route path="/artists/:id" element={<ArtistDetails />} />
               <Route path="/songs/:songid" element={<SongDetails />} />
               <Route path="/search/:searchTerm" element={<Search />} />

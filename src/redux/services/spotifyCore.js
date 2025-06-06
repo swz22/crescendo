@@ -23,7 +23,7 @@ const adaptTrackData = (track) => {
     },
     preview_url: track.preview_url,
     url: track.preview_url,
-    track_id: track.id, // Add this for fetching preview later
+    track_id: track.id,
     duration_ms: track.duration_ms,
     album: track.album,
     track: track,
@@ -50,55 +50,31 @@ export const spotifyCoreApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:3001/api/spotify",
   }),
-  keepUnusedDataFor: 300, // 5 minutes
+  keepUnusedDataFor: 300,
   refetchOnMountOrArgChange: false,
   endpoints: (builder) => ({
-    searchMulti: builder.query({
-      query: (searchTerm) =>
-        `/search?q=${encodeURIComponent(
-          searchTerm
-        )}&type=track,artist,album&limit=50`,
-      transformResponse: (response) => ({
-        tracks: response.tracks?.items?.map(adaptTrackData) || [],
-        artists: response.artists?.items?.map(adaptArtistData) || [],
-        albums: response.albums?.items || [],
-      }),
-    }),
-
-getTopCharts: builder.query({
-  query: () => '/search?q=top%202024%20kpop%20OR%20billboard&type=track&limit=50',
-  transformResponse: (response) => {
-    const tracks = response.tracks?.items?.map(adaptTrackData) || [];
-    return tracks.sort((a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0));
-  },
-}),
-
-    getTopTracks: builder.query({
-      query: () => "/search?q=popular%202024&type=track&limit=50&market=US",
+    getTopCharts: builder.query({
+      query: () => '/search?q=top%2050%20global%202024&type=track&limit=50',
       transformResponse: (response) => {
         const tracks = response.tracks?.items?.map(adaptTrackData) || [];
-        return tracks;
+        return tracks.sort((a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0));
       },
     }),
 
- getTopArtists: builder.query({
-  query: () => "/search?q=year:2024&type=artist&limit=20&market=US",
-  transformResponse: (response) => {
-    const artists = response.artists?.items?.map(artist => ({
-      ...adaptArtistData(artist),
-      coverart: artist.images?.[0]?.url || ''
-    })) || [];
-    return artists;
-  },
-}),
+    getTopArtists: builder.query({
+      query: () => "/search?q=year:2024&type=artist&limit=20&market=US",
+      transformResponse: (response) => {
+        const artists = response.artists?.items?.map(artist => ({
+          ...adaptArtistData(artist),
+          coverart: artist.images?.[0]?.url || ''
+        })) || [];
+        return artists;
+      },
+    }),
 
     getSongDetails: builder.query({
       query: ({ songid }) => `/tracks/${songid}`,
       transformResponse: (response) => adaptTrackData(response),
-    }),
-
-    getAudioFeatures: builder.query({
-      query: ({ songid }) => `/audio-features/${songid}`,
     }),
 
     getArtistDetails: builder.query({
@@ -112,14 +88,8 @@ getTopCharts: builder.query({
         response.tracks?.map(adaptTrackData) || [],
     }),
 
-    getRelatedArtists: builder.query({
-      query: ({ artistid }) => `/artists/${artistid}/related-artists`,
-      transformResponse: (response) =>
-        response.artists?.map(adaptArtistData) || [],
-    }),
-
     getSongRelated: builder.query({
-      query: ({ songid }) => `/recommendations?seed_tracks=${songid}&limit=30`,
+      query: ({ songid }) => `/recommendations?seed_tracks=${songid}&limit=20`,
       transformResponse: (response) =>
         response.tracks?.map(adaptTrackData) || [],
     }),
@@ -127,74 +97,71 @@ getTopCharts: builder.query({
     getSongsByGenre: builder.query({
       query: (genre) => {
         const genreMap = {
-          POP: "taylor swift",
-          HIP_HOP_RAP: "drake",
-          DANCE: "david guetta",
-          ELECTRONIC: "deadmau5",
-          SOUL_RNB: "the weeknd",
-          ALTERNATIVE: "imagine dragons",
-          ROCK: "foo fighters",
-          LATIN: "bad bunny",
-          FILM_TV: "hans zimmer",
-          COUNTRY: "morgan wallen",
-          WORLDWIDE: "ed sheeran",
-          REGGAE_DANCE_HALL: "bob marley",
-          HOUSE: "swedish house mafia",
-          K_POP: "bts",
+          POP: "pop",
+          HIP_HOP_RAP: "hip-hop",
+          DANCE: "dance",
+          ELECTRONIC: "electronic",
+          SOUL_RNB: "r&b",
+          ALTERNATIVE: "alternative",
+          ROCK: "rock",
+          LATIN: "latin",
+          FILM_TV: "soundtrack",
+          COUNTRY: "country",
+          WORLDWIDE: "global",
+          REGGAE_DANCE_HALL: "reggae",
+          HOUSE: "house",
+          K_POP: "k-pop",
         };
 
-        const searchQuery = genreMap[genre] || "popular songs";
-        return `/search?q=${encodeURIComponent(
-          searchQuery
-        )}&type=track&limit=50&market=US`;
+        const genreQuery = genreMap[genre] || "pop";
+        return `/search?q=genre:${encodeURIComponent(genreQuery)}&type=track&limit=50&market=US`;
       },
       transformResponse: (response) => {
         const tracks = response.tracks?.items?.map(adaptTrackData) || [];
-        console.log(`Genre search: ${tracks.length} total tracks`);
-        return tracks;
+        return tracks.sort((a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0));
       },
-    }),
-
-    getNewReleases: builder.query({
-      query: () => "/browse/new-releases?limit=50",
-      transformResponse: (response) => response.albums?.items || [],
-    }),
-
-    getFeaturedPlaylists: builder.query({
-      query: () => "/browse/featured-playlists?limit=20",
-      transformResponse: (response) => response.playlists?.items || [],
     }),
 
     getSongsBySearch: builder.query({
       query: (searchTerm) =>
         `/search?q=${encodeURIComponent(searchTerm)}&type=track&limit=50`,
-      transformResponse: (response) =>
-        response.tracks?.items?.map(adaptTrackData) || [],
+      transformResponse: (response) => {
+        const tracks = response.tracks?.items?.map(adaptTrackData) || [];
+        return { tracks: { hits: tracks.map(track => ({ track })) } };
+      },
     }),
 
-    getArtistsBySearch: builder.query({
-      query: (searchTerm) =>
-        `/search?q=${encodeURIComponent(searchTerm)}&type=artist&limit=20`,
+    getNewReleases: builder.query({
+      query: () => "/browse/new-releases?country=US&limit=50",
+      transformResponse: (response) => response.albums?.items || [],
+    }),
+
+    getFeaturedPlaylists: builder.query({
+      query: () => "/search?q=owner:spotify&type=playlist&limit=50&market=US",
+      transformResponse: (response) => ({
+        message: "Spotify Curated Playlists",
+        playlists: response.playlists?.items || []
+      }),
+    }),
+
+    getPlaylistTracks: builder.query({
+      query: ({ playlistId }) => `/playlists/${playlistId}/tracks?limit=50`,
       transformResponse: (response) =>
-        response.artists?.items?.map(adaptArtistData) || [],
+        response.items?.map(item => adaptTrackData(item.track)).filter(track => track) || [],
     }),
   }),
 });
 
 export const {
-  useSearchMultiQuery,
   useGetTopChartsQuery,
-  useGetTopTracksQuery,
+  useGetTopArtistsQuery,
   useGetSongDetailsQuery,
-  useGetAudioFeaturesQuery,
   useGetArtistDetailsQuery,
   useGetArtistTopTracksQuery,
-  useGetRelatedArtistsQuery,
   useGetSongRelatedQuery,
   useGetSongsByGenreQuery,
+  useGetSongsBySearchQuery,
   useGetNewReleasesQuery,
   useGetFeaturedPlaylistsQuery,
-  useGetSongsBySearchQuery,
-  useGetArtistsBySearchQuery,
-  useGetTopArtistsQuery,
+  useGetPlaylistTracksQuery,
 } = spotifyCoreApi;

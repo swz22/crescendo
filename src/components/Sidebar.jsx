@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  HiOutlineHashtag,
   HiOutlineHome,
   HiOutlineMenu,
   HiOutlineUserGroup,
+  HiOutlineSparkles,
+  HiOutlineCollection,
 } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
 import { logo } from "../assets";
@@ -12,7 +13,8 @@ import { logo } from "../assets";
 const links = [
   { name: "Discover", to: "/", icon: HiOutlineHome },
   { name: "Top Artists", to: "/top-artists", icon: HiOutlineUserGroup },
-  { name: "Top Charts", to: "/top-charts", icon: HiOutlineHashtag },
+  { name: "New Releases", to: "/new-releases", icon: HiOutlineSparkles },
+  { name: "Community Playlists", to: "/playlists", icon: HiOutlineCollection },
 ];
 
 const NavLinks = ({ handleClick }) => (
@@ -37,12 +39,7 @@ const Sidebar = () => {
   return (
     <>
       <div className="md:flex hidden flex-col w-[240px] py-10 px-4 bg-[#0f0c29]">
-        <img
-          src={logo}
-          alt="logo"
-          onClick={() => (window.location.href = "/")}
-          className="w-full h-14 object-contain cursor-pointer"
-        />
+        <img src={logo} alt="logo" onClick={() => window.location.href = '/'} className="w-full h-14 object-contain cursor-pointer" />
         <NavLinks />
       </div>
       {/* Mobile sidebar */}
