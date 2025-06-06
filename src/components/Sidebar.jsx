@@ -37,7 +37,12 @@ const Sidebar = () => {
   return (
     <>
       <div className="md:flex hidden flex-col w-[240px] py-10 px-4 bg-[#0f0c29]">
-        <img src={logo} alt="logo" onClick={() => window.location = '/'} className="w-full h-14 object-contain cursor-pointer" />
+        <img
+          src={logo}
+          alt="logo"
+          onClick={() => (window.location.href = "/")}
+          className="w-full h-14 object-contain cursor-pointer"
+        />
         <NavLinks />
       </div>
       {/* Mobile sidebar */}
