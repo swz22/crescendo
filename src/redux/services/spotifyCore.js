@@ -1,5 +1,4 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { getAuthHeaders } from './spotifyAuth';
 
 const adaptTrackData = (track) => ({
   key: track.id,
@@ -39,15 +38,8 @@ const adaptArtistData = (artist) => ({
 export const spotifyCoreApi = createApi({
   reducerPath: 'spotifyCoreApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'https://api.spotify.com/v1',
-    prepareHeaders: async (headers) => {
-      const authHeaders = await getAuthHeaders();
-      Object.entries(authHeaders).forEach(([key, value]) => {
-        headers.set(key, value);
-      });
-      return headers;
-    },
-  }),
+  baseUrl: import.meta.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api/spotify',
+}),
   endpoints: (builder) => ({
     searchMulti: builder.query({
       query: (searchTerm) => `/search?q=${encodeURIComponent(searchTerm)}&type=track,artist,album&limit=20`,
