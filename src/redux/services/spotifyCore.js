@@ -56,7 +56,7 @@ export const spotifyCoreApi = createApi({
       query: (searchTerm) =>
         `/search?q=${encodeURIComponent(
           searchTerm
-        )}&type=track,artist,album&limit=20`,
+        )}&type=track,artist,album&limit=50`,
       transformResponse: (response) => ({
         tracks: response.tracks?.items?.map(adaptTrackData) || [],
         artists: response.artists?.items?.map(adaptArtistData) || [],
@@ -64,8 +64,8 @@ export const spotifyCoreApi = createApi({
       }),
     }),
 
-    getTopCharts: builder.query({
-  query: () => '/search?q=kpop%202024&type=track&limit=50&market=KR',
+getTopCharts: builder.query({
+  query: () => '/search?q=top%202024%20kpop%20OR%20billboard&type=track&limit=50',
   transformResponse: (response) => {
     const tracks = response.tracks?.items?.map(adaptTrackData) || [];
     return tracks.sort((a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0));
@@ -80,10 +80,14 @@ export const spotifyCoreApi = createApi({
       },
     }),
 
-  getTopArtists: builder.query({
+ getTopArtists: builder.query({
   query: () => "/search?q=year:2024&type=artist&limit=20&market=US",
   transformResponse: (response) => {
-    const artists = response.artists?.items?.map(adaptArtistData) || [];
+    const artists = response.artists?.items?.map(artist => ({
+      ...adaptArtistData(artist),
+      // Ensure we have the coverart field for ArtistCard
+      coverart: artist.images?.[0]?.url || ''
+    })) || [];
     return artists;
   },
 }),
@@ -115,7 +119,7 @@ export const spotifyCoreApi = createApi({
     }),
 
     getSongRelated: builder.query({
-      query: ({ songid }) => `/recommendations?seed_tracks=${songid}&limit=20`,
+      query: ({ songid }) => `/recommendations?seed_tracks=${songid}&limit=30`,
       transformResponse: (response) =>
         response.tracks?.map(adaptTrackData) || [],
     }),

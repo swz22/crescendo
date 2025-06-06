@@ -1,34 +1,60 @@
+import { useState, useEffect } from "react";
 import { ArtistCard, Error, Loader } from "../components";
 import { useGetTopChartsQuery } from "../redux/services/spotifyCore";
 
 const TopArtists = () => {
   const { data, isFetching, error } = useGetTopChartsQuery();
+  const [artistsWithImages, setArtistsWithImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(true);
 
-  if (isFetching) return <Loader title="Loading artists..." />;
+  useEffect(() => {
+    if (!data || data.length === 0) return;
 
+    const fetchArtistImages = async () => {
+      // Extract unique artists from tracks
+      const artistsMap = new Map();
+      
+      data.forEach((track) => {
+        if (track?.artists?.[0]) {
+          const artist = track.artists[0];
+          const artistId = artist.id;
+          if (artistId && !artistsMap.has(artistId)) {
+            artistsMap.set(artistId, {
+              ...artist,
+              adamid: artist.id,
+            });
+          }
+        }
+      });
+
+      const uniqueArtists = Array.from(artistsMap.values());
+
+      // Fetch full artist data with images
+      const artistPromises = uniqueArtists.map(async (artist) => {
+        try {
+          const response = await fetch(`http://localhost:3001/api/spotify/artists/${artist.adamid}`);
+          const fullArtist = await response.json();
+          return {
+            ...artist,
+            coverart: fullArtist.images?.[0]?.url || '',
+            images: fullArtist.images
+          };
+        } catch (err) {
+          console.error(`Failed to fetch artist ${artist.name}:`, err);
+          return artist;
+        }
+      });
+
+      const artistsWithFullData = await Promise.all(artistPromises);
+      setArtistsWithImages(artistsWithFullData);
+      setLoadingImages(false);
+    };
+
+    fetchArtistImages();
+  }, [data]);
+
+  if (isFetching || loadingImages) return <Loader title="Loading artists..." />;
   if (error) return <Error />;
-
-  // Extract tracks and get unique artists
-  const tracks = data?.tracks || data || [];
-  
-  // Create a map of unique artists
-  const artistsMap = new Map();
-  
-  tracks.forEach((track) => {
-    if (track?.artists?.[0]) {
-      const artist = track.artists[0];
-      const artistId = artist.adamid || artist.id;
-      if (artistId && !artistsMap.has(artistId)) {
-        artistsMap.set(artistId, {
-          ...artist,
-          // Use the track's image as artist image if artist doesn't have one
-          coverart: artist.avatar || track.images?.background || track.images?.coverart
-        });
-      }
-    }
-  });
-
-  const topArtists = Array.from(artistsMap.values());
 
   return (
     <div className="flex flex-col">
@@ -37,13 +63,9 @@ const TopArtists = () => {
       </h2>
 
       <div className="flex flex-wrap sm:justify-start justify-center gap-8">
-        {topArtists.length > 0 ? (
-          topArtists.map((artist) => (
-            <ArtistCard key={artist.adamid || artist.id} track={{ artists: [artist] }} />
-          ))
-        ) : (
-          <p className="text-gray-400 text-2xl">No artists found</p>
-        )}
+        {artistsWithImages.map((artist) => (
+          <ArtistCard key={artist.adamid} track={{ artists: [artist] }} />
+        ))}
       </div>
     </div>
   );
