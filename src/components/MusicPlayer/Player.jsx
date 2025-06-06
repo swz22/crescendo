@@ -1,39 +1,44 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from 'react';
 
-const Player = ({
-  activeSong,
-  isPlaying,
-  volume,
-  seekTime,
-  onEnded,
-  onTimeUpdate,
-  onLoadedData,
-  repeat,
-}) => {
+const Player = ({ activeSong, isPlaying, volume, seekTime, onEnded, onTimeUpdate, onLoadedData, repeat, songUrl }) => {
   const ref = useRef(null);
+  
+  // Handle play/pause
   if (ref.current) {
     if (isPlaying) {
-      ref.current.play();
+      ref.current.play().catch((error) => {
+        console.error('Error playing audio:', error);
+      });
     } else {
       ref.current.pause();
     }
   }
 
   useEffect(() => {
-    ref.current.volume = volume;
+    if (ref.current) {
+      ref.current.volume = volume;
+    }
   }, [volume]);
+
+  // Update seek time
   useEffect(() => {
-    ref.current.currentTime = seekTime;
+    if (ref.current) {
+      ref.current.currentTime = seekTime;
+    }
   }, [seekTime]);
 
   return (
     <audio
-      src={activeSong?.hub?.actions[1]?.uri}
+      src={songUrl}
       ref={ref}
       loop={repeat}
       onEnded={onEnded}
       onTimeUpdate={onTimeUpdate}
       onLoadedData={onLoadedData}
+      onError={(e) => {
+        console.error('Audio playback error:', e);
+        console.log('Failed URL:', songUrl);
+      }}
     />
   );
 };

@@ -8,29 +8,49 @@ const Discover = () => {
   const dispatch = useDispatch();
   const { genreListId } = useSelector((state) => state.player);
   const { activeSong, isPlaying } = useSelector((state) => state.player);
+  
+  // Log the genre being requested
+  console.log('Requesting genre:', genreListId || "genre-global-chart-1");
+  
+  // Use the genre ID directly
   const { data, isFetching, error } = useGetSongsByGenreQuery(
-    genreListId || "POP"
+    genreListId || "genre-global-chart-1"
   );
+
+  // Enhanced debugging
+  console.log('API Response:', { data, isFetching, error });
+  
+  if (error) {
+    console.error('API Error:', error);
+  }
 
   if (isFetching) return <Loader title="Loading songs..." />;
 
   if (error) return <Error />;
 
-  const genreTitle = genres.find(({ value }) => value === genreListId)?.title;
+  const genreTitle = genres.find(({ value }) => value === genreListId)?.title || 'Pop';
+  
+  // Extract tracks from the response - check different possible structures
+  const songs = data?.tracks || data?.data || data || [];
+
+  console.log('Genre songs data:', data);
+  console.log('Extracted songs:', songs);
 
   return (
     <div className="flex flex-col">
       <div className="w-full flex justify-between items-center sm:flex-row flex-col mt-4 mb-10">
         <div className="text-white">
-        <h2 className="font-bold text-3xl text-left text-white"> 
-        ♫ Discover {genreTitle} Music ♫
-        </h2>
-        <div className="font-xs mt-2"> * Click an artist's name to view details. Click a song title to view lyrics. Use the dropdown menu to filer by genre. * </div>
-      </div>
+          <h2 className="font-bold text-3xl text-left text-white"> 
+            ♫ Discover {genreTitle} Music ♫
+          </h2>
+          <div className="font-xs mt-2"> 
+            * Click an artist's name to view details. Click a song title to view lyrics. Use the dropdown menu to filter by genre. * 
+          </div>
+        </div>
 
         <select
           onChange={(e) => dispatch(selectGenreListId(e.target.value))}
-          value={genreListId || "pop"}
+          value={genreListId || "genre-global-chart-1"}
           className="bg-black text-gray-300 p-3 text-sm rounded-lg outline-none sm:mt-0 mt-5"
         >
           {genres.map((genre) => (
@@ -42,16 +62,20 @@ const Discover = () => {
       </div>
 
       <div className="flex flex-wrap sm:justify-start justify-center gap-8">
-        {data?.map((song, i) => (
-          <SongCard
-            key={song.key}
-            song={song}
-            isPlaying={isPlaying}
-            activeSong={activeSong}
-            data={data}
-            i={i}
-          />
-        ))}
+        {songs.length > 0 ? (
+          songs.map((song, i) => (
+            <SongCard
+              key={song?.key || song?.id || i}
+              song={song}
+              isPlaying={isPlaying}
+              activeSong={activeSong}
+              data={songs}
+              i={i}
+            />
+          ))
+        ) : (
+          <p className="text-gray-300 text-2xl">No songs found for this genre</p>
+        )}
       </div>
     </div>
   );

@@ -9,20 +9,20 @@ import {
 
 const SongDetails = () => {
   const dispatch = useDispatch();
-  const { songid, id: artistId } = useParams();
+  const { songid } = useParams();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const {
-    data,
-    isFetching: isFetchinRelatedSongs,
-    error,
-  } = useGetSongRelatedQuery({ songid });
+  
   const { data: songData, isFetching: isFetchingSongDetails } =
     useGetSongDetailsQuery({ songid });
+  
+  const { data: relatedData, isFetching: isFetchingRelatedSongs, error } =
+    useGetSongRelatedQuery({ songid });
 
-  if (isFetchingSongDetails && isFetchinRelatedSongs)
+  if (isFetchingSongDetails || isFetchingRelatedSongs)
     return <Loader title="Searching song details" />;
 
-    console.log(songData);
+  console.log('Song details data:', songData);
+  console.log('Related songs data:', relatedData);
 
   if (error) return <Error />;
 
@@ -31,25 +31,60 @@ const SongDetails = () => {
   };
 
   const handlePlayClick = (song, i) => {
-    dispatch(setActiveSong({ song, data, i }));
+    dispatch(setActiveSong({ song, data: relatedData?.tracks || relatedData || [], i }));
     dispatch(playPause(true));
   };
 
+  // Extract lyrics from different possible locations
+  const getLyrics = () => {
+    // Check for lyrics in sections
+    if (songData?.sections) {
+      const lyricsSection = songData.sections.find(
+        section => section.type === "LYRICS"
+      );
+      if (lyricsSection?.text) {
+        return lyricsSection.text;
+      }
+    }
+    
+    // Check for lyrics in resources
+    if (songData?.resources?.lyrics) {
+      return Object.values(songData.resources.lyrics)[0]?.attributes?.text;
+    }
+    
+    // Check for lyrics in other possible locations
+    if (songData?.lyrics) {
+      return songData.lyrics;
+    }
+    
+    return null;
+  };
+
+  const lyrics = getLyrics();
+  const relatedSongs = relatedData?.tracks || relatedData || [];
+
   return (
     <div className="flex flex-col">
-      <DetailsHeader artistId={artistId} songData={songData} />
+      <DetailsHeader artistId="" songData={songData} />
+      
       <div className="mb-10">
         <h2 className="text-white text-3xl font-bold">Lyrics:</h2>
         <div className="mt-5">
-          {songData?.sections[1].type === "LYRICS" ? (
-            songData?.sections[1]?.text.map((line, i) => (
-              <p
-                key={`lyrics-${line}-${i}`}
-                className="text-gray-400 text-base my-1"
-              >
-                {line}
+          {lyrics ? (
+            Array.isArray(lyrics) ? (
+              lyrics.map((line, i) => (
+                <p
+                  key={`lyrics-${i}`}
+                  className="text-gray-400 text-base my-1"
+                >
+                  {line}
+                </p>
+              ))
+            ) : (
+              <p className="text-gray-400 text-base my-1 whitespace-pre-line">
+                {lyrics}
               </p>
-            ))
+            )
           ) : (
             <p className="text-gray-400 text-base my-1">
               Sorry, no lyrics found!
@@ -59,8 +94,8 @@ const SongDetails = () => {
       </div>
 
       <RelatedSongs
-        data={data}
-        artistId={artistId}
+        data={relatedSongs}
+        artistId=""
         isPlaying={isPlaying}
         activeSong={activeSong}
         handlePauseClick={handlePauseClick}

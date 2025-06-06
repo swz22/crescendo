@@ -13,7 +13,7 @@ import {
 
 const App = () => {
   const { activeSong } = useSelector((state) => state.player);
-
+  console.log('All env variables:', import.meta.env);
   return (
     <div className="relative flex">
       <Sidebar />
