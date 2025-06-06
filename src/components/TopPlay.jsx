@@ -22,7 +22,7 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
         <Link to={`/songs/${song.key}`}>
           <p className="text-xl font-bold text-white">{song?.title}</p>
         </Link>
-        <Link to={`/artists/${song?.artists[0].adamid}`}>
+        <Link to={`/artists/${song?.artists?.[0]?.adamid}`}>
           <p className="text-base text-gray-300 mt-1">{song?.subtitle}</p>
         </Link>
       </div>
@@ -47,14 +47,15 @@ const TopPlay = () => {
     divRef.current.scrollIntoView({ behavior: "smooth" });
   });
 
-  const topPlays = data?.slice(0, 5);
+  const tracks = data?.tracks || data?.properties?.tracks || data || [];
+  const topPlays = tracks.slice(0, 5);
 
   const handlePauseClick = () => {
     dispatch(playPause(false));
   };
 
   const handlePlayClick = (song, i) => {
-    dispatch(setActiveSong({ song, data, i }));
+    dispatch(setActiveSong({ song, data: tracks, i }));
     dispatch(playPause(true));
   };
 
@@ -103,15 +104,15 @@ const TopPlay = () => {
           modules={[FreeMode]}
           className="mt-4"
         >
-          {topPlays?.slice(0, 5).map((artist) => (
+          {topPlays?.slice(0, 5).map((song) => (
             <SwiperSlide
-              key={artist?.key}
+              key={song?.key}
               style={{ width: "25%", height: "auto" }}
               className="shadow-lg rounded-full animate-slideright"
             >
-              <Link to={`/artists/${artist?.artists[0].adamid}`}>
+              <Link to={`/artists/${song?.artists?.[0]?.adamid}`}>
                 <img
-                  src={artist?.images?.background}
+                  src={song?.images?.background}
                   alt="Name"
                   className="rounded-full w-full object-cover"
                 />

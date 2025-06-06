@@ -1,41 +1,69 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useSelector } from "react-redux";
 import { Error, Loader, SongCard } from "../components";
-import { useGetSongsByCountryQuery } from "../redux/services/shazamCore";
+import { useGetSongsByCountryQuery, useGetChartsListQuery } from "../redux/services/shazamCore";
 
 const CountryTracks = () => {
-  const [country, setCountry] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [selectedCountryId, setSelectedCountryId] = useState("");
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const { data, isFetching, error } = useGetSongsByCountryQuery(country);
-
+  
+  // Get charts list to get available countries
+  const { data: chartsData, isLoading: chartsLoading } = useGetChartsListQuery();
+  
+  // Set default country when charts data loads
   useEffect(() => {
-    axios
-      .get(`https://geo.ipify.org/api/v2/country?apiKey=${import.meta.env.VITE_GEO_API_KEY}`)
-      .then((res) => setCountry(res?.data?.location.country))
-      .catch((err) => console.log(err))
-      .finally(() => setLoading(false));
-  }, [country]);
+    if (chartsData && !selectedCountryId) {
+      // Default to US or first available country
+      const usCountry = chartsData.countries?.find(c => c.id === 'US');
+      const defaultCountry = usCountry || chartsData.countries?.[0];
+      if (defaultCountry) {
+        setSelectedCountryId(defaultCountry.listid);
+      }
+    }
+  }, [chartsData, selectedCountryId]);
+  
+  // Get songs for the selected country
+  const { data, isFetching, error } = useGetSongsByCountryQuery(
+    selectedCountryId,
+    { skip: !selectedCountryId }
+  );
 
-  if (isFetching && loading) return <Loader title="Loading Songs around you..." />;
-
-  if (error && country !== "") return <Error />;
+  if (chartsLoading) return <Loader title="Loading countries..." />;
+  if (isFetching) return <Loader title="Loading Songs..." />;
+  if (error) return <Error />;
+  
+  // Extract tracks from the response
+  const songs = data?.tracks || data || [];
+  const countries = chartsData?.countries || [];
 
   return (
     <div className="flex flex-col">
-      <h2 className="font-bold text-3xl text-white text-left mt-4 mb-10">
-        Around You
-        <div className="mt-2 text-base">Current Country: {country}</div>
-      </h2>
+      <div className="w-full flex justify-between items-center sm:flex-row flex-col mt-4 mb-10">
+        <h2 className="font-bold text-3xl text-white text-left">
+          Around You
+        </h2>
+        
+        <select
+          onChange={(e) => setSelectedCountryId(e.target.value)}
+          value={selectedCountryId}
+          className="bg-black text-gray-300 p-3 text-sm rounded-lg outline-none sm:mt-0 mt-5"
+        >
+          {countries.map((country) => (
+            <option key={country.listid} value={country.listid}>
+              {country.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="flex flex-wrap sm:justify-start justify-center gap-8">
-        {data?.map((song, i) => (
+        {songs?.map((song, i) => (
           <SongCard
             key={song.key}
             song={song}
             isPlaying={isPlaying}
             activeSong={activeSong}
-            data={data}
+            data={songs}
             i={i}
           />
         ))}
