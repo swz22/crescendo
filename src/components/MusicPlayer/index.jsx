@@ -8,6 +8,17 @@ import Seekbar from './Seekbar';
 import Track from './Track';
 import VolumeBar from './VolumeBar';
 
+const fetchPreviewUrl = async (trackId) => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/preview/${trackId}`);
+    const data = await response.json();
+    return data.preview_url;
+  } catch (error) {
+    console.error('Failed to fetch preview URL:', error);
+    return null;
+  }
+};
+
 const MusicPlayer = () => {
   const { activeSong, currentSongs, currentIndex, isActive, isPlaying } = useSelector((state) => state.player);
   const [duration, setDuration] = useState(0);
@@ -70,26 +81,30 @@ const MusicPlayer = () => {
     return 'https://via.placeholder.com/240x240.png?text=No+Image';
   };
 
-  // Get the song URL with fallbacks
-  const getSongUrl = () => {
-    if (!activeSong) return '';
-    
-    // Try different possible URL paths
-    if (activeSong.hub?.actions?.[1]?.uri) return activeSong.hub.actions[1].uri;
-    if (activeSong.hub?.actions?.[0]?.uri) return activeSong.hub.actions[0].uri;
-    if (activeSong.url) return activeSong.url;
-    if (activeSong.preview_url) return activeSong.preview_url;
-    if (activeSong.uri) return activeSong.uri;
-    
-    // Look for any action with a URI
-    if (activeSong.hub?.actions) {
-      const action = activeSong.hub.actions.find(action => action.uri);
-      if (action?.uri) return action.uri;
-    }
-    
-    return '';
-  };
-
+const getSongUrl = () => {
+  if (!activeSong) return '';
+  
+  // Check preview_url FIRST since that's where Spotify puts it
+  if (activeSong.preview_url) {
+    console.log('Found preview_url:', activeSong.preview_url);
+    return activeSong.preview_url;
+  }
+  
+  // Then check other possible locations
+  if (activeSong.url) return activeSong.url;
+  if (activeSong.hub?.actions?.[1]?.uri) return activeSong.hub.actions[1].uri;
+  if (activeSong.hub?.actions?.[0]?.uri) return activeSong.hub.actions[0].uri;
+  if (activeSong.uri) return activeSong.uri;
+  
+  // Look for any action with a URI
+  if (activeSong.hub?.actions) {
+    const action = activeSong.hub.actions.find(action => action.uri);
+    if (action?.uri) return action.uri;
+  }
+  
+  console.log('No URL found for song:', activeSong);
+  return '';
+};
   return (
     <div className="relative sm:px-12 px-8 w-full flex items-center justify-between">
       <Track 

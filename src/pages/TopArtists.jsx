@@ -1,5 +1,5 @@
 import { ArtistCard, Error, Loader } from "../components";
-import { useGetTopChartsQuery } from "../redux/services/shazamCore";
+import { useGetTopChartsQuery } from "../redux/services/spotifyCore";
 
 const TopArtists = () => {
   const { data, isFetching, error } = useGetTopChartsQuery();

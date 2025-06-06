@@ -1,56 +1,56 @@
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { DetailsHeader, Error, Loader, RelatedSongs } from "../components";
-import { useGetArtistDetailsQuery } from "../redux/services/shazamCore";
+import { useGetArtistDetailsQuery, useGetArtistTopTracksQuery } from "../redux/services/spotifyCore";
+import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { setActiveSong, playPause } from "../redux/features/playerSlice";
 
 const ArtistDetails = () => {
   const { id: artistId } = useParams();
+  const dispatch = useDispatch();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
+  const { getPreviewUrl } = usePreviewUrl();
+  
   const {
     data: artistData,
     isFetching: isFetchingArtistDetails,
     error,
-  } = useGetArtistDetailsQuery(artistId);
+  } = useGetArtistDetailsQuery({ artistid: artistId });
+  
+  const {
+    data: topTracks,
+    isFetching: isFetchingTopTracks,
+  } = useGetArtistTopTracksQuery({ artistid: artistId });
 
-  if (isFetchingArtistDetails)
+  if (isFetchingArtistDetails || isFetchingTopTracks)
     return <Loader title="Loading artist details..." />;
 
   if (error) return <Error />;
 
-  // Debug log to see the structure
-  console.log('Artist data structure:', artistData);
-
-  // Handle different possible response structures
-  const artist = artistData?.data?.[0] || artistData?.artists?.[0] || artistData;
-  
-  // Extract top songs - handle different possible paths
-  const getTopSongs = () => {
-    if (artist?.views?.["top-songs"]?.data) {
-      return artist.views["top-songs"].data;
-    }
-    if (artistData?.songs) {
-      return artistData.songs;
-    }
-    if (artistData?.data?.views?.["top-songs"]?.data) {
-      return artistData.data.views["top-songs"].data;
-    }
-    return [];
+  const handlePauseClick = () => {
+    dispatch(playPause(false));
   };
 
-  const topSongs = getTopSongs();
+  const handlePlayClick = async (song, i) => {
+    const songWithPreview = await getPreviewUrl(song);
+    dispatch(setActiveSong({ song: songWithPreview, data: topTracks, i }));
+    dispatch(playPause(true));
+  };
 
   return (
     <div className="flex flex-col">
       <DetailsHeader 
         artistId={artistId} 
-        artistData={artist} 
+        artistData={artistData} 
       />
 
       <RelatedSongs
-        data={topSongs}
+        data={topTracks || []}
         artistId={artistId}
         isPlaying={isPlaying}
         activeSong={activeSong}
+        handlePauseClick={handlePauseClick}
+        handlePlayClick={handlePlayClick}
       />
     </div>
   );

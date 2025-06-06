@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Error, Loader, SongCard } from "../components";
 import { selectGenreListId } from "../redux/features/playerSlice";
-import { useGetSongsBySearchQuery } from "../redux/services/shazamCore";
+import { useGetSongsBySearchQuery } from "../redux/services/spotifyCore";
 import { genres } from "../assets/constants";
 
 const Discover = () => {
@@ -9,17 +9,13 @@ const Discover = () => {
   const { genreListId } = useSelector((state) => state.player);
   const { activeSong, isPlaying } = useSelector((state) => state.player);
   
-  // Get the genre title to use as search term
   const genreTitle = genres.find(({ value }) => value === genreListId)?.title || 'Pop';
-  
-  // Use search API instead of charts API since charts are returning no data
   const { data, isFetching, error } = useGetSongsBySearchQuery(genreTitle.toLowerCase());
 
   if (isFetching) return <Loader title="Loading songs..." />;
 
   if (error) return <Error />;
 
-  // Extract songs from search results
   const songs = data?.tracks?.hits?.map(hit => ({
     ...hit.track,
     key: hit.track?.key || hit.track?.hub?.actions?.[0]?.id
