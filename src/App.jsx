@@ -1,6 +1,7 @@
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Route, Routes } from "react-router-dom";
-import { Searchbar, LeftSidebar, MusicPlayer, MusicSidebar } from "./components";
+import { Route, Routes, useLocation } from "react-router-dom";
+import { Searchbar, LeftSidebar, MusicPlayer, MusicSidebar, FloatingMiniPlayer } from "./components";
 import {
   ArtistDetails,
   TopArtists,
@@ -12,8 +13,32 @@ import {
 } from "./pages";
 
 const App = () => {
-  const { activeSong } = useSelector((state) => state.player);
+  const { activeSong, isModalOpen, playlistContext, isPlaying } = useSelector((state) => state.player);
+  const location = useLocation();
+  const [playlistSession, setPlaylistSession] = useState(false);
+  
   console.log('All env variables:', import.meta.env);
+  
+  // Start playlist session when we have a playlist context
+  useEffect(() => {
+    if (playlistContext && location.pathname === '/playlists') {
+      setPlaylistSession(true);
+    }
+  }, [playlistContext, location.pathname]);
+  
+  // Only end playlist session when we navigate away from playlists page
+  useEffect(() => {
+    if (location.pathname !== '/playlists') {
+      setPlaylistSession(false);
+    }
+  }, [location.pathname]);
+  
+  // Show floating player during playlist session
+  const showFloatingPlayer = playlistSession && location.pathname === '/playlists';
+  
+  // Hide main player when modal is open OR when floating player is shown
+  const hideMainPlayer = isModalOpen || showFloatingPlayer;
+  
   return (
     <div className="relative flex">
       <LeftSidebar />
@@ -36,11 +61,18 @@ const App = () => {
           </div>
         </div>
       </div>
+      
+      {/* Always render the music player, but hide it visually when appropriate */}
       {activeSong?.title && (
-        <div className="absolute h-28 bottom-0 left-0 right-0 flex animate-slideup bg-gradient-to-br from-white/10 to-[#2a2a80] backdrop-blur-lg rounded-t-3xl z-10">
+        <div className={`absolute h-28 bottom-0 left-0 right-0 flex animate-slideup bg-gradient-to-br from-white/10 to-[#2a2a80] backdrop-blur-lg rounded-t-3xl z-10 ${
+          hideMainPlayer ? 'invisible' : 'visible'
+        }`}>
           <MusicPlayer />
         </div>
       )}
+      
+      {/* Global floating player - show during playlist session regardless of activeSong state */}
+      <FloatingMiniPlayer isVisible={showFloatingPlayer} />
     </div>
   );
 };
