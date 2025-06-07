@@ -1,5 +1,7 @@
+import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import PlayPause from "./PlayPause";
+import { usePreviewUrl } from "../hooks/usePreviewUrl";
 
 const SongBar = ({
   song,
@@ -10,6 +12,40 @@ const SongBar = ({
   handlePauseClick,
   handlePlayClick,
 }) => {
+  const { prefetchPreviewUrl, isPreviewCached } = usePreviewUrl();
+  const barRef = useRef(null);
+
+  // Prefetch on hover
+  const handleMouseEnter = () => {
+    if (!isPreviewCached(song)) {
+      prefetchPreviewUrl(song, { priority: 'high' });
+    }
+  };
+
+  // Prefetch when visible
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isPreviewCached(song)) {
+            prefetchPreviewUrl(song, { priority: 'low', delay: 300 });
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    if (barRef.current) {
+      observer.observe(barRef.current);
+    }
+
+    return () => {
+      if (barRef.current) {
+        observer.unobserve(barRef.current);
+      }
+    };
+  }, [song, prefetchPreviewUrl, isPreviewCached]);
+
   // Handle different image path structures
   const getCoverArt = () => {
     if (song?.images?.coverart) return song.images.coverart;
@@ -44,9 +80,11 @@ const SongBar = ({
 
   return (
     <div
+      ref={barRef}
       className={`w-full flex flex-row items-center hover:bg-[#4c426e] ${
         activeSong?.title === song?.title ? "bg-[#4c426e]" : "bg-transparent"
       } py-2 p-4 rounded-lg cursor-pointer mb-2`}
+      onMouseEnter={handleMouseEnter}
     >
       <h3 className="font-bold text-base text-white mr-3">{i + 1}.</h3>
       <div className="flex-1 flex flex-row justify-between items-center">

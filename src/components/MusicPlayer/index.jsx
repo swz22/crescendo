@@ -59,17 +59,21 @@ const MusicPlayer = () => {
       return "";
     }
 
-    // Check preview_url FIRST since that's where Spotify puts it
+    // Check all possible locations for preview URL
     if (activeSong.preview_url) {
       return activeSong.preview_url;
     }
 
-    // Then check other possible locations
+    // Also check url field
     if (activeSong.url) {
       return activeSong.url;
     }
+
+    // Legacy ShazamCore structure
     if (activeSong.hub?.actions?.[1]?.uri) return activeSong.hub.actions[1].uri;
     if (activeSong.hub?.actions?.[0]?.uri) return activeSong.hub.actions[0].uri;
+    
+    // Direct uri field
     if (activeSong.uri) return activeSong.uri;
 
     // Look for any action with a URI
@@ -83,11 +87,20 @@ const MusicPlayer = () => {
 
   const songUrl = getSongUrl();
 
-  // Don't render the player if we don't have a valid URL
-  if (!songUrl && isPlaying) {
-    // If we're supposed to be playing but have no URL, pause
-    dispatch(playPause(false));
-  }
+  // Log the URL state for debugging
+  useEffect(() => {
+    console.log('MusicPlayer - Current song URL:', songUrl);
+    console.log('MusicPlayer - Is playing:', isPlaying);
+    console.log('MusicPlayer - Active song:', activeSong);
+  }, [songUrl, isPlaying, activeSong]);
+
+  // Handle case where song has no URL in a useEffect to avoid render-time state updates
+  useEffect(() => {
+    if (activeSong && !songUrl && isPlaying) {
+      console.log('No URL for active song, pausing playback');
+      dispatch(playPause(false));
+    }
+  }, [activeSong, songUrl, isPlaying, dispatch]);
 
   return (
     <div className="relative sm:px-12 px-8 w-full flex items-center justify-between">

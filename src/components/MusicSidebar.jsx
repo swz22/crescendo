@@ -17,14 +17,21 @@ const cleanTitle = (title) => {
     .trim();
 };
 
-const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick, data }) => {
+const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick, data, prefetchPreviewUrl, isPreviewCached }) => {
   const displayTitle = cleanTitle(song?.title);
+  
+  const handleMouseEnter = () => {
+    if (!isPreviewCached(song)) {
+      prefetchPreviewUrl(song, { priority: 'high' });
+    }
+  };
   
   return (
     <div
       className={`w-full flex flex-row items-center hover:bg-[#4c426e] ${
         activeSong?.title === song?.title ? "bg-[#4c426e]" : "bg-transparent"
       } py-2 p-3 rounded-lg cursor-pointer mb-1`}
+      onMouseEnter={handleMouseEnter}
     >
       <h3 className="font-bold text-sm text-white mr-3">{i + 1}.</h3>
       <div className="flex-1 flex flex-row justify-between items-center">
@@ -51,14 +58,21 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
   );
 };
 
-const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick, data }) => {
+const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick, data, prefetchPreviewUrl, isPreviewCached }) => {
   const displayTitle = cleanTitle(song?.title);
+  
+  const handleMouseEnter = () => {
+    if (!isPreviewCached(song)) {
+      prefetchPreviewUrl(song, { priority: 'high' });
+    }
+  };
   
   return (
     <div
       className={`w-full flex items-center hover:bg-[#4c426e] ${
         activeSong?.key === song?.key ? "bg-[#4c426e]" : "bg-transparent"
       } py-2 px-3 rounded-lg cursor-pointer transition-all duration-200`}
+      onMouseEnter={handleMouseEnter}
     >
       <span className="text-gray-500 text-sm w-4 mr-3">{i + 1}</span>
       
@@ -96,7 +110,7 @@ const MusicSidebar = () => {
   const dispatch = useDispatch();
   const { activeSong, isPlaying, recentlyPlayed = [] } = useSelector((state) => state.player);
   const { data, isFetching, error } = useGetTopChartsQuery();
-  const { getPreviewUrl } = usePreviewUrl();
+  const { getPreviewUrl, prefetchPreviewUrl, prefetchMultiple, isPreviewCached } = usePreviewUrl();
   const divRef = useRef(null);
 
   useEffect(() => {
@@ -104,6 +118,14 @@ const MusicSidebar = () => {
       divRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, []);
+
+  // Prefetch top tracks when they load - but with more conservative settings
+  useEffect(() => {
+    if (data && data.length > 0) {
+      // Only prefetch the first 2 tracks, with longer delays
+      prefetchMultiple(data.slice(0, 2), { maxConcurrent: 1, startDelay: 2000 });
+    }
+  }, [data, prefetchMultiple]);
 
   const topPlays = data
     ?.filter((song, index, self) => {
@@ -119,9 +141,16 @@ const MusicSidebar = () => {
   };
 
   const handlePlayClick = async (song, i, songArray) => {
+    // Always get preview URL (from cache or fetch)
     const songWithPreview = await getPreviewUrl(song);
-    dispatch(setActiveSong({ song: songWithPreview, data: songArray, i }));
-    dispatch(playPause(true));
+    
+    if (songWithPreview.preview_url) {
+      console.log('Playing song with preview URL:', songWithPreview);
+      dispatch(setActiveSong({ song: songWithPreview, data: songArray, i }));
+      dispatch(playPause(true));
+    } else {
+      console.log('No preview available for:', song.title);
+    }
   };
 
   if (isFetching) {
@@ -166,7 +195,9 @@ const MusicSidebar = () => {
               activeSong={activeSong}
               handlePauseClick={handlePauseClick}
               handlePlayClick={handlePlayClick}
-              data={topPlays} // Pass the array
+              data={topPlays}
+              prefetchPreviewUrl={prefetchPreviewUrl}
+              isPreviewCached={isPreviewCached}
             />
           ))}
         </div>
@@ -192,7 +223,9 @@ const MusicSidebar = () => {
                   activeSong={activeSong}
                   handlePauseClick={handlePauseClick}
                   handlePlayClick={handlePlayClick}
-                  data={recentlyPlayed.slice(0, 5)} // Pass the displayed array
+                  data={recentlyPlayed.slice(0, 5)}
+                  prefetchPreviewUrl={prefetchPreviewUrl}
+                  isPreviewCached={isPreviewCached}
                 />
               ))}
             </div>

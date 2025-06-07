@@ -109,7 +109,11 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
-// Preview endpoint
+// Rate limiting - track last request time
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 3000; // 3 seconds between requests
+
+// Preview endpoint with enhanced logging
 app.get('/api/preview/:trackId', async (req, res) => {
   try {
     const trackId = req.params.trackId;
@@ -120,6 +124,16 @@ app.get('/api/preview/:trackId', async (req, res) => {
       console.log('Returning cached preview for:', trackId);
       return res.json({ preview_url: previewCache.get(trackId) });
     }
+    
+    // Rate limiting - wait if necessary
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+      const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+      console.log(`Rate limiting: waiting ${waitTime}ms before request`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    lastRequestTime = Date.now();
     
     // Get track details from Spotify
     const token = await getSpotifyToken();
@@ -136,32 +150,67 @@ app.get('/api/preview/:trackId', async (req, res) => {
     const artistName = trackResponse.data.artists[0].name;
     console.log(`Searching for: ${trackName} by ${artistName}`);
     
-    // Search using track name and artist
-    const result = await searchAndGetLinks(`${trackName} ${artistName}`);
-    
-    if (result.success && result.results && result.results.length > 0) {
-      // Find the result that matches our track
-      const matchingResult = result.results.find(r => 
-        r.spotifyUrl && r.spotifyUrl.includes(trackId)
-      ) || result.results[0];
+    try {
+      // Search using track name and artist with timeout
+      console.log('Calling searchAndGetLinks...');
+      const searchQuery = `${trackName} ${artistName}`;
       
-      if (matchingResult.previewUrls && matchingResult.previewUrls.length > 0) {
-        const previewUrl = matchingResult.previewUrls[0];
-        console.log('Found preview URL:', previewUrl);
+      // Add timeout promise
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Search timeout')), 15000)
+      );
+      
+      const searchPromise = searchAndGetLinks(searchQuery);
+      
+      const result = await Promise.race([searchPromise, timeoutPromise]);
+      
+      console.log('Search result:', JSON.stringify(result, null, 2));
+      
+      if (result.success && result.results && result.results.length > 0) {
+        // Find the result that matches our track
+        const matchingResult = result.results.find(r => 
+          r.spotifyUrl && r.spotifyUrl.includes(trackId)
+        ) || result.results[0];
         
-        // Cache it
-        previewCache.set(trackId, previewUrl);
+        console.log('Matching result:', matchingResult);
         
-        res.json({ preview_url: previewUrl });
+        if (matchingResult.previewUrls && matchingResult.previewUrls.length > 0) {
+          const previewUrl = matchingResult.previewUrls[0];
+          console.log('Found preview URL:', previewUrl);
+          
+          // Cache it
+          previewCache.set(trackId, previewUrl);
+          
+          res.json({ preview_url: previewUrl });
+        } else {
+          console.log('No preview URLs in result');
+          // Cache null to prevent repeated attempts
+          previewCache.set(trackId, null);
+          res.status(404).json({ error: 'No preview URL found' });
+        }
       } else {
-        res.status(404).json({ error: 'No preview URL found' });
+        console.log('No results from search or search failed');
+        console.log('Result object:', result);
+        
+        // If rate limited, don't cache the failure
+        if (result.error && result.error.includes('429')) {
+          console.log('Rate limited - not caching failure');
+          res.status(429).json({ error: 'Rate limited - try again later' });
+        } else {
+          // Cache other failures
+          previewCache.set(trackId, null);
+          res.status(404).json({ error: 'No results found' });
+        }
       }
-    } else {
-      res.status(404).json({ error: 'No results found' });
+    } catch (searchError) {
+      console.error('Error during search:', searchError.message);
+      console.error('Stack trace:', searchError.stack);
+      res.status(404).json({ error: 'Search failed: ' + searchError.message });
     }
   } catch (error) {
-    console.error('Preview fetch error:', error);
-    res.status(404).json({ error: 'Preview not found' });
+    console.error('Preview fetch error:', error.message);
+    console.error('Stack trace:', error.stack);
+    res.status(404).json({ error: 'Preview not found: ' + error.message });
   }
 });
 

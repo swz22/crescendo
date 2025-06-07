@@ -14,7 +14,7 @@ import { IoClose } from "react-icons/io5";
 const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const { getPreviewUrl } = usePreviewUrl();
+  const { getPreviewUrl, prefetchMultiple, isPreviewCached, hasNoPreview, prefetchPreviewUrl } = usePreviewUrl();
   const [isAnimating, setIsAnimating] = useState(false);
   const [mosaicImages, setMosaicImages] = useState(initialMosaicImages || []);
 
@@ -44,16 +44,14 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   // Prefetch preview URLs when tracks load
   useEffect(() => {
     if (tracks && tracks.length > 0) {
-      // Prefetch first 5 tracks' preview URLs in background
-      tracks.slice(0, 5).forEach((track) => {
-        if (!track.preview_url) {
-          getPreviewUrl(track).catch((err) =>
-            console.log("Failed to prefetch preview for:", track.title)
-          );
-        }
+      // Use the new prefetchMultiple method for better performance
+      // Only prefetch first 3 tracks with conservative settings
+      prefetchMultiple(tracks.slice(0, 3), { 
+        maxConcurrent: 2, 
+        startDelay: 1000 
       });
     }
-  }, [tracks, getPreviewUrl]);
+  }, [tracks, prefetchMultiple]);
 
   const handleClose = () => {
     setIsAnimating(false);
@@ -63,17 +61,19 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const handlePlayClick = async (song, i) => {
     console.log("handlePlayClick - song:", song, "index:", i);
 
-    // Pause any currently playing song
+    // Pause current playback while fetching
     if (isPlaying) {
       dispatch(playPause(false));
     }
-
-    // Check if song already has preview_url
-    if (song.preview_url) {
-      // If we already have preview URL, play immediately
+    
+    // Always get preview URL (from cache or fetch)
+    const songWithPreview = await getPreviewUrl(song);
+    
+    if (songWithPreview.preview_url) {
+      console.log('Playing song with preview URL:', songWithPreview);
       dispatch(
         setActiveSong({
-          song: song,
+          song: songWithPreview,
           data: tracks,
           i,
           playlistId: playlist.id,
@@ -81,35 +81,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
       );
       dispatch(playPause(true));
     } else {
-      // Show loading state by setting song info but keeping player paused
-      // This updates UI immediately without causing audio errors
-      dispatch(
-        setActiveSong({
-          song: { ...song, preview_url: null }, // Explicitly set to null to prevent Player from trying to load
-          data: tracks,
-          i,
-          playlistId: playlist.id,
-        })
-      );
-
-      // Fetch preview URL
-      const songWithPreview = await getPreviewUrl(song);
-
-      // Update with preview URL and play
-      if (songWithPreview.preview_url) {
-        dispatch(
-          setActiveSong({
-            song: songWithPreview,
-            data: tracks,
-            i,
-            playlistId: playlist.id,
-          })
-        );
-        // Play immediately - audio element will have valid source now
-        dispatch(playPause(true));
-      } else {
-        console.error("No preview URL available for this track");
-      }
+      console.error("No preview URL available for this track");
     }
   };
 
@@ -216,6 +188,12 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   <div
                     key={track.key || i}
                     className="flex items-center py-2 px-3 hover:bg-white/5 rounded-lg transition-colors group"
+                    onMouseEnter={() => {
+                      // Prefetch on hover if not already cached
+                      if (!isPreviewCached(track)) {
+                        prefetchPreviewUrl(track, { priority: 'high' });
+                      }
+                    }}
                   >
                     <span className="text-gray-500 text-sm w-8 text-center">
                       {i + 1}

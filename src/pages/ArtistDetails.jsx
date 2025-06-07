@@ -9,7 +9,7 @@ const ArtistDetails = () => {
   const { id: artistId } = useParams();
   const dispatch = useDispatch();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const { getPreviewUrl } = usePreviewUrl();
+  const { getPreviewUrl, isPreviewCached } = usePreviewUrl();
   
   const {
     data: artistData,
@@ -32,9 +32,16 @@ const ArtistDetails = () => {
   };
 
   const handlePlayClick = async (song, i) => {
+    // Always get preview URL (from cache or fetch)
     const songWithPreview = await getPreviewUrl(song);
-    dispatch(setActiveSong({ song: songWithPreview, data: topTracks, i }));
-    dispatch(playPause(true));
+    
+    if (songWithPreview.preview_url) {
+      console.log('Playing song with preview URL:', songWithPreview);
+      dispatch(setActiveSong({ song: songWithPreview, data: topTracks, i }));
+      dispatch(playPause(true));
+    } else {
+      console.log('No preview available for:', song.title);
+    }
   };
 
   return (
