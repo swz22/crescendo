@@ -119,13 +119,22 @@ const MusicSidebar = () => {
     }
   }, []);
 
-  // Prefetch top tracks when they load - but with more conservative settings
+  // Conservative prefetch - only first 3 tracks after delay
   useEffect(() => {
     if (data && data.length > 0) {
-      // Only prefetch the first 2 tracks, with longer delays
-      prefetchMultiple(data.slice(0, 2), { maxConcurrent: 1, startDelay: 2000 });
+      // Wait 2 seconds before starting any prefetch
+      const timeoutId = setTimeout(() => {
+        // Only prefetch first 3 tracks with delays between each
+        data.slice(0, 3).forEach((song, index) => {
+          setTimeout(() => {
+            prefetchPreviewUrl(song, { priority: 'low' });
+          }, index * 3000); // 3 seconds between each prefetch
+        });
+      }, 2000);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [data, prefetchMultiple]);
+  }, [data, prefetchPreviewUrl]);
 
   const topPlays = data
     ?.filter((song, index, self) => {

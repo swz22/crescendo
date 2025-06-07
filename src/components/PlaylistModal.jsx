@@ -41,17 +41,23 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     };
   }, [dispatch]);
 
-  // Prefetch preview URLs when tracks load
+  // Conservative prefetch for playlists
   useEffect(() => {
     if (tracks && tracks.length > 0) {
-      // Use the new prefetchMultiple method for better performance
-      // Only prefetch first 3 tracks with conservative settings
-      prefetchMultiple(tracks.slice(0, 3), { 
-        maxConcurrent: 2, 
-        startDelay: 1000 
-      });
+      // Only prefetch first 3 tracks with significant delays
+      const timeoutId = setTimeout(() => {
+        tracks.slice(0, 3).forEach((track, index) => {
+          setTimeout(() => {
+            if (!isPreviewCached(track)) {
+              prefetchPreviewUrl(track, { priority: 'low' });
+            }
+          }, index * 3000); // 3 seconds between each
+        });
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [tracks, prefetchMultiple]);
+  }, [tracks, prefetchPreviewUrl, isPreviewCached]);
 
   const handleClose = () => {
     setIsAnimating(false);
