@@ -12,6 +12,7 @@ import Error from './Error';
 import PlayPause from './PlayPause';
 import AlbumCard from './AlbumCard';
 import PlaylistCard from './PlaylistCard';
+import Tooltip from './Tooltip';
 
 export { 
   LeftSidebar, 
@@ -27,5 +28,6 @@ export {
   Error,
   PlayPause,
   AlbumCard,
-  PlaylistCard
+  PlaylistCard,
+  Tooltip
 };

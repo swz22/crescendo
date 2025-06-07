@@ -3,6 +3,9 @@ module.exports = {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      screens: {
+        '3xl': '1920px', // Add 3xl breakpoint for ultrawide screens
+      },
       colors: {
         black: '#191624',
       },

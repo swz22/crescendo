@@ -62,7 +62,7 @@ const TopArtists = () => {
         Top Artists
       </h2>
 
-      <div className="flex flex-wrap sm:justify-start justify-center gap-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4 sm:gap-6 lg:gap-8">
         {artistsWithImages.map((artist) => (
           <ArtistCard key={artist.adamid} track={{ artists: [artist] }} />
         ))}

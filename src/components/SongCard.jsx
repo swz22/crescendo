@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import PlayPause from "./PlayPause";
 import { playPause, setActiveSong } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import Tooltip from "./Tooltip";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
@@ -30,7 +31,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     return "https://via.placeholder.com/400x400.png?text=No+Image";
   };
 
-
   const getArtistId = () => {
     if (song.artists?.[0]?.adamid) return song.artists[0].adamid;
     if (song.artists?.[0]?.id) return song.artists[0].id;
@@ -42,10 +42,12 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
 
   const artistId = getArtistId();
   const coverArt = getCoverArt();
+  const songTitle = song.title || song.attributes?.name || "Unknown Title";
+  const artistName = song.subtitle || song.attributes?.artistName || "Unknown Artist";
 
   return (
-    <div className="flex flex-col w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer">
-      <div className="relative w-full h-56 group">
+    <div className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover">
+      <div className="relative w-full aspect-square group">
         <div
           className={`absolute inset-0 justify-center items-center bg-black bg-opacity-50 group-hover:flex ${
             activeSong?.title === song.title
@@ -72,20 +74,24 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         />
       </div>
       <div className="mt-4 flex flex-col">
-        <p className="font-semibold text-lg text-white truncate">
-          <Link to={`/songs/${song?.key || song?.id}`}>
-            {song.title || song.attributes?.name || "Unknown Title"}
-          </Link>
-        </p>
-        <p className="text-sm truncate text-gray-300 mt-1">
-          {artistId ? (
-            <Link to={`/artists/${artistId}`}>
-              {song.subtitle || song.attributes?.artistName || "Unknown Artist"}
+        <Tooltip text={songTitle}>
+          <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
+            <Link to={`/songs/${song?.key || song?.id}`}>
+              {songTitle}
             </Link>
-          ) : (
-            song.subtitle || song.attributes?.artistName || "Unknown Artist"
-          )}
-        </p>
+          </p>
+        </Tooltip>
+        <Tooltip text={artistName}>
+          <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
+            {artistId ? (
+              <Link to={`/artists/${artistId}`}>
+                {artistName}
+              </Link>
+            ) : (
+              artistName
+            )}
+          </p>
+        </Tooltip>
       </div>
     </div>
   );
