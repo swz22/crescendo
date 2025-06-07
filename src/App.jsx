@@ -1,6 +1,6 @@
 import { useSelector } from "react-redux";
 import { Route, Routes } from "react-router-dom";
-import { Searchbar, Sidebar, MusicPlayer, TopPlay } from "./components";
+import { Searchbar, LeftSidebar, MusicPlayer, MusicSidebar } from "./components";
 import {
   ArtistDetails,
   TopArtists,
@@ -16,7 +16,7 @@ const App = () => {
   console.log('All env variables:', import.meta.env);
   return (
     <div className="relative flex">
-      <Sidebar />
+      <LeftSidebar />
       <div className="flex-1 flex flex-col bg-gradient-to-r from-[#110d36] via-[#352f73] to-[#110d36]">
         <Searchbar />
         <div className="px-6 h-[calc(100vh-72px)] overflow-y-scroll custom-scrollbar flex xl:flex-row flex-col-reverse">
@@ -32,7 +32,7 @@ const App = () => {
             </Routes>
           </div>
           <div className="xl:sticky relative top-0 h-fit">
-            <TopPlay />
+            <MusicSidebar />
           </div>
         </div>
       </div>
