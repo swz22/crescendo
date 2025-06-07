@@ -104,9 +104,19 @@ export const spotifyCoreApi = createApi({
           FILM_TV: "soundtrack",
           COUNTRY: "country",
           WORLDWIDE: "global",
-          REGGAE_DANCE_HALL: "reggae",
+          REGGAE: "reggae",
           HOUSE: "house",
           K_POP: "k-pop",
+          INDIE: "indie",
+          METAL: "metal",
+          JAZZ: "jazz",
+          CLASSICAL: "classical",
+          BLUES: "blues",
+          PUNK: "punk",
+          FUNK: "funk",
+          GOSPEL: "gospel",
+          DISCO: "disco",
+          LOFI: "lo-fi",
         };
 
         const genreQuery = genreMap[genre] || "pop";
@@ -145,6 +155,40 @@ export const spotifyCoreApi = createApi({
       transformResponse: (response) =>
         response.items?.map(item => adaptTrackData(item.track)).filter(track => track) || [],
     }),
+
+    getTrackFeatures: builder.query({
+      query: ({ songid }) => `/audio-features/${songid}`,
+      transformResponse: (response) => {
+        if (!response || typeof response === 'string') return null;
+        
+        return {
+          key: {
+            name: response.key === 0 ? 'C' : response.key === 1 ? 'C♯/D♭' : 
+                  response.key === 2 ? 'D' : response.key === 3 ? 'D♯/E♭' : 
+                  response.key === 4 ? 'E' : response.key === 5 ? 'F' : 
+                  response.key === 6 ? 'F♯/G♭' : response.key === 7 ? 'G' : 
+                  response.key === 8 ? 'G♯/A♭' : response.key === 9 ? 'A' : 
+                  response.key === 10 ? 'A♯/B♭' : response.key === 11 ? 'B' : 'Unknown',
+            number: response.key
+          },
+          mode: response.mode === 1 ? 'Major' : 'Minor',
+          tempo: response.tempo ? Math.round(response.tempo) : null,
+          energy: response.energy ? Math.round(response.energy * 100) : null,
+          danceability: response.danceability ? Math.round(response.danceability * 100) : null,
+          happiness: response.valence ? Math.round(response.valence * 100) : null,
+          acousticness: response.acousticness ? Math.round(response.acousticness * 100) : null,
+          speechiness: response.speechiness ? Math.round(response.speechiness * 100) : null,
+          liveness: response.liveness ? Math.round(response.liveness * 100) : null,
+          loudness: response.loudness ? Math.round(response.loudness) : null,
+          duration: response.duration_ms ? Math.round(response.duration_ms / 1000) : null
+        };
+      },
+      // Don't throw errors for this endpoint
+      transformErrorResponse: (response) => {
+        console.log('Audio features not available');
+        return { error: 'Audio features not available' };
+      },
+    }),
   }),
 });
 
@@ -160,4 +204,5 @@ export const {
   useGetNewReleasesQuery,
   useGetFeaturedPlaylistsQuery,
   useGetPlaylistTracksQuery,
+  useGetTrackFeaturesQuery,
 } = spotifyCoreApi;

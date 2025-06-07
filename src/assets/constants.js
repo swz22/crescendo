@@ -12,9 +12,19 @@ export const genres = [
   { title: 'Film & TV', value: 'FILM_TV' },
   { title: 'Country', value: 'COUNTRY' },
   { title: 'Worldwide', value: 'WORLDWIDE' },
-  { title: 'Reggae/Dancehall', value: 'REGGAE_DANCE_HALL' },
+  { title: 'Reggae', value: 'REGGAE' },
   { title: 'House', value: 'HOUSE' },
   { title: 'K-Pop', value: 'K_POP' },
+  { title: 'Indie', value: 'INDIE' },
+  { title: 'Metal', value: 'METAL' },
+  { title: 'Jazz', value: 'JAZZ' },
+  { title: 'Classical', value: 'CLASSICAL' },
+  { title: 'Blues', value: 'BLUES' },
+  { title: 'Punk', value: 'PUNK' },
+  { title: 'Funk', value: 'FUNK' },
+  { title: 'Gospel', value: 'GOSPEL' },
+  { title: 'Disco', value: 'DISCO' },
+  { title: 'Lo-Fi', value: 'LOFI' },
 ];
 
 export const links = [
