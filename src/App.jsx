@@ -17,8 +17,6 @@ const App = () => {
   const location = useLocation();
   const [playlistSession, setPlaylistSession] = useState(false);
   
-  console.log('All env variables:', import.meta.env);
-  
   // Start playlist session when we have a playlist context
   useEffect(() => {
     if (playlistContext && location.pathname === '/playlists') {

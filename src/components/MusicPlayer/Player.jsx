@@ -15,15 +15,15 @@ const Player = ({
 
   // Handle play/pause
   useEffect(() => {
-    if (!ref.current || !songUrl) {
-      // Don't try to play if no URL
+    if (!ref.current) return;
+
+    // Don't try to play if no URL
+    if (!songUrl) {
+      console.log('No song URL available, skipping playback');
       return;
     }
 
-    if (isPlaying) {
-      // Reset the audio element when source changes
-      ref.current.load();
-
+    if (isPlaying && songUrl) {
       const playPromise = ref.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((error) => {
@@ -43,7 +43,7 @@ const Player = ({
     } else {
       ref.current.pause();
     }
-  }, [isPlaying, songUrl]); // Added songUrl as dependency
+  }, [isPlaying, songUrl]);
 
   useEffect(() => {
     if (ref.current) {
@@ -53,7 +53,7 @@ const Player = ({
 
   // Update seek time
   useEffect(() => {
-    if (ref.current) {
+    if (ref.current && songUrl) {
       ref.current.currentTime = seekTime;
     }
   }, [seekTime]);
@@ -63,6 +63,11 @@ const Player = ({
     console.log("Audio source changed:", songUrl);
     console.log("Active song details:", activeSong);
   }, [songUrl, activeSong]);
+
+  // Don't render audio element if no URL
+  if (!songUrl) {
+    return null;
+  }
 
   return (
     <audio

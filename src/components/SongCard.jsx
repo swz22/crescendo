@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import PlayPause from "./PlayPause";
@@ -8,17 +8,75 @@ import Tooltip from "./Tooltip";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
-  const { getPreviewUrl } = usePreviewUrl();
+  const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached, hasNoPreview } = usePreviewUrl();
+  const cardRef = useRef(null);
+  const prefetchTimeoutRef = useRef(null);
 
-  const handlePauseClick = () => {
+  // All hooks must be called before any conditions or early returns
+  
+  // Prefetch on hover
+  const handleMouseEnter = useCallback(() => {
+    // Prefetch immediately on hover if not cached
+    if (!isPreviewCached(song)) {
+      prefetchPreviewUrl(song, { priority: 'high' });
+    }
+  }, [song, isPreviewCached, prefetchPreviewUrl]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (prefetchTimeoutRef.current) {
+        clearTimeout(prefetchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Prefetch when card becomes visible (Intersection Observer)
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isPreviewCached(song)) {
+            // Prefetch with low priority when scrolled into view
+            prefetchTimeoutRef.current = setTimeout(() => {
+              prefetchPreviewUrl(song, { priority: 'low', delay: 1000 });
+            }, 100);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '50px' } // Reduced root margin
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, [song, prefetchPreviewUrl, isPreviewCached]);
+
+  const handlePauseClick = useCallback(() => {
     dispatch(playPause(false));
-  };
+  }, [dispatch]);
 
-  const handlePlayClick = async () => {
+  const handlePlayClick = useCallback(async () => {
+    console.log('handlePlayClick called for song:', song.title);
+    
+    // Always try to get preview URL (from cache or fetch)
     const songWithPreview = await getPreviewUrl(song);
-    dispatch(setActiveSong({ song: songWithPreview, data, i }));
-    dispatch(playPause(true));
-  };
+    
+    if (songWithPreview.preview_url) {
+      console.log('Playing song with preview URL:', songWithPreview);
+      dispatch(setActiveSong({ song: songWithPreview, data, i }));
+      dispatch(playPause(true));
+    } else {
+      console.log('No preview available for:', song.title);
+      // Don't play if no preview available
+    }
+  }, [song, data, i, dispatch, getPreviewUrl]);
 
   const getCoverArt = () => {
     if (song.images?.coverart) return song.images.coverart;
@@ -47,7 +105,11 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const artistName = song.subtitle || song.attributes?.artistName || "Unknown Artist";
 
   return (
-    <div className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover">
+    <div 
+      ref={cardRef}
+      className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover"
+      onMouseEnter={handleMouseEnter}
+    >
       <div className="relative w-full aspect-square group">
         <div
           className={`absolute inset-0 justify-center items-center bg-black bg-opacity-50 group-hover:flex ${
