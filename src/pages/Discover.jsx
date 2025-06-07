@@ -8,44 +8,89 @@ const Discover = () => {
   const dispatch = useDispatch();
   const { genreListId } = useSelector((state) => state.player);
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-
-  const selectedGenre = genreListId || "POP";
-  const genreTitle =
-    genres.find(({ value }) => value === selectedGenre)?.title || "Pop";
-
+  
+  const selectedGenre = genreListId || 'POP';
+  const genreTitle = genres.find(({ value }) => value === selectedGenre)?.title || 'Pop';
+  
   const { data, isFetching, error } = useGetSongsByGenreQuery(selectedGenre);
 
   if (isFetching) return <Loader title="Loading songs..." />;
   if (error) return <Error />;
 
+  // Color mapping for genres
+  const genreColors = {
+    'POP': 'from-pink-500 to-rose-500',
+    'HIP_HOP_RAP': 'from-purple-600 to-purple-800',
+    'DANCE': 'from-blue-500 to-cyan-500',
+    'ELECTRONIC': 'from-indigo-500 to-blue-600',
+    'SOUL_RNB': 'from-orange-500 to-red-500',
+    'ALTERNATIVE': 'from-gray-700 to-gray-900',
+    'ROCK': 'from-red-700 to-red-900',
+    'LATIN': 'from-yellow-500 to-orange-500',
+    'FILM_TV': 'from-teal-500 to-green-600',
+    'COUNTRY': 'from-yellow-600 to-amber-700',
+    'WORLDWIDE': 'from-green-500 to-emerald-600',
+    'REGGAE': 'from-green-600 to-yellow-600',
+    'HOUSE': 'from-purple-500 to-pink-500',
+    'K_POP': 'from-pink-400 to-purple-600',
+    'INDIE': 'from-amber-500 to-orange-600',
+    'METAL': 'from-gray-900 to-red-900',
+    'JAZZ': 'from-blue-800 to-indigo-900',
+    'CLASSICAL': 'from-purple-900 to-pink-800',
+    'BLUES': 'from-blue-900 to-blue-700',
+    'PUNK': 'from-pink-600 to-black',
+    'FUNK': 'from-purple-700 to-orange-600',
+    'GOSPEL': 'from-yellow-600 to-yellow-800',
+    'DISCO': 'from-pink-500 to-purple-700',
+    'LOFI': 'from-purple-400 to-pink-300',
+  };
+
   return (
     <div className="flex flex-col">
-      <div className="w-full flex justify-between items-center sm:flex-row flex-col mt-4 mb-10">
-        <h2 className="font-bold text-3xl text-white">Discover {genreTitle}</h2>
-        <select
-          onChange={(e) => dispatch(selectGenreListId(e.target.value))}
-          value={selectedGenre}
-          className="bg-black text-gray-300 p-3 text-sm rounded-lg outline-none sm:mt-0 mt-5"
-        >
-          {genres.map((genre) => (
-            <option key={genre.value} value={genre.value}>
-              {genre.title}
-            </option>
-          ))}
-        </select>
+      <div className="w-full mb-10">
+        <h2 className="font-bold text-3xl text-white mb-6">
+          Discover {genreTitle}
+        </h2>
+        
+        {/* Genre Pills */}
+        <div className="flex flex-wrap gap-2 mb-6 max-h-32 overflow-y-auto genre-pills-container p-2">
+          {[...genres]
+            .sort((a, b) => a.title.localeCompare(b.title))
+            .map((genre) => (
+              <button
+                key={genre.value}
+                onClick={() => dispatch(selectGenreListId(genre.value))}
+                className={`px-4 py-2 rounded-full font-medium transition-all duration-300 ${
+                  selectedGenre === genre.value
+                    ? `bg-gradient-to-r ${genreColors[genre.value] || 'from-gray-600 to-gray-700'} text-white shadow-lg scale-105`
+                    : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
+                }`}
+              >
+                {genre.title}
+              </button>
+            ))}
+        </div>
       </div>
 
       <div className="flex flex-wrap sm:justify-start justify-center gap-8">
-        {data?.map((song, i) => (
-          <SongCard
-            key={song.key || i}
-            song={song}
-            isPlaying={isPlaying}
-            activeSong={activeSong}
-            data={data}
-            i={i}
-          />
-        ))}
+        {data
+          ?.filter((song, index, self) => {
+            // Remove duplicates based on title and artist
+            return index === self.findIndex(s => 
+              s.title?.toLowerCase() === song.title?.toLowerCase() && 
+              s.subtitle?.toLowerCase() === song.subtitle?.toLowerCase()
+            );
+          })
+          .map((song, i) => (
+            <SongCard
+              key={song.key || i}
+              song={song}
+              isPlaying={isPlaying}
+              activeSong={activeSong}
+              data={data}
+              i={i}
+            />
+          ))}
       </div>
     </div>
   );

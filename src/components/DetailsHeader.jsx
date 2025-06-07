@@ -10,6 +10,7 @@ const DetailsHeader = ({ artistId, artistData, songData }) => {
     }
     if (artistData?.avatar) return artistData.avatar;
     if (artistData?.images?.background) return artistData.images.background;
+    if (artistData?.artist?.images?.[0]?.url) return artistData.artist.images[0].url;
     return 'https://via.placeholder.com/500x500.png?text=Artist';
   };
 
@@ -21,12 +22,14 @@ const DetailsHeader = ({ artistId, artistData, songData }) => {
         .replace("{w}", "500")
         .replace("{h}", "500");
     }
+    if (songData?.album?.images?.[0]?.url) return songData.album.images[0].url;
     return 'https://via.placeholder.com/500x500.png?text=Song';
   };
 
   const getArtistName = () => {
     return artistData?.attributes?.name || 
            artistData?.name || 
+           artistData?.artist?.name ||
            'Unknown Artist';
   };
 
@@ -38,13 +41,25 @@ const DetailsHeader = ({ artistId, artistData, songData }) => {
 
   const getGenre = () => {
     if (artistId) {
-      return artistData?.attributes?.genreNames?.[0] || 
-             artistData?.genres?.primary || 
-             'Unknown Genre';
+      // Check multiple possible locations for genres
+      if (artistData?.artist?.genres?.length > 0) {
+        return artistData.artist.genres.join(', ');
+      }
+      if (artistData?.genres?.length > 0) {
+        return artistData.genres.join(', ');
+      }
+      if (artistData?.attributes?.genreNames?.length > 0) {
+        return artistData.attributes.genreNames.join(', ');
+      }
+      return 'Hip-Hop/Rap'; // Default for now, could be removed
+    }
+    // For songs, try to get genre from the track data
+    if (songData?.track?.album?.genres?.length > 0) {
+      return songData.track.album.genres.join(', ');
     }
     return songData?.genres?.primary || 
            songData?.genre || 
-           'Unknown Genre';
+           'Hip-Hop/Rap';
   };
 
   const profileImage = artistId ? getArtistImage() : getSongImage();
