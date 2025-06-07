@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import PlayPause from "./PlayPause";
@@ -97,4 +98,12 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   );
 };
 
-export default SongCard;
+export default React.memo(SongCard, (prevProps, nextProps) => {
+  // Only re-render if these specific props change
+  return (
+    prevProps.song.key === nextProps.song.key &&
+    prevProps.i === nextProps.i &&
+    prevProps.isPlaying === nextProps.isPlaying &&
+    prevProps.activeSong?.key === nextProps.activeSong?.key
+  );
+});
