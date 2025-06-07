@@ -50,20 +50,23 @@ export const spotifyCoreApi = createApi({
   refetchOnMountOrArgChange: false,
   endpoints: (builder) => ({
     getTopCharts: builder.query({
-      query: () => '/search?q=top%2050%20global%202024&type=track&limit=50',
+      query: () => "/search?q=top%2050%20global%202024&type=track&limit=50",
       transformResponse: (response) => {
         const tracks = response.tracks?.items?.map(adaptTrackData) || [];
-        return tracks.sort((a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0));
+        return tracks.sort(
+          (a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0)
+        );
       },
     }),
 
     getTopArtists: builder.query({
       query: () => "/search?q=year:2024&type=artist&limit=20&market=US",
       transformResponse: (response) => {
-        const artists = response.artists?.items?.map(artist => ({
-          ...adaptArtistData(artist),
-          coverart: artist.images?.[0]?.url || ''
-        })) || [];
+        const artists =
+          response.artists?.items?.map((artist) => ({
+            ...adaptArtistData(artist),
+            coverart: artist.images?.[0]?.url || "",
+          })) || [];
         return artists;
       },
     }),
@@ -120,11 +123,15 @@ export const spotifyCoreApi = createApi({
         };
 
         const genreQuery = genreMap[genre] || "pop";
-        return `/search?q=genre:${encodeURIComponent(genreQuery)}&type=track&limit=50&market=US`;
+        return `/search?q=genre:${encodeURIComponent(
+          genreQuery
+        )}&type=track&limit=50&market=US`;
       },
       transformResponse: (response) => {
         const tracks = response.tracks?.items?.map(adaptTrackData) || [];
-        return tracks.sort((a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0));
+        return tracks.sort(
+          (a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0)
+        );
       },
     }),
 
@@ -133,7 +140,7 @@ export const spotifyCoreApi = createApi({
         `/search?q=${encodeURIComponent(searchTerm)}&type=track&limit=50`,
       transformResponse: (response) => {
         const tracks = response.tracks?.items?.map(adaptTrackData) || [];
-        return { tracks: { hits: tracks.map(track => ({ track })) } };
+        return { tracks: { hits: tracks.map((track) => ({ track })) } };
       },
     }),
 
@@ -146,47 +153,81 @@ export const spotifyCoreApi = createApi({
       query: () => "/search?q=owner:spotify&type=playlist&limit=50&market=US",
       transformResponse: (response) => ({
         message: "Spotify Curated Playlists",
-        playlists: response.playlists?.items || []
+        playlists: response.playlists?.items || [],
       }),
     }),
 
     getPlaylistTracks: builder.query({
       query: ({ playlistId }) => `/playlists/${playlistId}/tracks?limit=50`,
       transformResponse: (response) =>
-        response.items?.map(item => adaptTrackData(item.track)).filter(track => track) || [],
+        response.items
+          ?.filter((item) => item && item.track)
+          .map((item) => adaptTrackData(item.track)) || [],
     }),
 
     getTrackFeatures: builder.query({
       query: ({ songid }) => `/audio-features/${songid}`,
       transformResponse: (response) => {
-        if (!response || typeof response === 'string') return null;
-        
+        if (!response || typeof response === "string") return null;
+
         return {
           key: {
-            name: response.key === 0 ? 'C' : response.key === 1 ? 'C♯/D♭' : 
-                  response.key === 2 ? 'D' : response.key === 3 ? 'D♯/E♭' : 
-                  response.key === 4 ? 'E' : response.key === 5 ? 'F' : 
-                  response.key === 6 ? 'F♯/G♭' : response.key === 7 ? 'G' : 
-                  response.key === 8 ? 'G♯/A♭' : response.key === 9 ? 'A' : 
-                  response.key === 10 ? 'A♯/B♭' : response.key === 11 ? 'B' : 'Unknown',
-            number: response.key
+            name:
+              response.key === 0
+                ? "C"
+                : response.key === 1
+                ? "C♯/D♭"
+                : response.key === 2
+                ? "D"
+                : response.key === 3
+                ? "D♯/E♭"
+                : response.key === 4
+                ? "E"
+                : response.key === 5
+                ? "F"
+                : response.key === 6
+                ? "F♯/G♭"
+                : response.key === 7
+                ? "G"
+                : response.key === 8
+                ? "G♯/A♭"
+                : response.key === 9
+                ? "A"
+                : response.key === 10
+                ? "A♯/B♭"
+                : response.key === 11
+                ? "B"
+                : "Unknown",
+            number: response.key,
           },
-          mode: response.mode === 1 ? 'Major' : 'Minor',
+          mode: response.mode === 1 ? "Major" : "Minor",
           tempo: response.tempo ? Math.round(response.tempo) : null,
           energy: response.energy ? Math.round(response.energy * 100) : null,
-          danceability: response.danceability ? Math.round(response.danceability * 100) : null,
-          happiness: response.valence ? Math.round(response.valence * 100) : null,
-          acousticness: response.acousticness ? Math.round(response.acousticness * 100) : null,
-          speechiness: response.speechiness ? Math.round(response.speechiness * 100) : null,
-          liveness: response.liveness ? Math.round(response.liveness * 100) : null,
+          danceability: response.danceability
+            ? Math.round(response.danceability * 100)
+            : null,
+          happiness: response.valence
+            ? Math.round(response.valence * 100)
+            : null,
+          acousticness: response.acousticness
+            ? Math.round(response.acousticness * 100)
+            : null,
+          speechiness: response.speechiness
+            ? Math.round(response.speechiness * 100)
+            : null,
+          liveness: response.liveness
+            ? Math.round(response.liveness * 100)
+            : null,
           loudness: response.loudness ? Math.round(response.loudness) : null,
-          duration: response.duration_ms ? Math.round(response.duration_ms / 1000) : null
+          duration: response.duration_ms
+            ? Math.round(response.duration_ms / 1000)
+            : null,
         };
       },
       // Don't throw errors for this endpoint
       transformErrorResponse: (response) => {
-        console.log('Audio features not available');
-        return { error: 'Audio features not available' };
+        console.log("Audio features not available");
+        return { error: "Audio features not available" };
       },
     }),
   }),

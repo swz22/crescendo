@@ -12,6 +12,8 @@ import Error from './Error';
 import PlayPause from './PlayPause';
 import AlbumCard from './AlbumCard';
 import PlaylistCard from './PlaylistCard';
+import PlaylistModal from './PlaylistModal';
+import FloatingMiniPlayer from './FloatingMiniPlayer';
 import Tooltip from './Tooltip';
 
 export { 
@@ -29,5 +31,7 @@ export {
   PlayPause,
   AlbumCard,
   PlaylistCard,
+  PlaylistModal,
+  FloatingMiniPlayer,
   Tooltip
 };
