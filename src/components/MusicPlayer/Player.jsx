@@ -14,15 +14,36 @@ const Player = ({
   const ref = useRef(null);
 
   // Handle play/pause
-  if (ref.current) {
+  useEffect(() => {
+    if (!ref.current || !songUrl) {
+      // Don't try to play if no URL
+      return;
+    }
+
     if (isPlaying) {
-      ref.current.play().catch((error) => {
-        console.error("Error playing audio:", error);
-      });
+      // Reset the audio element when source changes
+      ref.current.load();
+
+      const playPromise = ref.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          // Only log if it's not an abort error (which is expected during transitions)
+          if (error.name !== "AbortError") {
+            console.error("Error playing audio:", error);
+            // If autoplay is blocked, we'll need user interaction
+            if (
+              error.name === "NotAllowedError" ||
+              error.name === "NotSupportedError"
+            ) {
+              console.log("Autoplay blocked - need user interaction");
+            }
+          }
+        });
+      }
     } else {
       ref.current.pause();
     }
-  }
+  }, [isPlaying, songUrl]); // Added songUrl as dependency
 
   useEffect(() => {
     if (ref.current) {
@@ -37,6 +58,12 @@ const Player = ({
     }
   }, [seekTime]);
 
+  // Log when audio source changes
+  useEffect(() => {
+    console.log("Audio source changed:", songUrl);
+    console.log("Active song details:", activeSong);
+  }, [songUrl, activeSong]);
+
   return (
     <audio
       src={songUrl}
@@ -49,6 +76,8 @@ const Player = ({
         console.error("Audio playback error:", e);
         console.log("Failed URL:", songUrl);
         console.log("Active Song:", activeSong);
+        console.log("Error type:", e.target.error?.code);
+        console.log("Error message:", e.target.error?.message);
       }}
     />
   );

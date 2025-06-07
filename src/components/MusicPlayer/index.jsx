@@ -1,26 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 
-import { nextSong, prevSong, playPause } from '../../redux/features/playerSlice';
-import Controls from './Controls';
-import Player from './Player';
-import Seekbar from './Seekbar';
-import Track from './Track';
-import VolumeBar from './VolumeBar';
-
-const fetchPreviewUrl = async (trackId) => {
-  try {
-    const response = await fetch(`http://localhost:3001/api/preview/${trackId}`);
-    const data = await response.json();
-    return data.preview_url;
-  } catch (error) {
-    console.error('Failed to fetch preview URL:', error);
-    return null;
-  }
-};
+import { playPause } from "../../redux/features/playerSlice";
+import { useSongNavigation } from "../../hooks/useSongNavigation";
+import Controls from "./Controls";
+import Player from "./Player";
+import Seekbar from "./Seekbar";
+import Track from "./Track";
+import VolumeBar from "./VolumeBar";
 
 const MusicPlayer = () => {
-  const { activeSong, currentSongs, currentIndex, isActive, isPlaying } = useSelector((state) => state.player);
+  const { activeSong, currentSongs, currentIndex, isActive, isPlaying } =
+    useSelector((state) => state.player);
   const [duration, setDuration] = useState(0);
   const [seekTime, setSeekTime] = useState(0);
   const [appTime, setAppTime] = useState(0);
@@ -28,6 +19,7 @@ const MusicPlayer = () => {
   const [repeat, setRepeat] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const dispatch = useDispatch();
+  const { handleNextSong, handlePrevSong } = useSongNavigation();
 
   useEffect(() => {
     if (currentSongs.length) dispatch(playPause(true));
@@ -43,73 +35,65 @@ const MusicPlayer = () => {
     }
   };
 
-  const handleNextSong = () => {
-    dispatch(playPause(false));
-
-    if (!shuffle) {
-      dispatch(nextSong((currentIndex + 1) % currentSongs.length));
-    } else {
-      dispatch(nextSong(Math.floor(Math.random() * currentSongs.length)));
-    }
-  };
-
-  const handlePrevSong = () => {
-    if (currentIndex === 0) {
-      dispatch(prevSong(currentSongs.length - 1));
-    } else if (shuffle) {
-      dispatch(prevSong(Math.floor(Math.random() * currentSongs.length)));
-    } else {
-      dispatch(prevSong(currentIndex - 1));
-    }
-  };
-
   // Get the song image with multiple fallbacks
   const getSongImage = () => {
-    if (!activeSong) return 'https://via.placeholder.com/240x240.png?text=No+Song';
-    
+    if (!activeSong)
+      return "https://via.placeholder.com/240x240.png?text=No+Song";
+
     // Try different possible image paths
     if (activeSong.images?.coverart) return activeSong.images.coverart;
     if (activeSong.share?.image) return activeSong.share.image;
     if (activeSong.images?.background) return activeSong.images.background;
     if (activeSong.attributes?.artwork?.url) {
       return activeSong.attributes.artwork.url
-        .replace('{w}', '240')
-        .replace('{h}', '240');
+        .replace("{w}", "240")
+        .replace("{h}", "240");
     }
     if (activeSong.hub?.image) return activeSong.hub.image;
-    
-    return 'https://via.placeholder.com/240x240.png?text=No+Image';
+
+    return "https://via.placeholder.com/240x240.png?text=No+Image";
   };
 
-const getSongUrl = () => {
-  if (!activeSong) return '';
-  
-  // Check preview_url FIRST since that's where Spotify puts it
-  if (activeSong.preview_url) {
-    console.log('Found preview_url:', activeSong.preview_url);
-    return activeSong.preview_url;
+  const getSongUrl = () => {
+    if (!activeSong) {
+      return "";
+    }
+
+    // Check preview_url FIRST since that's where Spotify puts it
+    if (activeSong.preview_url) {
+      return activeSong.preview_url;
+    }
+
+    // Then check other possible locations
+    if (activeSong.url) {
+      return activeSong.url;
+    }
+    if (activeSong.hub?.actions?.[1]?.uri) return activeSong.hub.actions[1].uri;
+    if (activeSong.hub?.actions?.[0]?.uri) return activeSong.hub.actions[0].uri;
+    if (activeSong.uri) return activeSong.uri;
+
+    // Look for any action with a URI
+    if (activeSong.hub?.actions) {
+      const action = activeSong.hub.actions.find((action) => action.uri);
+      if (action?.uri) return action.uri;
+    }
+
+    return "";
+  };
+
+  const songUrl = getSongUrl();
+
+  // Don't render the player if we don't have a valid URL
+  if (!songUrl && isPlaying) {
+    // If we're supposed to be playing but have no URL, pause
+    dispatch(playPause(false));
   }
-  
-  // Then check other possible locations
-  if (activeSong.url) return activeSong.url;
-  if (activeSong.hub?.actions?.[1]?.uri) return activeSong.hub.actions[1].uri;
-  if (activeSong.hub?.actions?.[0]?.uri) return activeSong.hub.actions[0].uri;
-  if (activeSong.uri) return activeSong.uri;
-  
-  // Look for any action with a URI
-  if (activeSong.hub?.actions) {
-    const action = activeSong.hub.actions.find(action => action.uri);
-    if (action?.uri) return action.uri;
-  }
-  
-  console.log('No URL found for song:', activeSong);
-  return '';
-};
+
   return (
     <div className="relative sm:px-12 px-8 w-full flex items-center justify-between">
-      <Track 
-        isPlaying={isPlaying} 
-        isActive={isActive} 
+      <Track
+        isPlaying={isPlaying}
+        isActive={isActive}
         activeSong={activeSong}
         songImage={getSongImage()}
       />
@@ -136,7 +120,7 @@ const getSongUrl = () => {
         />
         <Player
           activeSong={activeSong}
-          songUrl={getSongUrl()}
+          songUrl={songUrl}
           volume={volume}
           isPlaying={isPlaying}
           seekTime={seekTime}
@@ -147,7 +131,13 @@ const getSongUrl = () => {
           onLoadedData={(event) => setDuration(event.target.duration)}
         />
       </div>
-      <VolumeBar value={volume} min="0" max="1" onChange={(event) => setVolume(event.target.value)} setVolume={setVolume} />
+      <VolumeBar
+        value={volume}
+        min="0"
+        max="1"
+        onChange={(event) => setVolume(event.target.value)}
+        setVolume={setVolume}
+      />
     </div>
   );
 };
