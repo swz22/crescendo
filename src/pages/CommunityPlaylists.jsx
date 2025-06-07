@@ -17,7 +17,7 @@ const CommunityPlaylists = () => {
         <p className="text-gray-400 text-lg mb-6">Discover music curated by the community</p>
       )}
 
-      <div className="flex flex-wrap sm:justify-start justify-center gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 items-start">
         {data?.playlists?.map((playlist, i) => (
           <PlaylistCard key={playlist.id || i} playlist={playlist} />
         ))}

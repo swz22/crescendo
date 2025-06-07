@@ -72,7 +72,7 @@ const Discover = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap sm:justify-start justify-center gap-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4 sm:gap-6 lg:gap-8">
         {data
           ?.filter((song, index, self) => {
             // Remove duplicates based on title and artist

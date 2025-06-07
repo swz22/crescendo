@@ -2,6 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Card hover effects and animations */
+.card-hover {
+  @apply transition-all duration-300 ease-out;
+}
+
+.card-hover:hover {
+  @apply transform -translate-y-1;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+}
+
+/* Play button animations */
+.play-btn-scale {
+  @apply transition-transform duration-200;
+}
+
+.play-btn-scale:hover {
+  @apply transform scale-110;
+}
+
+.play-btn-scale:active {
+  @apply transform scale-95;
+}
+
+/* Consistent rounded corners for images */
+img {
+  @apply rounded-lg;
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, .clickable {
+  @apply transition-all duration-200 ease-out;
+}
+
+/* Tooltip animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
 .active {
   @apply text-cyan-500;
 }
