@@ -33,7 +33,7 @@ const NavLinks = ({ handleClick }) => (
   </div>
 );
 
-const Sidebar = () => {
+const LeftSidebar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -68,4 +68,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default LeftSidebar;
