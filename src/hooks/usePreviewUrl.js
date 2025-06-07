@@ -5,6 +5,7 @@ const previewCache = new Map();
 const cacheTimestamps = new Map();
 const prefetchQueue = new Set();
 const fetchPromises = new Map();
+const attemptedTracks = new Set(); // Track which songs we've already tried
 
 // Cache duration: 5 minutes for successful URLs, 30 seconds for failures
 const CACHE_DURATION_SUCCESS = 5 * 60 * 1000;
@@ -151,37 +152,53 @@ export const usePreviewUrl = () => {
   }, []);
 
   const prefetchPreviewUrl = useCallback((song, options = {}) => {
-    const { priority = 'low', delay = 0 } = options;
+    const { priority = 'low' } = options;
     
     if (!song || song.preview_url) return;
     
     const trackId = song.key || song.id || song.track_id;
     if (!trackId) return;
     
+    // Skip if we've already attempted this track
+    if (attemptedTracks.has(trackId)) {
+      return;
+    }
+    
     // Already cached (including null values) or being fetched
     if (previewCache.has(trackId) || fetchPromises.has(trackId)) {
       return;
     }
     
+    // Limit concurrent prefetch queue
+    if (prefetchQueue.size >= 3) {
+      console.log(`Prefetch queue full, skipping ${trackId}`);
+      return;
+    }
+    
+    // Mark as attempted
+    attemptedTracks.add(trackId);
+    
     // Add to prefetch queue
-    if (!prefetchQueue.has(trackId)) {
-      prefetchQueue.add(trackId);
-      
-      const doPrefetch = () => {
+    prefetchQueue.add(trackId);
+    
+    const doPrefetch = async () => {
+      try {
         console.log(`Prefetching preview URL for ${trackId} (priority: ${priority})`);
-        fetchPreviewUrl(trackId).then(() => {
-          prefetchQueue.delete(trackId);
-        }).catch(() => {
-          // Silently handle prefetch errors
-          prefetchQueue.delete(trackId);
-        });
-      };
-      
-      if (priority === 'high') {
-        doPrefetch();
-      } else {
-        prefetchTimeoutRef.current = setTimeout(doPrefetch, delay);
+        await fetchPreviewUrl(trackId);
+      } catch (error) {
+        console.error(`Prefetch failed for ${trackId}:`, error);
+      } finally {
+        prefetchQueue.delete(trackId);
       }
+    };
+    
+    // High priority: fetch immediately
+    // Low priority: respect rate limits
+    if (priority === 'high') {
+      doPrefetch();
+    } else {
+      // Add delay for low priority to prevent rate limits
+      setTimeout(doPrefetch, 1000);
     }
   }, []);
 

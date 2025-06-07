@@ -10,53 +10,29 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached, hasNoPreview } = usePreviewUrl();
   const cardRef = useRef(null);
-  const prefetchTimeoutRef = useRef(null);
 
   // All hooks must be called before any conditions or early returns
   
-  // Prefetch on hover
+  // Prefetch on hover with delay to ensure intent
   const handleMouseEnter = useCallback(() => {
-    // Prefetch immediately on hover if not cached
-    if (!isPreviewCached(song)) {
-      prefetchPreviewUrl(song, { priority: 'high' });
+    // Only prefetch on hover if not cached and user shows intent
+    if (!isPreviewCached(song) && !hasNoPreview(song)) {
+      // Add delay to prevent accidental hover prefetching
+      const timeoutId = setTimeout(() => {
+        prefetchPreviewUrl(song, { priority: 'high' });
+      }, 500);
+      
+      // Store timeout ID for cleanup
+      cardRef.current.hoverTimeout = timeoutId;
     }
-  }, [song, isPreviewCached, prefetchPreviewUrl]);
+  }, [song, isPreviewCached, hasNoPreview, prefetchPreviewUrl]);
 
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (prefetchTimeoutRef.current) {
-        clearTimeout(prefetchTimeoutRef.current);
-      }
-    };
+  const handleMouseLeave = useCallback(() => {
+    // Cancel prefetch if user leaves quickly
+    if (cardRef.current?.hoverTimeout) {
+      clearTimeout(cardRef.current.hoverTimeout);
+    }
   }, []);
-
-  // Prefetch when card becomes visible (Intersection Observer)
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !isPreviewCached(song)) {
-            // Prefetch with low priority when scrolled into view
-            prefetchTimeoutRef.current = setTimeout(() => {
-              prefetchPreviewUrl(song, { priority: 'low', delay: 1000 });
-            }, 100);
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: '50px' } // Reduced root margin
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
-  }, [song, prefetchPreviewUrl, isPreviewCached]);
 
   const handlePauseClick = useCallback(() => {
     dispatch(playPause(false));
@@ -109,6 +85,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       ref={cardRef}
       className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover"
       onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="relative w-full aspect-square group">
         <div

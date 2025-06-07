@@ -1,21 +1,21 @@
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Error, Loader, SongCard } from "../components";
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
+import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { genres } from "../assets/constants";
 
 const Discover = () => {
   const dispatch = useDispatch();
   const { genreListId } = useSelector((state) => state.player);
   const { activeSong, isPlaying } = useSelector((state) => state.player);
+  const { prefetchPreviewUrl } = usePreviewUrl();
   
   const selectedGenre = genreListId || 'POP';
   const genreTitle = genres.find(({ value }) => value === selectedGenre)?.title || 'Pop';
   
   const { data, isFetching, error } = useGetSongsByGenreQuery(selectedGenre);
-
-  if (isFetching) return <Loader title="Loading songs..." />;
-  if (error) return <Error />;
 
   // Filter out duplicates
   const uniqueSongs = data
@@ -25,6 +25,28 @@ const Discover = () => {
         s.subtitle?.toLowerCase() === song.subtitle?.toLowerCase()
       );
     }) || [];
+
+  // Conservative prefetch strategy - only first 5 songs
+  useEffect(() => {
+    if (uniqueSongs.length > 0) {
+      console.log('Discover page: Starting conservative prefetch of first 5 songs');
+      
+      // Wait 2 seconds before starting prefetch
+      const timeoutId = setTimeout(() => {
+        // Prefetch only first 5 songs with 3-second delays
+        uniqueSongs.slice(0, 5).forEach((song, index) => {
+          setTimeout(() => {
+            prefetchPreviewUrl(song, { priority: 'low' });
+          }, index * 3000); // 3 seconds between each prefetch
+        });
+      }, 2000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [uniqueSongs, prefetchPreviewUrl]);
+
+  if (isFetching) return <Loader title="Loading songs..." />;
+  if (error) return <Error />;
 
   // Color mapping for genres
   const genreColors = {
