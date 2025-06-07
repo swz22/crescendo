@@ -17,7 +17,7 @@ const cleanTitle = (title) => {
     .trim();
 };
 
-const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick }) => {
+const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick, data }) => {
   const displayTitle = cleanTitle(song?.title);
   
   return (
@@ -45,13 +45,13 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
         activeSong={activeSong}
         song={song}
         handlePause={handlePauseClick}
-        handlePlay={handlePlayClick}
+        handlePlay={() => handlePlayClick(song, i, data)}
       />
     </div>
   );
 };
 
-const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick }) => {
+const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick, data }) => {
   const displayTitle = cleanTitle(song?.title);
   
   return (
@@ -64,7 +64,7 @@ const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, 
       
       <img 
         className="w-12 h-12 rounded-md mr-3" 
-        src={song?.images?.coverart || 'https://via.placeholder.com/48x48.png?text=No+Image'} 
+        src={song?.images?.coverart || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzRhNTU2OCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiNhMGFlYzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='} 
         alt={song?.title} 
       />
       
@@ -86,7 +86,7 @@ const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, 
         activeSong={activeSong}
         song={song}
         handlePause={handlePauseClick}
-        handlePlay={() => handlePlayClick(song, i)}
+        handlePlay={() => handlePlayClick(song, i, data)}
       />
     </div>
   );
@@ -118,9 +118,9 @@ const MusicSidebar = () => {
     dispatch(playPause(false));
   };
 
-  const handlePlayClick = async (song, i) => {
+  const handlePlayClick = async (song, i, songArray) => {
     const songWithPreview = await getPreviewUrl(song);
-    dispatch(setActiveSong({ song: songWithPreview, data, i }));
+    dispatch(setActiveSong({ song: songWithPreview, data: songArray, i }));
     dispatch(playPause(true));
   };
 
@@ -165,7 +165,8 @@ const MusicSidebar = () => {
               isPlaying={isPlaying}
               activeSong={activeSong}
               handlePauseClick={handlePauseClick}
-              handlePlayClick={() => handlePlayClick(song, i)}
+              handlePlayClick={handlePlayClick}
+              data={topPlays} // Pass the array
             />
           ))}
         </div>
@@ -190,7 +191,8 @@ const MusicSidebar = () => {
                   isPlaying={isPlaying}
                   activeSong={activeSong}
                   handlePauseClick={handlePauseClick}
-                  handlePlayClick={() => handlePlayClick(song, i)}
+                  handlePlayClick={handlePlayClick}
+                  data={recentlyPlayed.slice(0, 5)} // Pass the displayed array
                 />
               ))}
             </div>

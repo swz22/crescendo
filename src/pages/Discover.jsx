@@ -17,6 +17,15 @@ const Discover = () => {
   if (isFetching) return <Loader title="Loading songs..." />;
   if (error) return <Error />;
 
+  // Filter out duplicates
+  const uniqueSongs = data
+    ?.filter((song, index, self) => {
+      return index === self.findIndex(s => 
+        s.title?.toLowerCase() === song.title?.toLowerCase() && 
+        s.subtitle?.toLowerCase() === song.subtitle?.toLowerCase()
+      );
+    }) || [];
+
   // Color mapping for genres
   const genreColors = {
     'POP': 'from-pink-500 to-rose-500',
@@ -73,24 +82,16 @@ const Discover = () => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4 sm:gap-6 lg:gap-8">
-        {data
-          ?.filter((song, index, self) => {
-            // Remove duplicates based on title and artist
-            return index === self.findIndex(s => 
-              s.title?.toLowerCase() === song.title?.toLowerCase() && 
-              s.subtitle?.toLowerCase() === song.subtitle?.toLowerCase()
-            );
-          })
-          .map((song, i) => (
-            <SongCard
-              key={song.key || i}
-              song={song}
-              isPlaying={isPlaying}
-              activeSong={activeSong}
-              data={data}
-              i={i}
-            />
-          ))}
+        {uniqueSongs.map((song, i) => (
+          <SongCard
+            key={song.key || i}
+            song={song}
+            isPlaying={isPlaying}
+            activeSong={activeSong}
+            data={uniqueSongs} // Pass the filtered array so prev/next work
+            i={i}
+          />
+        ))}
       </div>
     </div>
   );
