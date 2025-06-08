@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import { Error, Loader, SongCard } from "../components";
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
@@ -8,9 +9,10 @@ import { genres } from "../assets/constants";
 
 const Discover = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { genreListId } = useSelector((state) => state.player);
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const { prefetchPreviewUrl } = usePreviewUrl();
+  const { prefetchPreviewUrl, getPagePrefetchStrategy } = usePreviewUrl();
   
   const selectedGenre = genreListId || 'POP';
   const genreTitle = genres.find(({ value }) => value === selectedGenre)?.title || 'Pop';
@@ -26,24 +28,25 @@ const Discover = () => {
       );
     }) || [];
 
-  // Conservative prefetch strategy - only first 5 songs
+  // Page-specific prefetch strategy
   useEffect(() => {
     if (uniqueSongs.length > 0) {
-      console.log('Discover page: Starting conservative prefetch of first 5 songs');
+      const strategy = getPagePrefetchStrategy(location.pathname);
+      console.log(`Discover page: Using prefetch strategy`, strategy);
       
-      // Wait 2 seconds before starting prefetch
+      // Wait before starting prefetch
       const timeoutId = setTimeout(() => {
-        // Prefetch only first 5 songs with 3-second delays
-        uniqueSongs.slice(0, 5).forEach((song, index) => {
+        // Prefetch based on strategy
+        uniqueSongs.slice(0, strategy.maxSongs).forEach((song, index) => {
           setTimeout(() => {
-            prefetchPreviewUrl(song, { priority: 'low' });
-          }, index * 3000); // 3 seconds between each prefetch
+            prefetchPreviewUrl(song, { priority: strategy.priority });
+          }, index * strategy.delay);
         });
       }, 2000);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [uniqueSongs, prefetchPreviewUrl]);
+  }, [uniqueSongs, prefetchPreviewUrl, getPagePrefetchStrategy, location.pathname]);
 
   if (isFetching) return <Loader title="Loading songs..." />;
   if (error) return <Error />;

@@ -16,6 +16,9 @@ import PlaylistModal from './PlaylistModal';
 import FloatingMiniPlayer from './FloatingMiniPlayer';
 import Tooltip from './Tooltip';
 import CacheSettings from './CacheSettings';
+import MusicLoadingSpinner from './MusicLoadingSpinner';
+import TrackLoadingState from './TrackLoadingState';
+import CacheIndicator from './CacheIndicator';
 
 export { 
   LeftSidebar, 
@@ -35,5 +38,8 @@ export {
   PlaylistModal,
   FloatingMiniPlayer,
   Tooltip,
-  CacheSettings
+  CacheSettings,
+  MusicLoadingSpinner,
+  TrackLoadingState,
+  CacheIndicator
 };
