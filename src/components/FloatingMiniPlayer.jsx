@@ -4,12 +4,14 @@ import { playPause } from "../redux/features/playerSlice";
 import { useSongNavigation } from "../hooks/useSongNavigation";
 import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
 import { BsFillPauseFill, BsFillPlayFill } from "react-icons/bs";
+import { HiX } from "react-icons/hi";
 
 const FloatingMiniPlayer = ({ isVisible }) => {
-  const { activeSong, currentSongs, currentIndex, isActive, isPlaying } =
+  const { activeSong, currentSongs, currentIndex, isActive, isPlaying, isModalOpen } =
     useSelector((state) => state.player);
   const dispatch = useDispatch();
   const { handleNextSong, handlePrevSong } = useSongNavigation();
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // Store the last valid song to prevent disappearing during transitions
   const [lastValidSong, setLastValidSong] = useState(null);
@@ -20,6 +22,13 @@ const FloatingMiniPlayer = ({ isVisible }) => {
       setLastValidSong(activeSong);
     }
   }, [activeSong]);
+
+  // Auto-minimize when modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      setIsMinimized(true);
+    }
+  }, [isModalOpen]);
 
   // Don't render if not visible
   if (!isVisible) return null;
@@ -44,13 +53,57 @@ const FloatingMiniPlayer = ({ isVisible }) => {
     return "https://via.placeholder.com/64x64.png?text=No+Image";
   };
 
+  // Minimized version - sleek bar design
+  if (isMinimized) {
+    return (
+      <div
+        className={`fixed bottom-8 left-8 z-[60] transition-all duration-300 ${
+          isVisible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
+        }`}
+      >
+        <button
+          onClick={() => setIsMinimized(false)}
+          className="bg-gradient-to-r from-[#2d2467]/95 to-[#1a1848]/95 backdrop-blur-xl rounded-full shadow-2xl border border-white/10 hover:scale-105 transition-transform group flex items-center gap-3 px-2 pr-4 py-2"
+        >
+          <img
+            src={getSongImage()}
+            alt="cover"
+            className="w-10 h-10 rounded-full"
+            onError={(e) => {
+              e.target.src =
+                "https://via.placeholder.com/40x40.png?text=No+Image";
+            }}
+          />
+          <div className="flex items-center gap-2">
+            <div className="text-left">
+              <p className="text-white text-xs font-medium truncate max-w-[120px]">
+                {displaySong?.title}
+              </p>
+              <p className="text-gray-400 text-[10px] truncate max-w-[120px]">
+                {displaySong?.subtitle || "Unknown Artist"}
+              </p>
+            </div>
+            {isPlaying && (
+              <div className="flex gap-[2px]">
+                <div className="w-[2px] h-3 bg-[#7c3aed] rounded-full animate-pulse" />
+                <div className="w-[2px] h-3 bg-[#9333ea] rounded-full animate-pulse delay-75" />
+                <div className="w-[2px] h-3 bg-[#a855f7] rounded-full animate-pulse delay-150" />
+              </div>
+            )}
+          </div>
+        </button>
+      </div>
+    );
+  }
+
+  // Full version
   return (
     <div
-      className={`fixed bottom-8 right-8 z-[60] transition-all duration-300 ${
+      className={`fixed bottom-8 left-8 z-[60] transition-all duration-300 ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
       }`}
     >
-      <div className="bg-gradient-to-br from-purple-900/95 to-black/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/10 min-w-[320px]">
+      <div className="bg-gradient-to-br from-[#2d2467]/95 to-[#1a1848]/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/10 min-w-[320px]">
         <div className="flex items-center gap-4">
           {/* Album Art */}
           <div className="relative group">
@@ -59,6 +112,7 @@ const FloatingMiniPlayer = ({ isVisible }) => {
               alt="cover"
               className="w-16 h-16 rounded-lg shadow-lg"
               onError={(e) => {
+                e.target.onerror = null;
                 e.target.src =
                   "https://via.placeholder.com/64x64.png?text=No+Image";
               }}
@@ -77,7 +131,7 @@ const FloatingMiniPlayer = ({ isVisible }) => {
             <p className="text-white font-semibold text-sm truncate">
               {displaySong?.title}
             </p>
-            <p className="text-gray-400 text-xs truncate">
+            <p className="text-gray-300 text-xs truncate">
               {displaySong?.subtitle || displaySong?.artist || "Unknown Artist"}
             </p>
           </div>
@@ -89,18 +143,18 @@ const FloatingMiniPlayer = ({ isVisible }) => {
               className="p-2 rounded-full hover:bg-white/10 transition-colors"
               disabled={!currentSongs || currentSongs.length === 0}
             >
-              <MdSkipPrevious size={24} className="text-white" />
+              <MdSkipPrevious size={20} className="text-white" />
             </button>
 
             <button
               onClick={handlePlayPause}
-              className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
             >
               {isPlaying ? (
-                <BsFillPauseFill size={24} className="text-white" />
+                <BsFillPauseFill size={20} className="text-white" />
               ) : (
                 <BsFillPlayFill
-                  size={24}
+                  size={20}
                   className="text-white translate-x-0.5"
                 />
               )}
@@ -111,16 +165,24 @@ const FloatingMiniPlayer = ({ isVisible }) => {
               className="p-2 rounded-full hover:bg-white/10 transition-colors"
               disabled={!currentSongs || currentSongs.length === 0}
             >
-              <MdSkipNext size={24} className="text-white" />
+              <MdSkipNext size={20} className="text-white" />
             </button>
           </div>
+
+          {/* Minimize button */}
+          <button
+            onClick={() => setIsMinimized(true)}
+            className="p-1 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <HiX size={16} className="text-gray-400" />
+          </button>
         </div>
 
         {/* Progress indicator */}
         {isPlaying && (
           <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"
+              className="h-full bg-gradient-to-r from-[#7c3aed] to-[#9333ea] rounded-full animate-pulse"
               style={{ width: "45%" }}
             />
           </div>

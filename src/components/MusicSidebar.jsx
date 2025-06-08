@@ -30,23 +30,31 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
   
   return (
     <div
-      className={`w-full flex flex-row items-center hover:bg-white/10 ${
-        isCurrentSong ? "bg-white/10" : "bg-transparent"
-      } py-2 p-3 rounded-lg cursor-pointer mb-1 transition-all duration-200 group`}
+      className={`w-full flex flex-row items-center hover:bg-gradient-to-r hover:from-white/5 hover:to-transparent ${
+        isCurrentSong ? "bg-gradient-to-r from-[#7c3aed]/10 to-transparent" : "bg-transparent"
+      } py-2 p-3 rounded-lg cursor-pointer mb-1 transition-all duration-300 group relative overflow-hidden`}
       onMouseEnter={handleMouseEnter}
     >
-      <h3 className="font-bold text-sm text-white mr-3">{i + 1}.</h3>
-      <div className="flex-1 flex flex-row justify-between items-center">
-        <img 
-          className="w-14 h-14 rounded-lg transition-transform duration-200 group-hover:scale-105" 
-          src={song?.images?.coverart} 
-          alt={song?.title} 
-        />
+      {/* Animated background on hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#7c3aed]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      
+      <h3 className="font-bold text-sm text-white mr-3 relative z-10">{i + 1}.</h3>
+      <div className="flex-1 flex flex-row justify-between items-center relative z-10">
+        <div className="relative">
+          <img 
+            className="w-14 h-14 rounded-lg transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg" 
+            src={song?.images?.coverart} 
+            alt={song?.title} 
+          />
+          {isCurrentSong && (
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-[#7c3aed]/40 to-transparent" />
+          )}
+        </div>
         <div className="flex-1 flex flex-col justify-center mx-3 min-w-0">
           <Link to={`/songs/${song.key}`}>
             <Tooltip text={song?.title}>
-              <p className={`text-base font-bold truncate transition-colors ${
-                isCurrentSong ? 'text-purple-400' : 'text-white hover:text-purple-400'
+              <p className={`text-base font-bold truncate transition-all ${
+                isCurrentSong ? 'text-[#a855f7]' : 'text-white group-hover:text-[#a855f7]'
               }`}>{displayTitle}</p>
             </Tooltip>
           </Link>
@@ -61,6 +69,7 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
         song={song}
         handlePause={handlePauseClick}
         handlePlay={() => handlePlayClick(song, i, data)}
+        size={20}
       />
     </div>
   );
@@ -78,24 +87,32 @@ const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, 
   
   return (
     <div
-      className={`w-full flex items-center hover:bg-white/10 ${
-        isCurrentSong ? "bg-white/10" : "bg-transparent"
-      } py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 group`}
+      className={`w-full flex items-center hover:bg-gradient-to-r hover:from-white/5 hover:to-transparent ${
+        isCurrentSong ? "bg-gradient-to-r from-[#7c3aed]/10 to-transparent" : "bg-transparent"
+      } py-2 px-3 rounded-lg cursor-pointer transition-all duration-300 group relative overflow-hidden`}
       onMouseEnter={handleMouseEnter}
     >
-      <span className="text-gray-500 text-sm w-4 mr-3">{i + 1}</span>
+      {/* Animated background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#7c3aed]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       
-      <img 
-        className="w-12 h-12 rounded-md mr-3 transition-transform duration-200 group-hover:scale-105" 
-        src={song?.images?.coverart} 
-        alt={song?.title} 
-      />
+      <span className="text-gray-500 text-sm w-4 mr-3 relative z-10">{i + 1}</span>
+      
+      <div className="relative mr-3">
+        <img 
+          className="w-12 h-12 rounded-md transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg relative z-10" 
+          src={song?.images?.coverart} 
+          alt={song?.title} 
+        />
+        {isCurrentSong && (
+          <div className="absolute inset-0 rounded-md bg-gradient-to-t from-[#7c3aed]/40 to-transparent" />
+        )}
+      </div>
       
       <div className="flex-1 flex flex-col justify-center min-w-0">
         <Link to={`/songs/${song.key}`}>
           <Tooltip text={song?.title}>
             <p className={`font-medium text-sm truncate transition-colors ${
-              isCurrentSong ? 'text-purple-400' : 'text-white hover:text-purple-400'
+              isCurrentSong ? 'text-[#6B68E9]' : 'text-white hover:text-[#6B68E9]'
             }`}>
               {displayTitle}
             </p>
@@ -112,6 +129,7 @@ const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, 
         song={song}
         handlePause={handlePauseClick}
         handlePlay={() => handlePlayClick(song, i, data)}
+        size={20}
       />
     </div>
   );
@@ -196,11 +214,11 @@ const MusicSidebar = () => {
       className="xl:ml-6 ml-0 xl:mb-0 mb-6 flex-1 xl:max-w-[400px] max-w-full flex flex-col"
     >
       {/* Top Tracks Section */}
-      <div className="w-full flex flex-col">
-        <div className="flex flex-row justify-between items-center">
-          <h2 className="text-white font-bold text-xl">Top Tracks</h2>
+      <div className="w-full flex flex-col bg-gradient-to-br from-white/[0.02] to-transparent rounded-xl p-4 backdrop-blur-sm border border-white/5">
+        <div className="flex flex-row justify-between items-center mb-4">
+          <h2 className="text-white font-bold text-xl bg-gradient-to-r from-white to-[#a855f7] bg-clip-text text-transparent">Top Tracks</h2>
           <Link to="/top-charts">
-            <p className="text-gray-300 text-base cursor-pointer hover:text-purple-400 transition-colors">See more</p>
+            <p className="text-gray-300 text-sm cursor-pointer hover:text-[#a855f7] transition-all duration-300 hover:translate-x-1">See more →</p>
           </Link>
         </div>
 
@@ -223,9 +241,9 @@ const MusicSidebar = () => {
       </div>
 
       {/* Recently Played Section */}
-      <div className="w-full flex flex-col mt-8">
+      <div className="w-full flex flex-col mt-6 bg-gradient-to-br from-white/[0.02] to-transparent rounded-xl p-4 backdrop-blur-sm border border-white/5">
         <div className="flex flex-row justify-between items-center mb-4">
-          <h2 className="text-white font-bold text-xl">Recently Played</h2>
+          <h2 className="text-white font-bold text-xl bg-gradient-to-r from-white to-[#9333ea] bg-clip-text text-transparent">Recently Played</h2>
         </div>
 
         {!recentlyPlayed || recentlyPlayed.length === 0 ? (

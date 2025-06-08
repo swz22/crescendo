@@ -40,13 +40,24 @@ const App = () => {
   return (
     <div className="relative flex">
       <LeftSidebar />
-      <div className="flex-1 flex flex-col bg-gradient-to-r from-[#110d36] via-[#352f73] to-[#110d36]">
-        {/* Top Bar with Search */}
-        <div className="flex items-center justify-center px-6 py-4">
-          <Searchbar />
+      <div className="flex-1 flex flex-col bg-gradient-to-br from-[#1a1848] via-[#2d2467] to-[#1a1848]">
+        {/* Top Bar */}
+        <div className="relative flex items-center justify-between px-6 py-3 bg-black/20 backdrop-blur-md border-b border-white/5">
+          {/* Empty left section for balance */}
+          <div className="w-32"></div>
+          
+          {/* Centered Search */}
+          <div className="flex-1 max-w-2xl">
+            <Searchbar />
+          </div>
+          
+          {/* Right section with Cache Settings */}
+          <div className="w-32 flex justify-end">
+            <CacheSettings />
+          </div>
         </div>
         
-        <div className="px-6 h-[calc(100vh-80px)] overflow-y-scroll custom-scrollbar flex xl:flex-row flex-col-reverse">
+        <div className="px-6 h-[calc(100vh-68px)] overflow-y-scroll custom-scrollbar flex xl:flex-row flex-col-reverse">
           <div className="flex-1 h-fit pb-40">
             <Routes>
               <Route path="/" element={<Discover />} />
@@ -59,22 +70,21 @@ const App = () => {
             </Routes>
           </div>
           <div className="xl:sticky relative top-0 h-fit">
-            <CacheSettings />
             <MusicSidebar />
           </div>
         </div>
       </div>
       
-      {/* Always render the music player, but hide it visually when appropriate */}
+      {/* Music Player */}
       {activeSong?.title && (
-        <div className={`absolute h-28 bottom-0 left-0 right-0 flex animate-slideup bg-gradient-to-br from-white/10 to-[#2a2a80] backdrop-blur-lg rounded-t-3xl z-10 ${
+        <div className={`absolute h-28 bottom-0 left-0 right-0 flex animate-slideup bg-gradient-to-br from-white/10 to-[#2d2467] backdrop-blur-lg rounded-t-3xl z-10 ${
           hideMainPlayer ? 'invisible' : 'visible'
         }`}>
           <MusicPlayer />
         </div>
       )}
       
-      {/* Global floating player - show during playlist session regardless of activeSong state */}
+      {/* Floating player */}
       <FloatingMiniPlayer isVisible={showFloatingPlayer} />
     </div>
   );

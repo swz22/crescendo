@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #6B68E9 0%, #8B88F0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effect for active elements */
+.glow {
+  box-shadow: 0 0 20px rgba(107, 104, 233, 0.3);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 30px rgba(107, 104, 233, 0.5);
+}
+
 /* Card hover effects and animations */
 .card-hover {
   @apply transition-all duration-300 ease-out;
@@ -129,20 +159,18 @@ button, a, .clickable {
   animation: shimmer 1.5s infinite;
 }
 
-/* Tooltip animation */
+/* Additional animations for cool effects */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
   }
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.3s ease-out;
 }
 
 /* Loading animations */
@@ -250,16 +278,46 @@ button, a, .clickable {
   }
 }
 
+@keyframes slidedown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .animate-slidein {
   animation: slideInLeft 0.3s ease-out;
 }
 
+.animate-slidedown {
+  animation: slidedown 0.3s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
 .active {
-  @apply text-cyan-500;
+  @apply text-[#6B68E9];
 }
 
 .active svg {
-  @apply text-cyan-500;
+  @apply text-[#6B68E9];
 }
 
 .bar:nth-child(2) {

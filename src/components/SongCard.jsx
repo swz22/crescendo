@@ -8,6 +8,7 @@ import { useAudioPreload } from "../hooks/useAudioPreload";
 import Tooltip from "./Tooltip";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import { HiLightningBolt } from "react-icons/hi";
+import { FaPlayCircle } from "react-icons/fa";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
@@ -16,10 +17,13 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const cardRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCacheIndicator, setShowCacheIndicator] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef(null);
 
   const songId = song?.key || song?.id || song?.track_id;
-  const isCurrentSong = activeSong?.title === song.title;
+  const isCurrentSong = activeSong?.key === song?.key || 
+                       activeSong?.title === song?.title ||
+                       (activeSong?.key && song?.key && activeSong.key === song.key);
   
   // Update cache indicator
   useEffect(() => {
@@ -37,6 +41,8 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   
   // Hover handler with preloading
   const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+    
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
@@ -61,11 +67,12 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           await preloadAudio(songId, previewUrl);
         }
       }
-    }, 100); // Reduced from 200ms for faster response
+    }, 100);
   }, [song, songId, isPreviewCached, hasNoPreview, prefetchPreviewUrl, 
       preloadAudio, isAudioReady, getPreviewUrl]);
 
   const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
@@ -127,7 +134,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     <div 
       ref={cardRef}
       className={`flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl group
-        ${isCurrentSong ? 'ring-2 ring-purple-400 ring-opacity-50' : ''}
+        ${isCurrentSong ? 'ring-2 ring-[#7c3aed] ring-opacity-50' : ''}
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -135,43 +142,44 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       {/* Cache indicator - subtle lightning icon */}
       {showCacheIndicator && (
         <div className="absolute top-3 right-3 z-10">
-          <HiLightningBolt className="w-4 h-4 text-purple-400 opacity-70" title="Instant playback ready" />
+          <HiLightningBolt className="w-4 h-4 text-[#7c3aed] opacity-70" title="Instant playback ready" />
         </div>
       )}
       
       {/* Now Playing indicator */}
       {isCurrentSong && (
-        <div className="absolute top-3 left-3 z-10 bg-purple-400/20 backdrop-blur-sm rounded-full px-2 py-1">
-          <span className="text-xs text-purple-400 font-semibold">Now Playing</span>
+        <div className="absolute top-3 left-3 z-10 bg-[#7c3aed]/20 backdrop-blur-sm rounded-full px-2 py-1">
+          <span className="text-xs text-[#7c3aed] font-semibold">Now Playing</span>
         </div>
       )}
       
       <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
-        <div
-          className={`absolute inset-0 justify-center items-center bg-black bg-opacity-50 group-hover:flex ${
-            isCurrentSong
-              ? "flex bg-black bg-opacity-70"
-              : "hidden"
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isLoading) {
-              isCurrentSong && isPlaying ? handlePauseClick() : handlePlayClick();
-            }
-          }}
-        >
-          {isLoading ? (
-            <MusicLoadingSpinner size="md" />
-          ) : (
-            <PlayPause
-              isPlaying={isPlaying}
-              activeSong={activeSong}
-              song={song}
-              handlePause={handlePauseClick}
-              handlePlay={handlePlayClick}
-            />
-          )}
-        </div>
+        {/* Play button overlay - simplified approach */}
+        {(isHovered || isCurrentSong) && (
+          <div 
+            className="absolute inset-0 bg-black/50 flex items-center justify-center z-20 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isLoading) {
+                isCurrentSong && isPlaying ? handlePauseClick() : handlePlayClick();
+              }
+            }}
+          >
+            {isLoading ? (
+              <MusicLoadingSpinner size="md" />
+            ) : (
+              <PlayPause
+                isPlaying={isPlaying}
+                activeSong={activeSong}
+                song={song}
+                handlePause={handlePauseClick}
+                handlePlay={handlePlayClick}
+                size={50}
+              />
+            )}
+          </div>
+        )}
+        
         {coverArt ? (
           <img
             alt="song_img"
@@ -179,7 +187,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-[#7c3aed] to-[#9333ea] flex items-center justify-center">
             <span className="text-white/50 text-6xl">♪</span>
           </div>
         )}

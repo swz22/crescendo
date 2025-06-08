@@ -49,10 +49,10 @@ const Discover = () => {
   if (isFetching) return <Loader title="Loading songs..." />;
   if (error) return <Error />;
 
-  // Color mapping for genres
+  // Updated color mapping with new scheme
   const genreColors = {
     'POP': 'from-pink-500 to-rose-500',
-    'HIP_HOP_RAP': 'from-purple-600 to-purple-800',
+    'HIP_HOP_RAP': 'from-[#6366f1] to-[#0ea5e9]',
     'DANCE': 'from-blue-500 to-cyan-500',
     'ELECTRONIC': 'from-indigo-500 to-blue-600',
     'SOUL_RNB': 'from-orange-500 to-red-500',
@@ -63,29 +63,29 @@ const Discover = () => {
     'COUNTRY': 'from-yellow-600 to-amber-700',
     'WORLDWIDE': 'from-green-500 to-emerald-600',
     'REGGAE': 'from-green-600 to-yellow-600',
-    'HOUSE': 'from-purple-500 to-pink-500',
-    'K_POP': 'from-pink-400 to-purple-600',
+    'HOUSE': 'from-[#0ea5e9] to-[#6366f1]',
+    'K_POP': 'from-pink-400 to-[#6366f1]',
     'INDIE': 'from-amber-500 to-orange-600',
     'METAL': 'from-gray-900 to-red-900',
     'JAZZ': 'from-blue-800 to-indigo-900',
-    'CLASSICAL': 'from-purple-900 to-pink-800',
+    'CLASSICAL': 'from-[#1a1f3a] to-[#6366f1]',
     'BLUES': 'from-blue-900 to-blue-700',
     'PUNK': 'from-pink-600 to-black',
-    'FUNK': 'from-purple-700 to-orange-600',
+    'FUNK': 'from-[#6366f1] to-orange-600',
     'GOSPEL': 'from-yellow-600 to-yellow-800',
-    'DISCO': 'from-pink-500 to-purple-700',
-    'LOFI': 'from-purple-400 to-pink-300',
+    'DISCO': 'from-pink-500 to-[#6366f1]',
+    'LOFI': 'from-[#0ea5e9]/50 to-pink-300',
   };
 
   return (
     <div className="flex flex-col">
-      <div className="w-full mb-10">
-        <h2 className="font-bold text-3xl text-white mb-6">
+      <div className="w-full mb-6 mt-2">
+        <h2 className="font-bold text-3xl text-white mb-4">
           Discover {genreTitle}
         </h2>
         
         {/* Genre Pills */}
-        <div className="flex flex-wrap gap-2 mb-6 max-h-30 overflow-y-auto genre-pills-container p-2">
+        <div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto genre-pills-container p-1">
           {[...genres]
             .sort((a, b) => a.title.localeCompare(b.title))
             .map((genre) => (
@@ -104,7 +104,8 @@ const Discover = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4 sm:gap-6 lg:gap-8">
+      {/* Updated grid to show 6 cards per row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
         {uniqueSongs.map((song, i) => (
           <SongCard
             key={song.key || i}
