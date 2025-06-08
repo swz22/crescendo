@@ -26,7 +26,7 @@ const NavLinks = ({ handleClick }) => (
         className={({ isActive }) =>
           `flex flex-row justify-start items-center my-8 text-base font-medium 
           ${isActive 
-            ? 'text-[#6B68E9] bg-white/10 scale-105' 
+            ? 'text-[#2dd4bf] bg-white/10 scale-105 shadow-lg shadow-teal-500/20' 
             : 'text-gray-400 hover:text-white hover:bg-white/5'
           } 
           px-4 py-3 rounded-lg transition-all duration-200 group`
@@ -45,7 +45,7 @@ const LeftSidebar = () => {
 
   return (
     <>
-      <div className="md:flex hidden flex-col w-[240px] py-10 px-4 bg-[#1e1b4b]/90 backdrop-blur-md border-r border-white/5">
+      <div className="md:flex hidden flex-col w-[240px] py-10 px-4 bg-gradient-to-b from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-md border-r border-white/5">
         <img 
           src={logo} 
           alt="logo" 
@@ -71,7 +71,7 @@ const LeftSidebar = () => {
       </div>
       
       <div
-        className={`absolute top-0 h-screen w-2/3 bg-gradient-to-tl from-white/10 to-[#2d2b6b] backdrop-blur-lg z-50 p-6 md:hidden smooth-transition ${
+        className={`absolute top-0 h-screen w-2/3 bg-gradient-to-br from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-lg z-50 p-6 md:hidden smooth-transition ${
           mobileMenuOpen ? "left-0" : "-left-full"
         }`}
       >

@@ -42,7 +42,7 @@ const CacheSettings = () => {
       {/* Settings Button with glow effect */}
       <button
         onClick={handleToggle}
-        className="relative bg-gradient-to-r from-[#7c3aed]/20 to-[#9333ea]/20 hover:from-[#7c3aed]/30 hover:to-[#9333ea]/30 text-white p-2.5 rounded-full transition-all duration-300 backdrop-blur-sm group hover:shadow-[0_0_20px_rgba(124,58,237,0.5)]"
+        className="relative bg-gradient-to-r from-[#14b8a6]/20 to-[#2dd4bf]/20 hover:from-[#14b8a6]/30 hover:to-[#2dd4bf]/30 text-white p-2.5 rounded-full transition-all duration-300 group hover:shadow-[0_0_20px_rgba(20,184,166,0.5)]"
         title="Performance Settings"
       >
         <svg className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,154 +53,165 @@ const CacheSettings = () => {
         </svg>
       </button>
 
-      {/* Settings Overlay with glassmorphism */}
+      {/* Settings Overlay with improved visibility */}
       {showSettings && (
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 animate-fadeIn"
+            className="fixed inset-0 bg-black/50 z-40 animate-fadeIn"
             onClick={handleToggle}
           />
           
-          {/* Settings panel with cool animations */}
-          <div className="fixed top-[68px] right-6 bottom-6 w-[400px] z-50 animate-slideInRight">
-            <div className="h-full bg-gradient-to-br from-[#2d2467]/90 to-[#1a1848]/90 backdrop-blur-2xl shadow-[0_0_40px_rgba(124,58,237,0.3)] border border-white/20 rounded-2xl overflow-hidden">
-              {/* Animated background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-0 -left-4 w-24 h-24 bg-[#7c3aed] rounded-full filter blur-xl animate-pulse" />
-                <div className="absolute bottom-0 -right-4 w-32 h-32 bg-[#9333ea] rounded-full filter blur-xl animate-pulse delay-1000" />
+          {/* Settings panel - no backdrop blur, better contrast */}
+          <div className="fixed top-20 right-6 w-[420px] max-h-[calc(100vh-120px)] z-[100] animate-slideInRight">
+            <div className="h-full bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] shadow-2xl shadow-black/50 border border-white/10 rounded-2xl overflow-hidden">
+              {/* Subtle pattern background for texture */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute top-0 -left-4 w-32 h-32 bg-[#14b8a6] rounded-full filter blur-3xl" />
+                <div className="absolute bottom-0 -right-4 w-40 h-40 bg-[#2dd4bf] rounded-full filter blur-3xl" />
               </div>
               
-              <div className="relative p-6 h-full overflow-y-auto">
+              <div className="relative p-6 h-full overflow-y-auto custom-scrollbar">
                 {/* Header with gradient text */}
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-[#a855f7] bg-clip-text text-transparent flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-[#7c3aed]/30 to-[#9333ea]/30 rounded-lg">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-[#2dd4bf] bg-clip-text text-transparent flex items-center gap-3">
+                    <div className="p-2.5 bg-gradient-to-br from-[#14b8a6]/20 to-[#2dd4bf]/20 rounded-xl border border-[#14b8a6]/30">
+                      <svg className="w-6 h-6 text-[#2dd4bf]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                     </div>
-                    Performance
+                    Performance Monitor
                   </h3>
                   <button
                     onClick={handleToggle}
-                    className="text-gray-400 hover:text-white transition-colors hover:rotate-90 duration-300"
+                    className="text-gray-400 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all duration-300 hover:rotate-90"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
                 
-                {/* Stats Cards with hover effects */}
+                {/* Stats Cards with better contrast */}
                 <div className="space-y-4">
                   {/* Preview URL Cache */}
-                  <div className="bg-white/5 backdrop-blur-lg rounded-xl p-5 border border-white/10 hover:border-[#7c3aed]/50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(124,58,237,0.2)] group">
-                    <h4 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-[#7c3aed] to-[#9333ea] rounded-lg flex items-center justify-center">
-                        <span className="text-xs font-bold">URL</span>
+                  <div className="bg-white/[0.03] rounded-xl p-5 border border-white/10 hover:border-[#14b8a6]/40 transition-all duration-300 hover:bg-white/[0.05] group">
+                    <h4 className="text-white font-semibold text-lg mb-4 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-[#14b8a6] to-[#0891b2] rounded-xl flex items-center justify-center shadow-lg shadow-[#14b8a6]/20">
+                        <span className="text-xs font-bold text-white">URL</span>
                       </div>
-                      Preview Cache
+                      Preview URL Cache
                     </h4>
                     {stats ? (
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-black/20 rounded-lg p-3">
-                          <p className="text-gray-400 text-xs mb-1">Memory</p>
-                          <p className="text-white font-bold text-lg">{stats.memoryCache}</p>
+                        <div className="bg-black/30 rounded-lg p-4 border border-white/5">
+                          <p className="text-gray-400 text-xs mb-1 uppercase tracking-wider">Memory</p>
+                          <p className="text-white font-bold text-2xl">{stats.memoryCache}</p>
+                          <p className="text-gray-500 text-xs mt-1">Active URLs</p>
                         </div>
-                        <div className="bg-black/20 rounded-lg p-3">
-                          <p className="text-gray-400 text-xs mb-1">Storage</p>
-                          <p className="text-white font-bold text-lg">{stats.localStorage}</p>
+                        <div className="bg-black/30 rounded-lg p-4 border border-white/5">
+                          <p className="text-gray-400 text-xs mb-1 uppercase tracking-wider">Storage</p>
+                          <p className="text-white font-bold text-2xl">{stats.localStorage}</p>
+                          <p className="text-gray-500 text-xs mt-1">Persistent</p>
                         </div>
-                        <div className="bg-black/20 rounded-lg p-3">
-                          <p className="text-gray-400 text-xs mb-1">Queue</p>
-                          <p className="text-white font-bold text-lg">{stats.prefetchQueue}</p>
+                        <div className="bg-black/30 rounded-lg p-4 border border-white/5">
+                          <p className="text-gray-400 text-xs mb-1 uppercase tracking-wider">Queue</p>
+                          <p className="text-white font-bold text-2xl">{stats.prefetchQueue}</p>
+                          <p className="text-gray-500 text-xs mt-1">Pending</p>
                         </div>
-                        <div className="bg-black/20 rounded-lg p-3">
-                          <p className="text-gray-400 text-xs mb-1">Attempts</p>
-                          <p className="text-white font-bold text-lg">{stats.attemptedTracks}</p>
+                        <div className="bg-black/30 rounded-lg p-4 border border-white/5">
+                          <p className="text-gray-400 text-xs mb-1 uppercase tracking-wider">Total Fetched</p>
+                          <p className="text-white font-bold text-2xl">{stats.attemptedTracks}</p>
+                          <p className="text-gray-500 text-xs mt-1">All time</p>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-20">
-                        <div className="w-8 h-8 border-2 border-[#7c3aed] border-t-transparent rounded-full animate-spin" />
+                      <div className="flex items-center justify-center h-32">
+                        <div className="w-10 h-10 border-3 border-[#14b8a6] border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
                   </div>
                   
                   {/* Audio Cache */}
-                  <div className="bg-white/5 backdrop-blur-lg rounded-xl p-5 border border-white/10 hover:border-[#9333ea]/50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(147,51,234,0.2)] group">
-                    <h4 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-[#9333ea] to-[#a855f7] rounded-lg flex items-center justify-center">
-                        <span className="text-xs font-bold">♪</span>
+                  <div className="bg-white/[0.03] rounded-xl p-5 border border-white/10 hover:border-[#2dd4bf]/40 transition-all duration-300 hover:bg-white/[0.05] group">
+                    <h4 className="text-white font-semibold text-lg mb-4 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-[#2dd4bf] to-[#14b8a6] rounded-xl flex items-center justify-center shadow-lg shadow-[#2dd4bf]/20">
+                        <span className="text-lg font-bold text-white">♪</span>
                       </div>
-                      Audio Buffer
+                      Audio Buffer Cache
                     </h4>
                     {audioStats ? (
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400 text-sm">Cached</span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-32 h-2 bg-black/30 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-[#9333ea] to-[#a855f7] rounded-full transition-all duration-500"
-                                style={{ width: `${(audioStats.cached / audioStats.maxCache) * 100}%` }}
-                              />
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-300 text-sm font-medium">Buffer Usage</span>
+                            <span className="text-white font-semibold">{audioStats.cached}/{audioStats.maxCache}</span>
+                          </div>
+                          <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-[#14b8a6] to-[#2dd4bf] rounded-full transition-all duration-700 relative"
+                              style={{ width: `${(audioStats.cached / audioStats.maxCache) * 100}%` }}
+                            >
+                              <div className="absolute inset-0 bg-white/20 animate-pulse" />
                             </div>
-                            <span className="text-white font-medium text-sm">{audioStats.cached}/{audioStats.maxCache}</span>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400 text-sm">Loading</span>
-                          <span className="text-white font-medium">{audioStats.loading} tracks</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400 text-sm">Memory</span>
-                          <span className="text-white font-medium">~{(audioStats.cached * 3).toFixed(0)} MB</span>
+                        
+                        <div className="grid grid-cols-2 gap-3 mt-4">
+                          <div className="bg-black/30 rounded-lg p-3 border border-white/5">
+                            <p className="text-gray-400 text-xs mb-1">Loading</p>
+                            <p className="text-white font-semibold text-lg">{audioStats.loading}</p>
+                            <p className="text-gray-500 text-xs">tracks</p>
+                          </div>
+                          <div className="bg-black/30 rounded-lg p-3 border border-white/5">
+                            <p className="text-gray-400 text-xs mb-1">Est. Memory</p>
+                            <p className="text-white font-semibold text-lg">~{(audioStats.cached * 3).toFixed(0)}</p>
+                            <p className="text-gray-500 text-xs">MB used</p>
+                          </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-20">
-                        <div className="w-8 h-8 border-2 border-[#9333ea] border-t-transparent rounded-full animate-spin" />
+                      <div className="flex items-center justify-center h-32">
+                        <div className="w-10 h-10 border-3 border-[#2dd4bf] border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
                   </div>
                 </div>
                 
-                {/* Performance Tips with animated icon */}
-                <div className="mt-6 bg-gradient-to-br from-[#7c3aed]/10 to-[#9333ea]/10 rounded-xl p-4 border border-white/10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#9333ea] flex items-center justify-center animate-pulse">
-                      <span className="text-white text-xs">💡</span>
+                {/* Performance Tips with better styling */}
+                <div className="mt-6 bg-gradient-to-br from-[#14b8a6]/10 to-[#2dd4bf]/10 rounded-xl p-5 border border-[#14b8a6]/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#14b8a6] to-[#2dd4bf] flex items-center justify-center animate-pulse shadow-lg shadow-[#14b8a6]/30">
+                      <span className="text-white text-sm">💡</span>
                     </div>
-                    <h4 className="text-white font-medium">Pro Tips</h4>
+                    <h4 className="text-white font-semibold text-base">Performance Tips</h4>
                   </div>
-                  <ul className="text-xs text-gray-300 space-y-2">
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#7c3aed] mt-0.5">▸</span>
+                  <ul className="text-sm text-gray-300 space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="text-[#14b8a6] mt-0.5 text-lg">•</span>
                       <span>Hover over songs to preload for instant playback</span>
                     </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#9333ea] mt-0.5">▸</span>
-                      <span>Cached songs have a lightning indicator</span>
+                    <li className="flex items-start gap-3">
+                      <span className="text-[#2dd4bf] mt-0.5 text-lg">•</span>
+                      <span>Look for the lightning bolt ⚡ on cached tracks</span>
                     </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#a855f7] mt-0.5">▸</span>
+                    <li className="flex items-start gap-3">
+                      <span className="text-[#5eead4] mt-0.5 text-lg">•</span>
                       <span>Clear cache if experiencing playback issues</span>
                     </li>
                   </ul>
                 </div>
                 
-                {/* Clear Cache Button with gradient animation */}
+                {/* Clear Cache Button */}
                 <button
                   onClick={handleClearCache}
-                  className="mt-6 w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 px-4 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-[0_0_20px_rgba(220,38,38,0.4)] transform hover:scale-[1.02]"
+                  className="mt-6 w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3.5 px-6 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-red-500/25 transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Clear All Cache
                 </button>
                 
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  Performance optimization powered by intelligent caching
+                <p className="text-xs text-gray-500 mt-4 text-center">
+                  Intelligent caching for seamless music playback
                 </p>
               </div>
             </div>

@@ -8,7 +8,6 @@ import { useAudioPreload } from "../hooks/useAudioPreload";
 import Tooltip from "./Tooltip";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import { HiLightningBolt } from "react-icons/hi";
-import { FaPlayCircle } from "react-icons/fa";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
@@ -133,23 +132,23 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   return (
     <div 
       ref={cardRef}
-      className={`flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl group
-        ${isCurrentSong ? 'ring-2 ring-[#7c3aed] ring-opacity-50' : ''}
+      className={`flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-teal-500/20 group
+        ${isCurrentSong ? 'ring-2 ring-[#14b8a6] ring-opacity-50' : ''}
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Cache indicator - subtle lightning icon */}
+      {/* Cache indicator - subtle lightning icon with pulse */}
       {showCacheIndicator && (
         <div className="absolute top-3 right-3 z-10">
-          <HiLightningBolt className="w-4 h-4 text-[#7c3aed] opacity-70" title="Instant playback ready" />
+          <HiLightningBolt className="w-4 h-4 text-[#14b8a6] opacity-80 animate-pulse" title="Instant playback ready" />
         </div>
       )}
       
       {/* Now Playing indicator */}
       {isCurrentSong && (
-        <div className="absolute top-3 left-3 z-10 bg-[#7c3aed]/20 backdrop-blur-sm rounded-full px-2 py-1">
-          <span className="text-xs text-[#7c3aed] font-semibold">Now Playing</span>
+        <div className="absolute top-3 left-3 z-10 bg-[#14b8a6]/20 backdrop-blur-sm rounded-full px-2 py-1">
+          <span className="text-xs text-[#14b8a6] font-semibold">Now Playing</span>
         </div>
       )}
       
@@ -157,7 +156,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         {/* Play button overlay - simplified approach */}
         {(isHovered || isCurrentSong) && (
           <div 
-            className="absolute inset-0 bg-black/50 flex items-center justify-center z-20 cursor-pointer"
+            className="absolute inset-0 bg-black/50 flex items-center justify-center z-20 cursor-pointer backdrop-blur-sm"
             onClick={(e) => {
               e.stopPropagation();
               if (!isLoading) {
@@ -187,7 +186,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#7c3aed] to-[#9333ea] flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-[#14b8a6] to-[#0891b2] flex items-center justify-center">
             <span className="text-white/50 text-6xl">♪</span>
           </div>
         )}
@@ -204,7 +203,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         <Tooltip text={artistName}>
           <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
             {artistId ? (
-              <Link to={`/artists/${artistId}`}>
+              <Link to={`/artists/${artistId}`} className="hover:text-[#2dd4bf] transition-colors">
                 {artistName}
               </Link>
             ) : (
