@@ -341,6 +341,28 @@ export const usePreviewUrl = () => {
     };
   }, []);
 
+  // Page-specific prefetch strategy
+  const getPagePrefetchStrategy = useCallback((pathname) => {
+    if (pathname === '/') {
+      // Discover page - prefetch first 5 songs
+      return { maxSongs: 5, priority: 'medium', delay: 3000 };
+    } else if (pathname === '/top-charts' || pathname === '/top-artists') {
+      // Top charts/artists - prefetch first 3 songs (popular, likely to be played)
+      return { maxSongs: 3, priority: 'high', delay: 2000 };
+    } else if (pathname.startsWith('/playlists')) {
+      // Playlists - prefetch first 3 songs only
+      return { maxSongs: 3, priority: 'low', delay: 3000 };
+    } else if (pathname.startsWith('/search')) {
+      // Search results - no automatic prefetch (unpredictable)
+      return { maxSongs: 0, priority: 'low', delay: 0 };
+    } else if (pathname.startsWith('/artists/')) {
+      // Artist page - prefetch first 2 top tracks
+      return { maxSongs: 2, priority: 'high', delay: 2000 };
+    }
+    // Default - conservative
+    return { maxSongs: 2, priority: 'low', delay: 3000 };
+  }, []);
+
   return { 
     getPreviewUrl, 
     prefetchPreviewUrl, 
@@ -349,6 +371,7 @@ export const usePreviewUrl = () => {
     hasNoPreview,
     loading,
     clearCache,
-    getCacheStats
+    getCacheStats,
+    getPagePrefetchStrategy
   };
 };
