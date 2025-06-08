@@ -8,6 +8,7 @@ import {
   MusicSidebar,
   FloatingMiniPlayer,
   PerformanceMonitor,
+  PlaylistPlayer,
 } from "./components";
 import {
   AlbumDetails,
@@ -21,11 +22,24 @@ import {
 } from "./pages";
 
 const App = () => {
-  const { activeSong, isModalOpen, playlistContext, isPlaying } = useSelector(
-    (state) => state.player
-  );
+  const {
+    activeSong,
+    isModalOpen,
+    playlistContext,
+    isPlaying,
+    currentPlaylist,
+    currentSongs,
+  } = useSelector((state) => state.player);
   const location = useLocation();
   const [playlistSession, setPlaylistSession] = useState(false);
+
+  // Determine if we're on a page that should show the PlaylistPlayer
+  const musicPages = ["/", "/playlists", "/top-artists", "/search"];
+  const showPlaylistPlayer = musicPages.some(
+    (page) =>
+      location.pathname === page || location.pathname.startsWith("/search/")
+  );
+  const showMusicSidebar = !showPlaylistPlayer;
 
   // Start playlist session when we have a playlist context
   useEffect(() => {
@@ -41,12 +55,11 @@ const App = () => {
     }
   }, [location.pathname]);
 
-  // Show floating player during playlist session
-  const showFloatingPlayer =
-    playlistSession && location.pathname === "/playlists";
+  // Remove floating player from playlist pages
+  const showFloatingPlayer = false; // Disabled since we have PlaylistPlayer now
 
-  // Hide main player when modal is open OR when floating player is shown
-  const hideMainPlayer = isModalOpen || showFloatingPlayer;
+  // Hide main player when modal is open
+  const hideMainPlayer = isModalOpen;
 
   return (
     <div className="relative flex">
@@ -82,7 +95,14 @@ const App = () => {
             </Routes>
           </div>
           <div className="xl:sticky relative top-0 h-fit">
-            <MusicSidebar />
+            {showMusicSidebar ? (
+              <MusicSidebar />
+            ) : (
+              <PlaylistPlayer
+                playlist={currentPlaylist}
+                tracks={currentSongs}
+              />
+            )}
           </div>
         </div>
       </div>

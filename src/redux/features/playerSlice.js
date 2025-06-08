@@ -10,6 +10,7 @@ const initialState = {
   recentlyPlayed: [],
   isModalOpen: false,
   playlistContext: null,
+  currentPlaylist: null,
   shuffle: false,
   shuffleIndices: [],
   playedIndices: [],
@@ -48,6 +49,11 @@ const playerSlice = createSlice({
       // Set playlist context if provided
       if (action.payload.playlistId) {
         state.playlistContext = action.payload.playlistId;
+      }
+
+      // Set current playlist if provided
+      if (action.payload.playlist) {
+        state.currentPlaylist = action.payload.playlist;
       }
 
       // If shuffle is active and we have new songs, create new shuffle indices
@@ -251,6 +257,14 @@ const playerSlice = createSlice({
     clearPlaylistContext: (state) => {
       state.playlistContext = null;
     },
+
+    setCurrentPlaylist: (state, action) => {
+      state.currentPlaylist = action.payload;
+    },
+
+    clearCurrentPlaylist: (state) => {
+      state.currentPlaylist = null;
+    },
   },
 });
 
@@ -265,6 +279,8 @@ export const {
   selectGenreListId,
   setModalOpen,
   clearPlaylistContext,
+  setCurrentPlaylist,
+  clearCurrentPlaylist,
 } = playerSlice.actions;
 
 export default playerSlice.reducer;

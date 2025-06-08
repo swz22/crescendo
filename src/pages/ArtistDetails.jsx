@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { store } from "../redux/store";
 import { DetailsHeader, Error, Loader, RelatedSongs } from "../components";
 import {
   useGetArtistDetailsQuery,
@@ -32,14 +33,34 @@ const ArtistDetails = () => {
     dispatch(playPause(false));
   };
 
-  const handlePlayClick = async (song, i) => {
+  const handlePlayClick = async (song, i, dataArray) => {
     // Always get preview URL (from cache or fetch)
     const songWithPreview = await getPreviewUrl(song);
 
     if (songWithPreview.preview_url) {
-      dispatch(setActiveSong({ song: songWithPreview, data: topTracks, i }));
+      // Get current queue
+      const currentQueue = store.getState().player.currentSongs || [];
+
+      // Check if song already exists
+      const songExists = currentQueue.some(
+        (s) => s.key === songWithPreview.key
+      );
+
+      let newQueue;
+      let newIndex;
+
+      if (songExists) {
+        newQueue = currentQueue;
+        newIndex = currentQueue.findIndex((s) => s.key === songWithPreview.key);
+      } else {
+        newQueue = [...currentQueue, songWithPreview];
+        newIndex = newQueue.length - 1;
+      }
+
+      dispatch(
+        setActiveSong({ song: songWithPreview, data: newQueue, i: newIndex })
+      );
       dispatch(playPause(true));
-    } else {
     }
   };
 

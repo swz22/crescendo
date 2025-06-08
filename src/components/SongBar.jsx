@@ -1,5 +1,7 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { store } from "../redux/store";
 import PlayPause from "./PlayPause";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 
@@ -78,6 +80,30 @@ const SongBar = ({
   const artist = getArtistInfo();
   const songKey = song?.key || song?.id || song?.hub?.actions?.[0]?.id;
 
+  const onPlayClick = () => {
+    // Get current queue
+    const currentQueue = store.getState().player.currentSongs || [];
+
+    // Check if song already exists in queue
+    const songExists = currentQueue.some((s) => s.key === song.key);
+
+    // Build new queue
+    let newQueue;
+    let newIndex;
+
+    if (songExists) {
+      // Song already in queue, just play it
+      newQueue = currentQueue;
+      newIndex = currentQueue.findIndex((s) => s.key === song.key);
+    } else {
+      // Add song to the end of current queue
+      newQueue = [...currentQueue, song];
+      newIndex = newQueue.length - 1;
+    }
+
+    handlePlayClick(song, newIndex, newQueue);
+  };
+
   return (
     <div
       ref={barRef}
@@ -147,7 +173,7 @@ const SongBar = ({
           activeSong={activeSong}
           song={song}
           handlePause={handlePauseClick}
-          handlePlay={() => handlePlayClick(song, i)}
+          handlePlay={onPlayClick}
         />
       )}
     </div>

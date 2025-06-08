@@ -4,6 +4,7 @@ import {
   playPause,
   setActiveSong,
   setModalOpen,
+  setCurrentPlaylist,
 } from "../redux/features/playerSlice";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -89,6 +90,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
           data: tracks,
           i,
           playlistId: playlist.id,
+          playlist: playlist,
         })
       );
       dispatch(playPause(true));
@@ -116,12 +118,12 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         onClick={handleBackdropClick}
       >
         <div
-          className={`bg-gradient-to-br from-purple-900/90 to-black/90 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl transition-all duration-200 transform ${
+          className={`bg-gradient-to-br from-[#1e1b4b]/95 to-[#0f172a]/95 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl transition-all duration-200 transform border border-white/10 ${
             isAnimating ? "scale-100 opacity-100" : "scale-95 opacity-0"
           }`}
         >
           {/* Header */}
-          <div className="relative p-6 pb-4 bg-gradient-to-b from-white/10 to-transparent">
+          <div className="relative p-6 pb-4 bg-gradient-to-b from-white/5 to-transparent">
             <button
               onClick={handleClose}
               className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
@@ -130,9 +132,50 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
             </button>
 
             <div className="flex items-start gap-6">
-              {/* Mosaic Image - Use the same images as the card */}
+              {/* Mosaic Image or Custom Art */}
               <div className="w-32 h-32 rounded-lg shadow-lg overflow-hidden flex-shrink-0">
-                {mosaicImages.length === 4 ? (
+                {playlist.name.toLowerCase().includes("lonely heart") ? (
+                  // Custom artwork for "Owner of a Lonely Heart Radio"
+                  <div className="w-full h-full relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6] via-[#0891b2] to-[#0e7490] animate-gradient">
+                      <div className="absolute inset-0 bg-black/20"></div>
+                    </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
+                      <div className="relative mb-2">
+                        <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                          <svg
+                            className="w-10 h-10 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-white/80 text-[10px] font-medium">
+                          FEATURED
+                        </p>
+                        <p className="text-white font-bold text-xs">Playlist</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : mosaicImages.length === 4 ? (
                   // Check if all images are the same (playlist cover fallback)
                   mosaicImages.every((img) => img === mosaicImages[0]) &&
                   mosaicImages[0] !== placeholderImage ? (
