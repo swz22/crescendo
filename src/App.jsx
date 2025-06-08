@@ -10,6 +10,7 @@ import {
   PerformanceMonitor,
 } from "./components";
 import {
+  AlbumDetails,
   ArtistDetails,
   TopArtists,
   Discover,
@@ -74,6 +75,7 @@ const App = () => {
               <Route path="/top-artists" element={<TopArtists />} />
               <Route path="/new-releases" element={<NewReleases />} />
               <Route path="/playlists" element={<CommunityPlaylists />} />
+              <Route path="/albums/:id" element={<AlbumDetails />} />
               <Route path="/artists/:id" element={<ArtistDetails />} />
               <Route path="/songs/:songid" element={<SongDetails />} />
               <Route path="/search/:searchTerm" element={<Search />} />

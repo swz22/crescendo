@@ -76,6 +76,38 @@ export const spotifyCoreApi = createApi({
       transformResponse: (response) => adaptTrackData(response),
     }),
 
+    getAlbumDetails: builder.query({
+      query: ({ albumId }) => `/albums/${albumId}`,
+      transformResponse: (response) => ({
+        id: response.id,
+        name: response.name,
+        artists: response.artists,
+        images: response.images,
+        release_date: response.release_date,
+        total_tracks: response.total_tracks,
+        album_type: response.album_type,
+        label: response.label,
+        popularity: response.popularity,
+        genres: response.genres || [],
+        copyrights: response.copyrights,
+        external_urls: response.external_urls,
+      }),
+    }),
+
+    getAlbumTracks: builder.query({
+      query: ({ albumId }) => `/albums/${albumId}/tracks?limit=50`,
+      transformResponse: (response, meta, arg) =>
+        response.items?.map((track) =>
+          adaptTrackData({
+            ...track,
+            album: {
+              id: arg.albumId, // Use arg.albumId instead of just albumId
+              images: [], // Album images will come from album details
+            },
+          })
+        ) || [],
+    }),
+
     getArtistDetails: builder.query({
       query: ({ artistid }) => `/artists/${artistid}`,
       transformResponse: (response) => adaptArtistData(response),
@@ -237,6 +269,8 @@ export const {
   useGetTopChartsQuery,
   useGetTopArtistsQuery,
   useGetSongDetailsQuery,
+  useGetAlbumDetailsQuery,
+  useGetAlbumTracksQuery,
   useGetArtistDetailsQuery,
   useGetArtistTopTracksQuery,
   useGetSongRelatedQuery,

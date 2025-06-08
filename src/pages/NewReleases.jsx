@@ -8,15 +8,18 @@ const NewReleases = () => {
   if (isFetching) return <Loader title="Loading new releases..." />;
   if (error) return <Error />;
 
+  // Filter out singles and only show albums
+  const albums = data?.filter(album => album.album_type === 'album') || [];
+
   return (
     <div className="flex flex-col">
       <h2 className="font-bold text-3xl text-white text-left mt-4 mb-10">
-        New Releases
+        New Album Releases
       </h2>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4 sm:gap-6 lg:gap-8">
-        {data?.map((album, i) => (
-          <AlbumCard key={album.id || i} album={album} />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
+        {albums.map((album, i) => (
+          <AlbumCard key={album.id || i} album={album} showTrackCount={true} />
         ))}
       </div>
     </div>

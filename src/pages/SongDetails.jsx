@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { DetailsHeader, Error, Loader, RelatedSongs } from "../components";
 import { setActiveSong, playPause } from "../redux/features/playerSlice";
@@ -60,25 +60,37 @@ const SongDetails = () => {
         {/* Song Info */}
         <div className="mt-5">
           <div className="bg-white/5 p-4 rounded-lg">
-            <h3 className="text-white text-xl font-semibold mb-3">Details</h3>
-            <p className="text-gray-400 mb-2">
-              <span className="text-gray-300">Album:</span> {songData?.album?.name || 'Unknown'}
-            </p>
-            <p className="text-gray-400 mb-2">
-              <span className="text-gray-300">Release Date:</span> {songData?.album?.release_date || 'Unknown'}
-            </p>
-            <p className="text-gray-400 mb-2">
-              <span className="text-gray-300">Duration:</span> {formatDuration(songData?.duration_ms)}
-            </p>
-            <p className="text-gray-400 mb-2">
-              <span className="text-gray-300">Popularity:</span> {songData?.track?.popularity || 'N/A'}/100
-            </p>
-            {songData?.track?.explicit && (
-              <p className="text-gray-400 mb-2">
-                <span className="text-red-500">Explicit Content</span>
-              </p>
-            )}
-          </div>
+  <h3 className="text-white text-xl font-semibold mb-3">Details</h3>
+  <p className="text-gray-400 mb-2">
+    <span className="text-gray-300">Album:</span> {songData?.album?.name || 'Unknown'}
+  </p>
+  <p className="text-gray-400 mb-2">
+    <span className="text-gray-300">Release Date:</span> {songData?.album?.release_date || 'Unknown'}
+  </p>
+  <p className="text-gray-400 mb-2">
+    <span className="text-gray-300">Duration:</span> {formatDuration(songData?.duration_ms)}
+  </p>
+  <p className="text-gray-400 mb-2">
+    <span className="text-gray-300">Popularity:</span> {songData?.track?.popularity || 'N/A'}/100
+  </p>
+  {songData?.track?.explicit && (
+    <p className="text-gray-400 mb-2">
+      <span className="text-red-500">Explicit Content</span>
+    </p>
+  )}
+  
+  {songData?.album?.id && (
+    <Link 
+      to={`/albums/${songData.album.id}`}
+      className="inline-flex items-center gap-2 mt-4 bg-[#14b8a6] hover:bg-[#0d9488] text-white px-4 py-2 rounded-full transition-all hover:scale-105"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      </svg>
+      View Full Album
+    </Link>
+  )}
+</div>
         </div>
       </div>
 
