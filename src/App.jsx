@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Route, Routes, useLocation } from "react-router-dom";
-import { Searchbar, LeftSidebar, MusicPlayer, MusicSidebar, FloatingMiniPlayer } from "./components";
+import { Searchbar, LeftSidebar, MusicPlayer, MusicSidebar, FloatingMiniPlayer, CacheSettings } from "./components";
 import {
   ArtistDetails,
   TopArtists,
@@ -16,6 +16,8 @@ const App = () => {
   const { activeSong, isModalOpen, playlistContext, isPlaying } = useSelector((state) => state.player);
   const location = useLocation();
   const [playlistSession, setPlaylistSession] = useState(false);
+  
+  console.log('All env variables:', import.meta.env);
   
   // Start playlist session when we have a playlist context
   useEffect(() => {
@@ -71,6 +73,9 @@ const App = () => {
       
       {/* Global floating player - show during playlist session regardless of activeSong state */}
       <FloatingMiniPlayer isVisible={showFloatingPlayer} />
+      
+      {/* Cache Settings Button */}
+      <CacheSettings />
     </div>
   );
 };

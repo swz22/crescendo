@@ -1,5 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
+// LocalStorage key
+const STORAGE_KEY = 'crescendo_preview_urls';
+const MAX_STORAGE_ITEMS = 1000; // Limit storage size
+
 // In-memory cache for preview URLs
 const previewCache = new Map();
 const cacheTimestamps = new Map();
@@ -10,6 +14,75 @@ const attemptedTracks = new Set(); // Track which songs we've already tried
 // Cache duration: 5 minutes for successful URLs, 30 seconds for failures
 const CACHE_DURATION_SUCCESS = 5 * 60 * 1000;
 const CACHE_DURATION_FAILURE = 30 * 1000;
+
+// Load cached previews from localStorage on initialization
+const loadFromLocalStorage = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      console.log(`Loading ${Object.keys(parsed).length} preview URLs from localStorage`);
+      
+      // Load into memory cache
+      Object.entries(parsed).forEach(([trackId, data]) => {
+        if (data.url) {
+          previewCache.set(trackId, data.url);
+          cacheTimestamps.set(trackId, data.timestamp || Date.now());
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Failed to load from localStorage:', error);
+  }
+};
+
+// Save to localStorage
+const saveToLocalStorage = (trackId, url) => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const cached = stored ? JSON.parse(stored) : {};
+    
+    // Add new entry
+    cached[trackId] = {
+      url,
+      timestamp: Date.now(),
+      lastUsed: Date.now()
+    };
+    
+    // Limit storage size - remove oldest entries if needed
+    const entries = Object.entries(cached);
+    if (entries.length > MAX_STORAGE_ITEMS) {
+      // Sort by lastUsed and keep most recent
+      entries.sort((a, b) => b[1].lastUsed - a[1].lastUsed);
+      const keepEntries = entries.slice(0, MAX_STORAGE_ITEMS);
+      const newCached = Object.fromEntries(keepEntries);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newCached));
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+    }
+  } catch (error) {
+    console.error('Failed to save to localStorage:', error);
+  }
+};
+
+// Update last used timestamp when retrieving from cache
+const updateLastUsed = (trackId) => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const cached = JSON.parse(stored);
+      if (cached[trackId]) {
+        cached[trackId].lastUsed = Date.now();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+      }
+    }
+  } catch (error) {
+    // Silently fail - not critical
+  }
+};
+
+// Initialize - load from localStorage on module load
+loadFromLocalStorage();
 
 const isCacheValid = (trackId) => {
   const timestamp = cacheTimestamps.get(trackId);
@@ -26,6 +99,12 @@ const fetchPreviewUrl = async (trackId) => {
   if (previewCache.has(trackId) && isCacheValid(trackId)) {
     const cachedValue = previewCache.get(trackId);
     console.log('Returning cached preview URL for:', trackId, cachedValue);
+    
+    // Update last used timestamp for localStorage
+    if (cachedValue) {
+      updateLastUsed(trackId);
+    }
+    
     return cachedValue;
   }
 
@@ -66,6 +145,11 @@ const fetchPreviewUrl = async (trackId) => {
       const previewUrl = data.preview_url || null;
       previewCache.set(trackId, previewUrl);
       cacheTimestamps.set(trackId, Date.now());
+      
+      // Save successful URLs to localStorage
+      if (previewUrl) {
+        saveToLocalStorage(trackId, previewUrl);
+      }
       
       return previewUrl;
     } catch (error) {
@@ -235,7 +319,26 @@ export const usePreviewUrl = () => {
     cacheTimestamps.clear();
     prefetchQueue.clear();
     fetchPromises.clear();
-    console.log('Preview URL cache cleared');
+    attemptedTracks.clear();
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      console.log('Preview URL cache cleared (including localStorage)');
+    } catch (error) {
+      console.error('Failed to clear localStorage:', error);
+    }
+  }, []);
+
+  // Get cache stats
+  const getCacheStats = useCallback(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const localStorageCount = stored ? Object.keys(JSON.parse(stored)).length : 0;
+    
+    return {
+      memoryCache: previewCache.size,
+      localStorage: localStorageCount,
+      prefetchQueue: prefetchQueue.size,
+      attemptedTracks: attemptedTracks.size
+    };
   }, []);
 
   return { 
@@ -245,6 +348,7 @@ export const usePreviewUrl = () => {
     isPreviewCached,
     hasNoPreview,
     loading,
-    clearCache 
+    clearCache,
+    getCacheStats
   };
 };
