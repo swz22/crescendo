@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 const Player = ({
   activeSong,
@@ -8,82 +8,122 @@ const Player = ({
   onEnded,
   onTimeUpdate,
   onLoadedData,
+  onCanPlay,
+  onLoadStart,
   repeat,
   songUrl,
 }) => {
   const ref = useRef(null);
+  const currentUrlRef = useRef(null);
+  const [isReady, setIsReady] = useState(false);
 
-  // Handle play/pause
+  // Handle source changes - optimized
   useEffect(() => {
-    if (!ref.current) return;
+    if (!ref.current || !songUrl) return;
 
-    // Don't try to play if no URL
-    if (!songUrl) {
-      console.log('No song URL available, skipping playback');
-      return;
+    // Only change source if it's actually different
+    if (currentUrlRef.current !== songUrl) {
+      currentUrlRef.current = songUrl;
+      setIsReady(false);
+      
+      // Notify parent that loading has started
+      if (onLoadStart) {
+        onLoadStart();
+      }
+      
+      // Don't call load() - let browser handle it
+      ref.current.src = songUrl;
+      
+      // For better performance, we can try to preload
+      ref.current.preload = 'auto';
     }
+  }, [songUrl, onLoadStart]);
 
-    if (isPlaying && songUrl) {
+  // Handle play/pause - optimized
+  useEffect(() => {
+    if (!ref.current || !songUrl || !isReady) return;
+
+    if (isPlaying) {
+      // Play immediately without delay
       const playPromise = ref.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((error) => {
-          // Only log if it's not an abort error (which is expected during transitions)
           if (error.name !== "AbortError") {
             console.error("Error playing audio:", error);
-            // If autoplay is blocked, we'll need user interaction
-            if (
-              error.name === "NotAllowedError" ||
-              error.name === "NotSupportedError"
-            ) {
-              console.log("Autoplay blocked - need user interaction");
-            }
           }
         });
       }
     } else {
       ref.current.pause();
     }
-  }, [isPlaying, songUrl]);
+  }, [isPlaying, songUrl, isReady]);
 
+  // Handle volume changes
   useEffect(() => {
     if (ref.current) {
       ref.current.volume = volume;
     }
   }, [volume]);
 
-  // Update seek time
+  // Handle seek
   useEffect(() => {
-    if (ref.current && songUrl) {
+    if (ref.current && seekTime !== undefined && !isNaN(seekTime)) {
       ref.current.currentTime = seekTime;
     }
   }, [seekTime]);
 
-  // Log when audio source changes
-  useEffect(() => {
-    console.log("Audio source changed:", songUrl);
-    console.log("Active song details:", activeSong);
-  }, [songUrl, activeSong]);
+  // Handle audio ready state
+  const handleCanPlay = () => {
+    setIsReady(true);
+    
+    // Notify parent
+    if (onCanPlay) {
+      onCanPlay();
+    }
+    
+    // If we should be playing and we just became ready, play
+    if (isPlaying && ref.current) {
+      ref.current.play().catch(error => {
+        if (error.name !== "AbortError") {
+          console.error("Error auto-playing:", error);
+        }
+      });
+    }
+  };
 
-  // Don't render audio element if no URL
+  const handleLoadStart = () => {
+    setIsReady(false);
+    if (onLoadStart) {
+      onLoadStart();
+    }
+  };
+
+  const handleLoadedData = (e) => {
+    if (onLoadedData) {
+      onLoadedData(e);
+    }
+  };
+
   if (!songUrl) {
     return null;
   }
 
   return (
     <audio
-      src={songUrl}
       ref={ref}
       loop={repeat}
       onEnded={onEnded}
       onTimeUpdate={onTimeUpdate}
-      onLoadedData={onLoadedData}
-      onError={(e) => {
-        console.error("Audio playback error:", e);
-        console.log("Failed URL:", songUrl);
-        console.log("Active Song:", activeSong);
-        console.log("Error type:", e.target.error?.code);
-        console.log("Error message:", e.target.error?.message);
+      onLoadedData={handleLoadedData}
+      onCanPlay={handleCanPlay}
+      onLoadStart={handleLoadStart}
+      onWaiting={() => {
       }}
+      onError={(e) => {
+        console.error("Audio error:", e.target.error);
+        setIsReady(false);
+      }}
+      preload="auto"
     />
   );
 };

@@ -9,23 +9,33 @@ import { usePreviewUrl } from "../hooks/usePreviewUrl";
 
 // Utility function to clean up titles
 const cleanTitle = (title) => {
-  if (!title) return '';
+  if (!title) return "";
   // Remove content in parentheses and brackets
   return title
-    .replace(/\s*\([^)]*\)/g, '') // Remove (anything)
-    .replace(/\s*\[[^\]]*\]/g, '') // Remove [anything]
+    .replace(/\s*\([^)]*\)/g, "") // Remove (anything)
+    .replace(/\s*\[[^\]]*\]/g, "") // Remove [anything]
     .trim();
 };
 
-const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick, data, prefetchPreviewUrl, isPreviewCached }) => {
+const TopChartCard = ({
+  song,
+  i,
+  isPlaying,
+  activeSong,
+  handlePauseClick,
+  handlePlayClick,
+  data,
+  prefetchPreviewUrl,
+  isPreviewCached,
+}) => {
   const displayTitle = cleanTitle(song?.title);
-  
+
   const handleMouseEnter = () => {
     if (!isPreviewCached(song)) {
-      prefetchPreviewUrl(song, { priority: 'high' });
+      prefetchPreviewUrl(song, { priority: "high" });
     }
   };
-  
+
   return (
     <div
       className={`w-full flex flex-row items-center hover:bg-[#4c426e] ${
@@ -35,11 +45,17 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
     >
       <h3 className="font-bold text-sm text-white mr-3">{i + 1}.</h3>
       <div className="flex-1 flex flex-row justify-between items-center">
-        <img className="w-14 h-14 rounded-lg" src={song?.images?.coverart} alt={song?.title} />
+        <img
+          className="w-14 h-14 rounded-lg"
+          src={song?.images?.coverart}
+          alt={song?.title}
+        />
         <div className="flex-1 flex flex-col justify-center mx-3 min-w-0">
           <Link to={`/songs/${song.key}`}>
             <Tooltip text={song?.title}>
-              <p className="text-base font-bold text-white truncate">{displayTitle}</p>
+              <p className="text-base font-bold text-white truncate">
+                {displayTitle}
+              </p>
             </Tooltip>
           </Link>
           <Tooltip text={song?.subtitle}>
@@ -58,15 +74,25 @@ const TopChartCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handle
   );
 };
 
-const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, handlePlayClick, data, prefetchPreviewUrl, isPreviewCached }) => {
+const RecentlyPlayedCard = ({
+  song,
+  i,
+  isPlaying,
+  activeSong,
+  handlePauseClick,
+  handlePlayClick,
+  data,
+  prefetchPreviewUrl,
+  isPreviewCached,
+}) => {
   const displayTitle = cleanTitle(song?.title);
-  
+
   const handleMouseEnter = () => {
     if (!isPreviewCached(song)) {
-      prefetchPreviewUrl(song, { priority: 'high' });
+      prefetchPreviewUrl(song, { priority: "high" });
     }
   };
-  
+
   return (
     <div
       className={`w-full flex items-center hover:bg-[#4c426e] ${
@@ -75,13 +101,16 @@ const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, 
       onMouseEnter={handleMouseEnter}
     >
       <span className="text-gray-500 text-sm w-4 mr-3">{i + 1}</span>
-      
-      <img 
-        className="w-12 h-12 rounded-md mr-3" 
-        src={song?.images?.coverart || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzRhNTU2OCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiNhMGFlYzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='} 
-        alt={song?.title} 
+
+      <img
+        className="w-12 h-12 rounded-md mr-3"
+        src={
+          song?.images?.coverart ||
+          "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzRhNTU2OCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiNhMGFlYzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4="
+        }
+        alt={song?.title}
       />
-      
+
       <div className="flex-1 flex flex-col justify-center min-w-0">
         <Link to={`/songs/${song.key}`}>
           <Tooltip text={song?.title}>
@@ -108,9 +137,18 @@ const RecentlyPlayedCard = ({ song, i, isPlaying, activeSong, handlePauseClick, 
 
 const MusicSidebar = () => {
   const dispatch = useDispatch();
-  const { activeSong, isPlaying, recentlyPlayed = [] } = useSelector((state) => state.player);
+  const {
+    activeSong,
+    isPlaying,
+    recentlyPlayed = [],
+  } = useSelector((state) => state.player);
   const { data, isFetching, error } = useGetTopChartsQuery();
-  const { getPreviewUrl, prefetchPreviewUrl, prefetchMultiple, isPreviewCached } = usePreviewUrl();
+  const {
+    getPreviewUrl,
+    prefetchPreviewUrl,
+    prefetchMultiple,
+    isPreviewCached,
+  } = usePreviewUrl();
   const divRef = useRef(null);
 
   useEffect(() => {
@@ -127,7 +165,7 @@ const MusicSidebar = () => {
         // Only prefetch first 3 tracks with delays between each
         data.slice(0, 3).forEach((song, index) => {
           setTimeout(() => {
-            prefetchPreviewUrl(song, { priority: 'low' });
+            prefetchPreviewUrl(song, { priority: "low" });
           }, index * 3000); // 3 seconds between each prefetch
         });
       }, 2000);
@@ -136,14 +174,19 @@ const MusicSidebar = () => {
     }
   }, [data, prefetchPreviewUrl]);
 
-  const topPlays = data
-    ?.filter((song, index, self) => {
-      return index === self.findIndex(s => 
-        s.title?.toLowerCase() === song.title?.toLowerCase() && 
-        s.subtitle?.toLowerCase() === song.subtitle?.toLowerCase()
-      );
-    })
-    .slice(0, 4) || [];
+  const topPlays =
+    data
+      ?.filter((song, index, self) => {
+        return (
+          index ===
+          self.findIndex(
+            (s) =>
+              s.title?.toLowerCase() === song.title?.toLowerCase() &&
+              s.subtitle?.toLowerCase() === song.subtitle?.toLowerCase()
+          )
+        );
+      })
+      .slice(0, 4) || [];
 
   const handlePauseClick = () => {
     dispatch(playPause(false));
@@ -152,13 +195,11 @@ const MusicSidebar = () => {
   const handlePlayClick = async (song, i, songArray) => {
     // Always get preview URL (from cache or fetch)
     const songWithPreview = await getPreviewUrl(song);
-    
+
     if (songWithPreview.preview_url) {
-      console.log('Playing song with preview URL:', songWithPreview);
       dispatch(setActiveSong({ song: songWithPreview, data: songArray, i }));
       dispatch(playPause(true));
     } else {
-      console.log('No preview available for:', song.title);
     }
   };
 
@@ -219,7 +260,9 @@ const MusicSidebar = () => {
         </div>
 
         {!recentlyPlayed || recentlyPlayed.length === 0 ? (
-          <p className="text-gray-400 text-sm">Start playing songs to see your history</p>
+          <p className="text-gray-400 text-sm">
+            Start playing songs to see your history
+          </p>
         ) : (
           <>
             <div className="flex flex-col gap-2">

@@ -32,8 +32,6 @@ const Discover = () => {
   useEffect(() => {
     if (uniqueSongs.length > 0) {
       const strategy = getPagePrefetchStrategy(location.pathname);
-      console.log(`Discover page: Using prefetch strategy`, strategy);
-      
       // Wait before starting prefetch
       const timeoutId = setTimeout(() => {
         // Prefetch based on strategy

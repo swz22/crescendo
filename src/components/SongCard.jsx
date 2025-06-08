@@ -1,66 +1,87 @@
 import React, { useEffect, useRef, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import PlayPause from "./PlayPause";
 import { playPause, setActiveSong } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { useAudioPreload } from "../hooks/useAudioPreload";
 import Tooltip from "./Tooltip";
 import CacheIndicator from "./CacheIndicator";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
-  const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached, hasNoPreview } = usePreviewUrl();
+  const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached, hasNoPreview } =
+    usePreviewUrl();
+  const { preloadAudio, isAudioReady } = useAudioPreload();
   const cardRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCacheIndicator, setShowCacheIndicator] = useState(false);
-  const loadingTimeoutRef = useRef(null);
+  const [showAudioIndicator, setShowAudioIndicator] = useState(false);
+  const hoverTimeoutRef = useRef(null);
 
-  // All hooks must be called before any conditions or early returns
-  
-  // Check cache status
+  const songId = song?.key || song?.id || song?.track_id;
+
+  // Update indicators
   useEffect(() => {
-    const cached = isPreviewCached(song);
-    setShowCacheIndicator(cached);
-  }, [song, isPreviewCached]);
+    setShowCacheIndicator(isPreviewCached(song));
+    if (songId) {
+      setShowAudioIndicator(isAudioReady(songId));
+    }
+  }, [song, songId, isPreviewCached, isAudioReady]);
 
-  // Clean up loading timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
       }
     };
   }, []);
 
-  // Monitor when this song becomes active and clear loading state
-  useEffect(() => {
-    if (activeSong?.key === song?.key && isPlaying && isLoading) {
-      // Add a small delay before hiding spinner to ensure smooth transition
-      loadingTimeoutRef.current = setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
-    }
-  }, [activeSong, song, isPlaying, isLoading]);
-  
-  // Prefetch on hover with delay to ensure intent
+  // Hover handler with preloading
   const handleMouseEnter = useCallback(() => {
-    // Only prefetch on hover if not cached and user shows intent
-    if (!isPreviewCached(song) && !hasNoPreview(song)) {
-      // Add delay to prevent accidental hover prefetching
-      const timeoutId = setTimeout(() => {
-        prefetchPreviewUrl(song, { priority: 'high' });
-      }, 500);
-      
-      // Store timeout ID for cleanup
-      cardRef.current.hoverTimeout = timeoutId;
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
     }
-  }, [song, isPreviewCached, hasNoPreview, prefetchPreviewUrl]);
+
+    hoverTimeoutRef.current = setTimeout(async () => {
+      // First ensure we have the preview URL
+      if (!song.preview_url && !isPreviewCached(song) && !hasNoPreview(song)) {
+        prefetchPreviewUrl(song, { priority: "high" });
+      }
+
+      // If we have a preview URL and audio isn't ready, preload it
+      if (songId && !isAudioReady(songId)) {
+        let previewUrl = song.preview_url || song.url;
+
+        // If no preview URL but it's cached, get it
+        if (!previewUrl && isPreviewCached(song)) {
+          const songWithPreview = await getPreviewUrl(song);
+          previewUrl = songWithPreview.preview_url;
+        }
+
+        if (previewUrl) {
+          await preloadAudio(songId, previewUrl);
+          setShowAudioIndicator(true);
+        }
+      }
+    }, 200); // 200ms hover intent
+  }, [
+    song,
+    songId,
+    isPreviewCached,
+    hasNoPreview,
+    prefetchPreviewUrl,
+    preloadAudio,
+    isAudioReady,
+    getPreviewUrl,
+  ]);
 
   const handleMouseLeave = useCallback(() => {
-    // Cancel prefetch if user leaves quickly
-    if (cardRef.current?.hoverTimeout) {
-      clearTimeout(cardRef.current.hoverTimeout);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
   }, []);
 
@@ -69,41 +90,26 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   }, [dispatch]);
 
   const handlePlayClick = useCallback(async () => {
-    console.log('handlePlayClick called for song:', song.title);
-    
-    // Clear any existing loading timeout
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-    }
-    
-    // Show loading state if not cached
-    if (!isPreviewCached(song)) {
+    // Don't show loading if audio is ready
+    if (!songId || !isAudioReady(songId)) {
       setIsLoading(true);
     }
-    
+
     try {
-      // Always try to get preview URL (from cache or fetch)
+      // Get preview URL (from cache or fetch)
       const songWithPreview = await getPreviewUrl(song);
-      
+
       if (songWithPreview.preview_url) {
-        console.log('Playing song with preview URL:', songWithPreview);
         dispatch(setActiveSong({ song: songWithPreview, data, i }));
         dispatch(playPause(true));
-        
-        // If cached, hide loading immediately
-        if (isPreviewCached(song)) {
-          setIsLoading(false);
-        }
-        // Otherwise, loading state will be cleared when song starts playing (see useEffect above)
       } else {
-        console.log('No preview available for:', song.title);
-        setIsLoading(false); // Hide loading if no preview available
       }
     } catch (error) {
-      console.error('Error playing song:', error);
+      console.error("Error playing song:", error);
+    } finally {
       setIsLoading(false);
     }
-  }, [song, data, i, dispatch, getPreviewUrl, isPreviewCached]);
+  }, [song, songId, data, i, dispatch, getPreviewUrl, isAudioReady]);
 
   const getCoverArt = () => {
     if (song.images?.coverart) return song.images.coverart;
@@ -129,22 +135,31 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const artistId = getArtistId();
   const coverArt = getCoverArt();
   const songTitle = song.title || song.attributes?.name || "Unknown Title";
-  const artistName = song.subtitle || song.attributes?.artistName || "Unknown Artist";
+  const artistName =
+    song.subtitle || song.attributes?.artistName || "Unknown Artist";
 
   return (
-    <div 
+    <div
       ref={cardRef}
       className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover relative"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Cache indicator */}
-      {showCacheIndicator && (
-        <div className="absolute top-2 right-2 z-10">
-          <CacheIndicator isCached={true} size="md" />
-        </div>
-      )}
-      
+      {/* Indicator row */}
+      <div className="absolute top-2 right-2 z-10 flex gap-2">
+        {showCacheIndicator && <CacheIndicator isCached={true} size="md" />}
+        {showAudioIndicator && (
+          <div className="relative">
+            <div
+              className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"
+              title="Audio ready - instant playback"
+            >
+              <div className="absolute inset-0 bg-blue-400 rounded-full animate-pulse opacity-50" />
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="relative w-full aspect-square group">
         <div
           className={`absolute inset-0 justify-center items-center bg-black bg-opacity-50 group-hover:flex ${
@@ -178,17 +193,13 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       <div className="mt-4 flex flex-col">
         <Tooltip text={songTitle}>
           <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
-            <Link to={`/songs/${song?.key || song?.id}`}>
-              {songTitle}
-            </Link>
+            <Link to={`/songs/${song?.key || song?.id}`}>{songTitle}</Link>
           </p>
         </Tooltip>
         <Tooltip text={artistName}>
           <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
             {artistId ? (
-              <Link to={`/artists/${artistId}`}>
-                {artistName}
-              </Link>
+              <Link to={`/artists/${artistId}`}>{artistName}</Link>
             ) : (
               artistName
             )}

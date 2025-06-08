@@ -14,7 +14,13 @@ import { IoClose } from "react-icons/io5";
 const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const { getPreviewUrl, prefetchMultiple, isPreviewCached, hasNoPreview, prefetchPreviewUrl } = usePreviewUrl();
+  const {
+    getPreviewUrl,
+    prefetchMultiple,
+    isPreviewCached,
+    hasNoPreview,
+    prefetchPreviewUrl,
+  } = usePreviewUrl();
   const [isAnimating, setIsAnimating] = useState(false);
   const [mosaicImages, setMosaicImages] = useState(initialMosaicImages || []);
 
@@ -49,7 +55,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         tracks.slice(0, 3).forEach((track, index) => {
           setTimeout(() => {
             if (!isPreviewCached(track)) {
-              prefetchPreviewUrl(track, { priority: 'low' });
+              prefetchPreviewUrl(track, { priority: "low" });
             }
           }, index * 3000); // 3 seconds between each
         });
@@ -71,12 +77,12 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     if (isPlaying) {
       dispatch(playPause(false));
     }
-    
+
     // Always get preview URL (from cache or fetch)
     const songWithPreview = await getPreviewUrl(song);
-    
+
     if (songWithPreview.preview_url) {
-      console.log('Playing song with preview URL:', songWithPreview);
+      console.log("Playing song with preview URL:", songWithPreview);
       dispatch(
         setActiveSong({
           song: songWithPreview,
@@ -197,7 +203,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     onMouseEnter={() => {
                       // Prefetch on hover if not already cached
                       if (!isPreviewCached(track)) {
-                        prefetchPreviewUrl(track, { priority: 'high' });
+                        prefetchPreviewUrl(track, { priority: "high" });
                       }
                     }}
                   >
