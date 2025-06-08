@@ -15,6 +15,7 @@ import PlaylistCard from './PlaylistCard';
 import PlaylistModal from './PlaylistModal';
 import FloatingMiniPlayer from './FloatingMiniPlayer';
 import Tooltip from './Tooltip';
+import CacheSettings from './CacheSettings';
 
 export { 
   LeftSidebar, 
@@ -33,5 +34,6 @@ export {
   PlaylistCard,
   PlaylistModal,
   FloatingMiniPlayer,
-  Tooltip
+  Tooltip,
+  CacheSettings
 };
