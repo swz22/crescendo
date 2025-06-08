@@ -106,9 +106,9 @@ app.get("/health", (req, res) => {
 
 // Rate limiting - track last request time
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 3000; // 3 seconds between requests
+const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests (reduced from 3 seconds)
 
-// Preview endpoint with enhanced logging
+// Preview endpoint 
 app.get("/api/preview/:trackId", async (req, res) => {
   try {
     const trackId = req.params.trackId;
@@ -117,7 +117,7 @@ app.get("/api/preview/:trackId", async (req, res) => {
       return res.json({ preview_url: previewCache.get(trackId) });
     }
 
-    // Rate limiting - wait if necessary
+    // Rate limiting - calculate actual wait time needed
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
     if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
@@ -144,9 +144,9 @@ app.get("/api/preview/:trackId", async (req, res) => {
       // Search using track name and artist with timeout
       const searchQuery = `${trackName} ${artistName}`;
 
-      // Add timeout promise
+      // Add timeout promise - reduced to 10 seconds
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Search timeout")), 15000)
+        setTimeout(() => reject(new Error("Search timeout")), 10000)
       );
 
       const searchPromise = searchAndGetLinks(searchQuery);
