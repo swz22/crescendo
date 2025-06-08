@@ -85,7 +85,7 @@ const Discover = () => {
         </h2>
         
         {/* Genre Pills */}
-        <div className="flex flex-wrap gap-2 mb-6 max-h-32 overflow-y-auto genre-pills-container p-2">
+        <div className="flex flex-wrap gap-2 mb-6 max-h-30 overflow-y-auto genre-pills-container p-2">
           {[...genres]
             .sort((a, b) => a.title.localeCompare(b.title))
             .map((genre) => (

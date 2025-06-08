@@ -19,6 +19,7 @@ import CacheSettings from './CacheSettings';
 import MusicLoadingSpinner from './MusicLoadingSpinner';
 import TrackLoadingState from './TrackLoadingState';
 import CacheIndicator from './CacheIndicator';
+import SkeletonCard from './SkeletonCard';
 
 export { 
   LeftSidebar, 
@@ -41,5 +42,6 @@ export {
   CacheSettings,
   MusicLoadingSpinner,
   TrackLoadingState,
-  CacheIndicator
+  CacheIndicator,
+  SkeletonCard
 };

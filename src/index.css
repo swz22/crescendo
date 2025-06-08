@@ -35,6 +35,100 @@ button, a, .clickable {
   @apply transition-all duration-200 ease-out;
 }
 
+/* Now Playing Pulse */
+@keyframes nowPlayingPulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.now-playing-pulse {
+  animation: nowPlayingPulse 2s ease-in-out infinite;
+}
+
+/* Sound bars animation */
+@keyframes soundBar {
+  0%, 100% {
+    height: 20%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+
+.sound-bar {
+  animation: soundBar 0.8s ease-in-out infinite;
+}
+
+.sound-bar:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.sound-bar:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Stagger animations for cards */
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-fade-in {
+  animation: staggerFadeIn 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.stagger-fade-in:nth-child(1) { animation-delay: 0.05s; }
+.stagger-fade-in:nth-child(2) { animation-delay: 0.1s; }
+.stagger-fade-in:nth-child(3) { animation-delay: 0.15s; }
+.stagger-fade-in:nth-child(4) { animation-delay: 0.2s; }
+.stagger-fade-in:nth-child(5) { animation-delay: 0.25s; }
+.stagger-fade-in:nth-child(6) { animation-delay: 0.3s; }
+.stagger-fade-in:nth-child(7) { animation-delay: 0.35s; }
+.stagger-fade-in:nth-child(8) { animation-delay: 0.4s; }
+
+/* Genre pill hover effects */
+.genre-pill {
+  @apply transition-all duration-300 ease-out;
+}
+
+.genre-pill:hover {
+  @apply transform scale-110 shadow-lg;
+}
+
+/* Skeleton loader animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
 /* Tooltip animation */
 @keyframes fadeIn {
   from {
@@ -144,18 +238,20 @@ button, a, .clickable {
   animation: float-note-3 3s ease-out infinite 1s;
 }
 
-/* Cache indicator animations */
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+/* Navigation link animations */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
   }
-  50% {
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-out infinite;
+.animate-slidein {
+  animation: slideInLeft 0.3s ease-out;
 }
 
 .active {
@@ -222,11 +318,12 @@ button, a, .clickable {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  padding: 8px;
 }
 
 .genre-pills-container::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 .genre-pills-container::-webkit-scrollbar-thumb {
