@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
-import { playPause } from "../../redux/features/playerSlice";
+import { playPause, toggleShuffle } from "../../redux/features/playerSlice";
 import { useSongNavigation } from "../../hooks/useSongNavigation";
 import { useAudioPreload } from "../../hooks/useAudioPreload";
 import { usePreviewUrl } from "../../hooks/usePreviewUrl";
@@ -13,14 +13,19 @@ import VolumeBar from "./VolumeBar";
 import TrackLoadingState from "../TrackLoadingState";
 
 const MusicPlayer = () => {
-  const { activeSong, currentSongs, currentIndex, isActive, isPlaying } =
-    useSelector((state) => state.player);
+  const {
+    activeSong,
+    currentSongs,
+    currentIndex,
+    isActive,
+    isPlaying,
+    shuffle,
+  } = useSelector((state) => state.player);
   const [duration, setDuration] = useState(0);
   const [seekTime, setSeekTime] = useState(0);
   const [appTime, setAppTime] = useState(0);
   const [volume, setVolume] = useState(0.3);
   const [repeat, setRepeat] = useState(false);
-  const [shuffle, setShuffle] = useState(false);
   const [isChangingTrack, setIsChangingTrack] = useState(false);
   const [isAudioReady, setIsAudioReady] = useState(false);
   const dispatch = useDispatch();
@@ -235,7 +240,7 @@ const MusicPlayer = () => {
             repeat={repeat}
             setRepeat={setRepeat}
             shuffle={shuffle}
-            setShuffle={setShuffle}
+            setShuffle={() => dispatch(toggleShuffle())}
             currentSongs={currentSongs}
             handlePlayPause={handlePlayPause}
             handlePrevSong={handlePrevSong}

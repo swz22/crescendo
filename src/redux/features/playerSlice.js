@@ -10,6 +10,9 @@ const initialState = {
   recentlyPlayed: [],
   isModalOpen: false,
   playlistContext: null,
+  shuffle: false,
+  shuffleIndices: [],
+  playedIndices: [],
 };
 
 const playerSlice = createSlice({
@@ -46,12 +49,28 @@ const playerSlice = createSlice({
       if (action.payload.playlistId) {
         state.playlistContext = action.payload.playlistId;
       }
+
+      // If shuffle is active and we have new songs, create new shuffle indices
+      if (state.shuffle && state.currentSongs.length > 0) {
+        const indices = Array.from(
+          { length: state.currentSongs.length },
+          (_, i) => i
+        ).filter((i) => i !== action.payload.i);
+
+        // Fisher-Yates shuffle
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+
+        state.shuffleIndices = indices;
+        state.playedIndices = [action.payload.i];
+      }
     },
 
     changeTrackAndPlay: (state, action) => {
       const { song, index } = action.payload;
 
-      // CRITICAL: Validate song data
       if (!song) {
         console.error("No song data provided to changeTrackAndPlay");
         return;
@@ -66,7 +85,6 @@ const playerSlice = createSlice({
         return;
       }
 
-      // Log what we're receiving
       if (!song.title || !song.images) {
         console.warn("Song data incomplete:", {
           hasTitle: !!song.title,
@@ -77,17 +95,14 @@ const playerSlice = createSlice({
         });
       }
 
-      // Get the actual song from currentSongs if the passed song is incomplete
       let fullSong = song;
       if (!song.title && state.currentSongs[index]) {
         let songFromArray = state.currentSongs[index];
 
-        // Handle nested structure
         if (songFromArray?.track) {
           songFromArray = songFromArray.track;
         }
 
-        // Merge the preview URL with the full song data
         fullSong = {
           ...songFromArray,
           preview_url: song.preview_url || song.url,
@@ -95,10 +110,8 @@ const playerSlice = createSlice({
         };
       }
 
-      // Update activeSong with the complete song data
       state.activeSong = fullSong;
 
-      // Add to recently played if we have valid data
       const songKey = fullSong.key || fullSong.id || fullSong.track_id;
       if (songKey && fullSong.title) {
         state.recentlyPlayed = [
@@ -113,6 +126,13 @@ const playerSlice = createSlice({
       state.currentIndex = index;
       state.isActive = true;
       state.isPlaying = true;
+
+      // Update shuffle tracking
+      if (state.shuffle && state.playedIndices) {
+        if (!state.playedIndices.includes(index)) {
+          state.playedIndices.push(index);
+        }
+      }
     },
 
     nextSong: (state, action) => {
@@ -171,6 +191,51 @@ const playerSlice = createSlice({
       state.isActive = true;
     },
 
+    toggleShuffle: (state) => {
+      state.shuffle = !state.shuffle;
+
+      if (state.shuffle && state.currentSongs.length > 0) {
+        // Create shuffled indices excluding current song
+        const indices = Array.from(
+          { length: state.currentSongs.length },
+          (_, i) => i
+        ).filter((i) => i !== state.currentIndex);
+
+        // Fisher-Yates shuffle
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+
+        state.shuffleIndices = indices;
+        state.playedIndices = [state.currentIndex];
+      } else {
+        state.shuffleIndices = [];
+        state.playedIndices = [];
+      }
+    },
+
+    setShuffleWithStart: (state, action) => {
+      state.shuffle = true;
+
+      if (state.currentSongs.length > 0) {
+        // Create shuffled indices for all songs
+        const indices = Array.from(
+          { length: state.currentSongs.length },
+          (_, i) => i
+        );
+
+        // Fisher-Yates shuffle
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+
+        state.shuffleIndices = indices;
+        state.playedIndices = [];
+      }
+    },
+
     playPause: (state, action) => {
       state.isPlaying = action.payload;
     },
@@ -194,6 +259,8 @@ export const {
   changeTrackAndPlay,
   nextSong,
   prevSong,
+  toggleShuffle,
+  setShuffleWithStart,
   playPause,
   selectGenreListId,
   setModalOpen,

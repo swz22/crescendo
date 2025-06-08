@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { playPause } from "../redux/features/playerSlice";
+import { playPause, toggleShuffle } from "../redux/features/playerSlice";
 import { useSongNavigation } from "../hooks/useSongNavigation";
 import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
-import { BsFillPauseFill, BsFillPlayFill } from "react-icons/bs";
+import { BsFillPauseFill, BsFillPlayFill, BsShuffle } from "react-icons/bs";
 import { HiX } from "react-icons/hi";
 
 const FloatingMiniPlayer = ({ isVisible }) => {
-  const { activeSong, currentSongs, currentIndex, isActive, isPlaying, isModalOpen } =
-    useSelector((state) => state.player);
+  const {
+    activeSong,
+    currentSongs,
+    currentIndex,
+    isActive,
+    isPlaying,
+    isModalOpen,
+    shuffle,
+  } = useSelector((state) => state.player);
   const dispatch = useDispatch();
   const { handleNextSong, handlePrevSong } = useSongNavigation();
   const [isMinimized, setIsMinimized] = useState(false);
@@ -58,7 +65,9 @@ const FloatingMiniPlayer = ({ isVisible }) => {
     return (
       <div
         className={`fixed bottom-8 left-8 z-[60] transition-all duration-300 ${
-          isVisible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
+          isVisible
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-full opacity-0"
         }`}
       >
         <button
@@ -168,6 +177,16 @@ const FloatingMiniPlayer = ({ isVisible }) => {
               <MdSkipNext size={20} className="text-white" />
             </button>
           </div>
+
+          {/* Add shuffle button */}
+          <button
+            onClick={() => dispatch(toggleShuffle())}
+            className={`p-2 rounded-full hover:bg-white/10 transition-colors ${
+              shuffle ? "text-[#14b8a6]" : "text-white"
+            }`}
+          >
+            <BsShuffle size={16} />
+          </button>
 
           {/* Minimize button */}
           <button

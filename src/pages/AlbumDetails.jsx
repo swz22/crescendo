@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { playPause, setActiveSong } from "../redux/features/playerSlice";
+import {
+  playPause,
+  setActiveSong,
+  setShuffleWithStart,
+} from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import {
   useGetAlbumDetailsQuery,
@@ -121,10 +125,15 @@ const AlbumDetails = () => {
     }
   };
 
-  const handleShuffle = () => {
+  const handleShuffle = async () => {
     if (tracks && tracks.length > 0) {
       const randomIndex = Math.floor(Math.random() * tracks.length);
-      handlePlayClick(tracks[randomIndex], randomIndex);
+
+      // Set shuffle mode and start playing
+      dispatch(setShuffleWithStart({ startIndex: randomIndex }));
+
+      // Play the random track
+      await handlePlayClick(tracks[randomIndex], randomIndex);
     }
   };
 
