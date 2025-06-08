@@ -19,13 +19,7 @@ const CommunityPlaylists = () => {
 
   // Auto-load "Owner of a Lonely Heart Radio" as featured playlist
   useEffect(() => {
-    if (data?.playlists?.length > 0 && !currentPlaylist && !featuredPlaylist) {
-      // Debug: log all playlist names to see exact spelling
-      console.log(
-        "Available playlists:",
-        data.playlists.map((p) => p.name)
-      );
-
+    if (data?.playlists?.length > 0) {
       const lonelyHeartPlaylist = data.playlists.find(
         (p) =>
           p.name.toLowerCase().includes("owner of a lonely heart") ||
@@ -33,12 +27,13 @@ const CommunityPlaylists = () => {
       );
 
       const featured = lonelyHeartPlaylist || data.playlists[0];
-      console.log("Featured playlist selected:", featured?.name);
-
       setFeaturedPlaylist(featured);
-      dispatch(setCurrentPlaylist(featured));
+
+      if (!currentPlaylist) {
+        dispatch(setCurrentPlaylist(featured));
+      }
     }
-  }, [data, currentPlaylist, featuredPlaylist, dispatch]);
+  }, [data, currentPlaylist, dispatch]);
 
   if (isFetching) return <Loader title="Loading community playlists..." />;
   if (error) return <Error />;
