@@ -1,5 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 
+// Get API URL from environment variable
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 // LocalStorage key
 const STORAGE_KEY = "crescendo_preview_urls";
 const MAX_STORAGE_ITEMS = 1000; // Limit storage size
@@ -114,9 +117,7 @@ const fetchPreviewUrl = async (trackId) => {
   // Create fetch promise
   const fetchPromise = (async () => {
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/preview/${trackId}`
-      );
+      const response = await fetch(`${API_URL}/api/preview/${trackId}`);
 
       // Check if response is ok
       if (!response.ok) {

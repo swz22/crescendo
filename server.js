@@ -16,7 +16,31 @@ const previewCache = new Map();
 const apiCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-app.use(cors());
+// Configure CORS for production
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://crescendo-music.netlify.app",
+      process.env.FRONTEND_URL,
+    ].filter(Boolean);
+
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log("Origin not allowed:", origin);
+      callback(null, true); // Be permissive for now
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 let accessToken = null;
@@ -74,6 +98,19 @@ const cacheMiddleware = (req, res, next) => {
   next();
 };
 
+// Root endpoint
+app.get("/", (req, res) => {
+  res.json({
+    message: "Crescendo Music API",
+    status: "Running",
+    endpoints: {
+      health: "/health",
+      spotify: "/api/spotify/*",
+      preview: "/api/preview/:trackId",
+    },
+  });
+});
+
 // Spotify API proxy with caching
 app.use("/api/spotify", cacheMiddleware, async (req, res) => {
   try {
@@ -106,9 +143,9 @@ app.get("/health", (req, res) => {
 
 // Rate limiting - track last request time
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests (reduced from 3 seconds)
+const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests
 
-// Preview endpoint 
+// Preview endpoint
 app.get("/api/preview/:trackId", async (req, res) => {
   try {
     const trackId = req.params.trackId;
@@ -213,4 +250,5 @@ app.get("/api/cache/stats", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log("Environment:", process.env.NODE_ENV || "development");
 });

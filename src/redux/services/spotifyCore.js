@@ -1,5 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+// Get API URL from environment variable
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const adaptTrackData = (track) => {
   return {
     key: track.id,
@@ -44,7 +47,7 @@ const adaptArtistData = (artist) => ({
 export const spotifyCoreApi = createApi({
   reducerPath: "spotifyCoreApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:3001/api/spotify",
+    baseUrl: `${API_URL}/api/spotify`,
   }),
   keepUnusedDataFor: 300,
   refetchOnMountOrArgChange: false,
@@ -102,7 +105,7 @@ export const spotifyCoreApi = createApi({
           adaptTrackData({
             ...track,
             album: {
-              id: arg.albumId, // Use arg.albumId instead of just albumId
+              id: arg.albumId,
               images: [], // Album images will come from album details
             },
           })
