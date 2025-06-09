@@ -81,8 +81,8 @@ const App = () => {
           </div>
         </div>
 
-        <div className="px-6 h-[calc(100vh-68px)] overflow-y-scroll custom-scrollbar flex xl:flex-row flex-col-reverse">
-          <div className="flex-1 h-fit pb-40">
+        <div className="px-6 pr-0 h-[calc(100vh-68px)] overflow-y-scroll custom-scrollbar flex xl:flex-row flex-col-reverse gap-6">
+          <div className="flex-1 h-fit pb-40 pr-6">
             <Routes>
               <Route path="/" element={<Discover />} />
               <Route path="/top-artists" element={<TopArtists />} />
