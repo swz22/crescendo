@@ -1,5 +1,27 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+// Load playlists from localStorage
+const loadPlaylistsFromStorage = () => {
+  try {
+    const stored = localStorage.getItem("crescendo_playlists");
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error("Failed to load playlists:", error);
+  }
+  return [];
+};
+
+// Save playlists to localStorage
+const savePlaylistsToStorage = (playlists) => {
+  try {
+    localStorage.setItem("crescendo_playlists", JSON.stringify(playlists));
+  } catch (error) {
+    console.error("Failed to save playlists:", error);
+  }
+};
+
 const initialState = {
   currentSongs: [],
   currentIndex: 0,
@@ -15,12 +37,17 @@ const initialState = {
   shuffleIndices: [],
   playedIndices: [],
   repeat: false,
+  // New playlist management state
+  playlists: loadPlaylistsFromStorage(),
+  activePlaylistId: null,
+  activePlaylistType: "queue", // "queue", "playlist", "recent"
 };
 
 const playerSlice = createSlice({
   name: "player",
   initialState,
   reducers: {
+    // Existing reducers remain the same
     setActiveSong: (state, action) => {
       state.activeSong = action.payload.song;
 
@@ -270,6 +297,112 @@ const playerSlice = createSlice({
     clearCurrentPlaylist: (state) => {
       state.currentPlaylist = null;
     },
+
+    // New playlist management actions
+    createPlaylist: (state, action) => {
+      const newPlaylist = {
+        id: `playlist_${Date.now()}`,
+        name: action.payload.name || "New Playlist",
+        tracks: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        imageUrl: null,
+      };
+      state.playlists.push(newPlaylist);
+      savePlaylistsToStorage(state.playlists);
+    },
+
+    deletePlaylist: (state, action) => {
+      state.playlists = state.playlists.filter(
+        (playlist) => playlist.id !== action.payload
+      );
+      if (state.activePlaylistId === action.payload) {
+        state.activePlaylistId = null;
+        state.activePlaylistType = "queue";
+      }
+      savePlaylistsToStorage(state.playlists);
+    },
+
+    renamePlaylist: (state, action) => {
+      const playlist = state.playlists.find(
+        (p) => p.id === action.payload.playlistId
+      );
+      if (playlist) {
+        playlist.name = action.payload.name;
+        playlist.updatedAt = new Date().toISOString();
+        savePlaylistsToStorage(state.playlists);
+      }
+    },
+
+    addToPlaylist: (state, action) => {
+      const { playlistId, track } = action.payload;
+      const playlist = state.playlists.find((p) => p.id === playlistId);
+      if (playlist) {
+        // Check if track already exists
+        const trackExists = playlist.tracks.some(
+          (t) => (t.key || t.id) === (track.key || track.id)
+        );
+        if (!trackExists) {
+          playlist.tracks.push(track);
+          playlist.updatedAt = new Date().toISOString();
+          savePlaylistsToStorage(state.playlists);
+        }
+      }
+    },
+
+    removeFromPlaylist: (state, action) => {
+      const { playlistId, trackId } = action.payload;
+      const playlist = state.playlists.find((p) => p.id === playlistId);
+      if (playlist) {
+        playlist.tracks = playlist.tracks.filter(
+          (t) => (t.key || t.id) !== trackId
+        );
+        playlist.updatedAt = new Date().toISOString();
+        savePlaylistsToStorage(state.playlists);
+      }
+    },
+
+    switchPlaylist: (state, action) => {
+      const { playlistId, playlistType } = action.payload;
+      state.activePlaylistId = playlistId;
+      state.activePlaylistType = playlistType;
+
+      // Load appropriate tracks based on type
+      if (playlistType === "playlist") {
+        const playlist = state.playlists.find((p) => p.id === playlistId);
+        if (playlist) {
+          state.currentSongs = playlist.tracks;
+          state.currentPlaylist = playlist;
+          state.currentIndex = 0;
+        }
+      } else if (playlistType === "recent") {
+        state.currentSongs = state.recentlyPlayed;
+        state.currentPlaylist = {
+          id: "recent",
+          name: "Recently Played",
+          tracks: state.recentlyPlayed,
+        };
+        state.currentIndex = 0;
+      } else if (playlistType === "queue") {
+        // Keep current queue
+        state.currentPlaylist = {
+          id: "queue",
+          name: "Your Queue",
+          tracks: state.currentSongs,
+        };
+      }
+    },
+
+    reorderPlaylistTracks: (state, action) => {
+      const { playlistId, fromIndex, toIndex } = action.payload;
+      const playlist = state.playlists.find((p) => p.id === playlistId);
+      if (playlist) {
+        const [movedTrack] = playlist.tracks.splice(fromIndex, 1);
+        playlist.tracks.splice(toIndex, 0, movedTrack);
+        playlist.updatedAt = new Date().toISOString();
+        savePlaylistsToStorage(state.playlists);
+      }
+    },
   },
 });
 
@@ -287,6 +420,14 @@ export const {
   clearPlaylistContext,
   setCurrentPlaylist,
   clearCurrentPlaylist,
+  // New exports
+  createPlaylist,
+  deletePlaylist,
+  renamePlaylist,
+  addToPlaylist,
+  removeFromPlaylist,
+  switchPlaylist,
+  reorderPlaylistTracks,
 } = playerSlice.actions;
 
 export default playerSlice.reducer;
