@@ -9,6 +9,7 @@ import {
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import PlaylistDropdown from "./PlaylistDropdown";
+import PlaylistManager from "./PlaylistManager";
 import {
   BsFillPlayFill,
   BsFillPauseFill,
@@ -474,6 +475,12 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
           )}
         </div>
       </div>
+
+      {/* Playlist Management Panel */}
+      <PlaylistManager
+        isOpen={showManagePanel}
+        onClose={() => setShowManagePanel(false)}
+      />
     </div>
   );
 };
