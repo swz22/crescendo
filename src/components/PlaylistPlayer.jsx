@@ -58,10 +58,29 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
   // Auto-scroll to active track
   useEffect(() => {
     if (activeTrackRef.current && scrollContainerRef.current) {
-      activeTrackRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+      const container = scrollContainerRef.current;
+      const activeElement = activeTrackRef.current;
+
+      // Get positions
+      const containerRect = container.getBoundingClientRect();
+      const activeRect = activeElement.getBoundingClientRect();
+
+      // Calculate if element is out of view
+      const isAbove = activeRect.top < containerRect.top;
+      const isBelow = activeRect.bottom > containerRect.bottom;
+
+      if (isAbove || isBelow) {
+        // Calculate scroll position to center the active element
+        const scrollTop =
+          activeElement.offsetTop -
+          container.offsetTop -
+          container.clientHeight / 2 +
+          activeElement.clientHeight / 2;
+        container.scrollTo({
+          top: scrollTop,
+          behavior: "smooth",
+        });
+      }
     }
   }, [currentIndex]);
 
@@ -356,7 +375,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
       </div>
 
       {/* Queue */}
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <div className="px-6 py-3 flex items-center justify-between border-b border-white/5">
           <h4 className="text-white font-semibold flex items-center gap-2">
             <HiOutlineQueueList size={20} />

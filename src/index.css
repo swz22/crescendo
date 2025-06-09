@@ -71,7 +71,6 @@ a,
 
 /* Now Playing Pulse */
 @keyframes nowPlayingPulse {
-
   0%,
   100% {
     opacity: 0.7;
@@ -86,31 +85,6 @@ a,
 
 .now-playing-pulse {
   animation: nowPlayingPulse 2s ease-in-out infinite;
-}
-
-/* Sound bars animation */
-@keyframes soundBar {
-
-  0%,
-  100% {
-    height: 20%;
-  }
-
-  50% {
-    height: 100%;
-  }
-}
-
-.sound-bar {
-  animation: soundBar 0.8s ease-in-out infinite;
-}
-
-.sound-bar:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.sound-bar:nth-child(3) {
-  animation-delay: 0.4s;
 }
 
 /* Stagger animations for cards */
@@ -185,10 +159,12 @@ a,
 }
 
 .skeleton {
-  background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0.05) 25%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.05) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -241,7 +217,6 @@ a,
 
 /* Musical note floating animations */
 @keyframes float-note-1 {
-
   0%,
   100% {
     transform: translate(-50%, -50%) translateY(0) rotate(0deg);
@@ -263,7 +238,6 @@ a,
 }
 
 @keyframes float-note-2 {
-
   0%,
   100% {
     transform: translate(-50%, -50%) translateY(0) rotate(0deg);
@@ -279,13 +253,13 @@ a,
   }
 
   100% {
-    transform: translate(-50%, -50%) translateY(-25px) translateX(10px) rotate(-20deg);
+    transform: translate(-50%, -50%) translateY(-25px) translateX(10px)
+      rotate(-20deg);
     opacity: 0;
   }
 }
 
 @keyframes float-note-3 {
-
   0%,
   100% {
     transform: translate(-50%, -50%) translateY(0) rotate(0deg);
@@ -301,7 +275,8 @@ a,
   }
 
   100% {
-    transform: translate(-50%, -50%) translateY(-18px) translateX(-8px) rotate(25deg);
+    transform: translate(-50%, -50%) translateY(-18px) translateX(-8px)
+      rotate(25deg);
     opacity: 0;
   }
 }
@@ -461,7 +436,6 @@ a,
 
 /* Enhanced pulse animation for cache indicator */
 @keyframes pulse-glow {
-
   0%,
   100% {
     opacity: 0.8;

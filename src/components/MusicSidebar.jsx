@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { store } from "../redux/store";
@@ -188,13 +188,6 @@ const MusicSidebar = () => {
     prefetchMultiple,
     isPreviewCached,
   } = usePreviewUrl();
-  const divRef = useRef(null);
-
-  useEffect(() => {
-    if (divRef.current) {
-      divRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, []);
 
   // Conservative prefetch - only first 3 tracks after delay
   useEffect(() => {
@@ -283,10 +276,7 @@ const MusicSidebar = () => {
   }
 
   return (
-    <div
-      ref={divRef}
-      className="xl:ml-6 ml-0 xl:mb-0 mb-6 flex-1 xl:max-w-[400px] max-w-full flex flex-col"
-    >
+    <div className="xl:ml-6 ml-0 xl:mb-0 mb-6 flex-1 xl:max-w-[400px] max-w-full flex flex-col">
       {/* Top Tracks Section */}
       <div className="w-full flex flex-col bg-gradient-to-br from-white/[0.02] to-transparent rounded-xl p-4 backdrop-blur-sm border border-white/5 hover:border-white/10 transition-all duration-300">
         <div className="flex flex-row justify-between items-center mb-4">
