@@ -1,20 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   playPause,
   setActiveSong,
   setModalOpen,
   setCurrentPlaylist,
+  toggleShuffle,
+  toggleRepeat,
 } from "../redux/features/playerSlice";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import PlayPause from "./PlayPause";
 import { Error, Loader } from "./";
-import { IoClose } from "react-icons/io5";
+import { IoClose, IoArrowBack } from "react-icons/io5";
+import {
+  BsMusicNoteBeamed,
+  BsClock,
+  BsArrowRepeat,
+  BsCalendar3,
+} from "react-icons/bs";
+import { IoMdTime } from "react-icons/io";
 
 const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
-  const { activeSong, isPlaying } = useSelector((state) => state.player);
+  const { activeSong, isPlaying, shuffle, repeat } = useSelector(
+    (state) => state.player
+  );
   const {
     getPreviewUrl,
     prefetchMultiple,
@@ -24,6 +35,8 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   } = usePreviewUrl();
   const [isAnimating, setIsAnimating] = useState(false);
   const [mosaicImages, setMosaicImages] = useState(initialMosaicImages || []);
+  const scrollContainerRef = useRef(null);
+  const activeTrackRef = useRef(null);
 
   const {
     data: tracks,
@@ -39,11 +52,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     setIsAnimating(true);
     dispatch(setModalOpen(true));
 
-    // Prevent body scroll when modal is open
-    document.body.style.overflow = "hidden";
-
     return () => {
-      document.body.style.overflow = "unset";
       dispatch(setModalOpen(false));
     };
   }, [dispatch]);
@@ -66,14 +75,42 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     }
   }, [tracks, prefetchPreviewUrl, isPreviewCached]);
 
+  // Auto-scroll to center the active track
+  useEffect(() => {
+    if (
+      activeTrackRef.current &&
+      scrollContainerRef.current &&
+      tracks &&
+      isAnimating
+    ) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        const container = scrollContainerRef.current;
+        const activeElement = activeTrackRef.current;
+
+        if (container && activeElement) {
+          const containerHeight = container.clientHeight;
+          const elementTop = activeElement.offsetTop;
+          const elementHeight = activeElement.clientHeight;
+
+          // Calculate scroll position to center the element
+          const scrollTo = elementTop - containerHeight / 2 + elementHeight / 2;
+
+          container.scrollTo({
+            top: scrollTo,
+            behavior: "smooth",
+          });
+        }
+      }, 300);
+    }
+  }, [activeSong, tracks, isAnimating]);
+
   const handleClose = () => {
     setIsAnimating(false);
-    setTimeout(onClose, 200);
+    setTimeout(onClose, 300);
   };
 
   const handlePlayClick = async (song, i) => {
-    console.log("handlePlayClick - song:", song, "index:", i);
-
     // Pause current playback while fetching
     if (isPlaying) {
       dispatch(playPause(false));
@@ -83,7 +120,6 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     const songWithPreview = await getPreviewUrl(song);
 
     if (songWithPreview.preview_url) {
-      console.log("Playing song with preview URL:", songWithPreview);
       dispatch(
         setActiveSong({
           song: songWithPreview,
@@ -94,8 +130,6 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         })
       );
       dispatch(playPause(true));
-    } else {
-      console.error("No preview URL available for this track");
     }
   };
 
@@ -109,42 +143,80 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     }
   };
 
+  const formatDuration = (ms) => {
+    if (!ms) return "--:--";
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
   return (
     <>
+      {/* Backdrop - only covers main content area */}
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ${
-          isAnimating ? "bg-black/60 backdrop-blur-sm" : "bg-transparent"
+        className={`fixed top-0 left-0 bottom-0 z-40 transition-all duration-300 ${
+          isAnimating ? "bg-black/40" : "bg-transparent pointer-events-none"
         }`}
         onClick={handleBackdropClick}
+        style={{
+          right: "420px", // Add more margin to ensure no overlap
+          backdropFilter: isAnimating ? "blur(8px)" : "blur(0px)",
+          WebkitBackdropFilter: isAnimating ? "blur(8px)" : "blur(0px)",
+        }}
       >
+        {/* Scale down effect for background content */}
         <div
-          className={`bg-gradient-to-br from-[#1e1b4b]/95 to-[#0f172a]/95 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl transition-all duration-200 transform border border-white/10 ${
-            isAnimating ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          className={`absolute inset-0 transition-transform duration-300 ${
+            isAnimating ? "scale-95 opacity-50" : "scale-100 opacity-100"
           }`}
-        >
+        />
+      </div>
+
+      {/* Slide-out panel */}
+      <div
+        className={`fixed top-0 left-0 bottom-0 w-[calc(100%-420px)] bg-gradient-to-br from-[#1e1b4b]/98 to-[#0f172a]/98 z-40 shadow-2xl transition-all duration-300 ease-out transform ${
+          isAnimating ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{
+          maxWidth: "calc(100% - 420px)", // Add buffer to prevent overlap
+          boxShadow: isAnimating ? "10px 0 40px rgba(0,0,0,0.5)" : "none",
+        }}
+      >
+        <div className="h-full flex flex-col">
           {/* Header */}
-          <div className="relative p-6 pb-4 bg-gradient-to-b from-white/5 to-transparent">
+          <div className="relative p-6 bg-gradient-to-b from-white/5 to-transparent border-b border-white/10">
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              className="absolute top-6 left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all hover:scale-110 group"
+            >
+              <IoArrowBack
+                size={20}
+                className="text-white group-hover:text-[#14b8a6] transition-colors"
+              />
+            </button>
+
+            <button
+              onClick={handleClose}
+              className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all hover:scale-110"
             >
               <IoClose size={24} className="text-white" />
             </button>
 
-            <div className="flex items-start gap-6">
-              {/* Mosaic Image or Custom Art */}
-              <div className="w-32 h-32 rounded-lg shadow-lg overflow-hidden flex-shrink-0">
+            <div className="flex items-start gap-6 mt-12">
+              {/* Playlist Image */}
+              <div className="w-40 h-40 rounded-xl shadow-2xl overflow-hidden flex-shrink-0 group relative">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
                 {playlist.name.toLowerCase().includes("lonely heart") ? (
-                  // Custom artwork for "Owner of a Lonely Heart Radio"
-                  <div className="w-full h-full relative group">
+                  // Custom artwork for featured playlist
+                  <div className="w-full h-full relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6] via-[#0891b2] to-[#0e7490] animate-gradient">
                       <div className="absolute inset-0 bg-black/20"></div>
                     </div>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
-                      <div className="relative mb-2">
-                        <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                      <div className="relative mb-3">
+                        <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
                           <svg
-                            className="w-10 h-10 text-white"
+                            className="w-12 h-12 text-white"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -157,57 +229,31 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             />
                           </svg>
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-                          </svg>
-                        </div>
                       </div>
-                      <div className="text-center">
-                        <p className="text-white/80 text-[10px] font-medium">
-                          FEATURED
-                        </p>
-                        <p className="text-white font-bold text-xs">Playlist</p>
-                      </div>
+                      <p className="text-white/80 text-[10px] font-medium">
+                        FEATURED
+                      </p>
                     </div>
                   </div>
-                ) : mosaicImages.length === 4 ? (
-                  // Check if all images are the same (playlist cover fallback)
-                  mosaicImages.every((img) => img === mosaicImages[0]) &&
-                  mosaicImages[0] !== placeholderImage ? (
-                    // Show single playlist cover instead of 4 identical quadrants
-                    <img
-                      src={mosaicImages[0]}
-                      alt={playlist.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = placeholderImage;
-                      }}
-                    />
-                  ) : (
-                    // Show mosaic grid
-                    <div className="grid grid-cols-2 gap-0.5 w-full h-full">
-                      {mosaicImages.map((image, index) => (
-                        <img
-                          key={index}
-                          src={image}
-                          alt={`Album ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = placeholderImage;
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )
+                ) : mosaicImages.length === 4 &&
+                  !mosaicImages.every((img) => img === mosaicImages[0]) ? (
+                  // Mosaic grid
+                  <div className="grid grid-cols-2 gap-0.5 w-full h-full">
+                    {mosaicImages.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`Album ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = placeholderImage;
+                        }}
+                      />
+                    ))}
+                  </div>
                 ) : (
-                  // Fallback while loading
+                  // Single image
                   <img
                     src={playlist.images?.[0]?.url || placeholderImage}
                     alt={playlist.name}
@@ -218,72 +264,283 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     }}
                   />
                 )}
+                {/* Play button overlay */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                  <div className="w-14 h-14 bg-[#14b8a6] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                    <svg
+                      className="w-6 h-6 text-white translate-x-0.5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M5 4v12l10-6z" />
+                    </svg>
+                  </div>
+                </div>
               </div>
+
               <div className="flex-1 min-w-0 pt-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                <p className="text-[#14b8a6] text-sm font-medium mb-2 uppercase tracking-wider">
+                  Playlist
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
                   {playlist.name}
                 </h2>
-                <p className="text-gray-300 mb-1">
+                <p className="text-gray-300 mb-2">
                   by {playlist.owner?.display_name || "Spotify"}
                 </p>
-                <p className="text-gray-400 text-sm">
-                  {playlist.tracks?.total || 0} tracks
-                </p>
+                <div className="flex items-center gap-4 text-gray-400 text-sm">
+                  <span className="flex items-center gap-1">
+                    <BsMusicNoteBeamed />
+                    {playlist.tracks?.total || 0} tracks
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <BsClock />
+                    {tracks
+                      ? `${Math.floor(
+                          tracks.reduce(
+                            (acc, t) => acc + (t.duration_ms || 0),
+                            0
+                          ) / 60000
+                        )} min`
+                      : "-- min"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Track List */}
-          <div className="p-6 pt-2 overflow-y-auto max-h-[60vh] custom-scrollbar">
-            {isFetching && <Loader title="Loading tracks..." />}
-            {error && <Error />}
+          <div
+            className="flex-1 overflow-y-auto custom-scrollbar"
+            ref={scrollContainerRef}
+          >
+            {isFetching && (
+              <div className="p-6">
+                <Loader title="Loading tracks..." />
+              </div>
+            )}
+            {error && (
+              <div className="p-6">
+                <Error />
+              </div>
+            )}
             {tracks && (
-              <div className="space-y-1">
-                {tracks.map((track, i) => (
-                  <div
-                    key={track.key || i}
-                    className="flex items-center py-2 px-3 hover:bg-white/5 rounded-lg transition-colors group"
-                    onMouseEnter={() => {
-                      // Prefetch on hover if not already cached
-                      if (!isPreviewCached(track)) {
-                        prefetchPreviewUrl(track, { priority: "high" });
-                      }
-                    }}
-                  >
-                    <span className="text-gray-500 text-sm w-8 text-center">
-                      {i + 1}
-                    </span>
-
-                    <img
-                      src={track.images?.coverart || placeholderImage}
-                      alt={track.title}
-                      className="w-12 h-12 rounded ml-3 mr-4 flex-shrink-0"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = placeholderImage;
-                      }}
-                    />
-
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm sm:text-base font-medium truncate">
-                        {track.title}
-                      </p>
-                      <p className="text-gray-400 text-xs sm:text-sm truncate">
-                        {track.subtitle}
-                      </p>
+              <div className="p-6 pt-2">
+                {/* Playlist Stats */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 group hover:border-[#14b8a6]/40 transition-all">
+                    <div className="flex items-center gap-2 mb-2">
+                      <BsClock className="text-[#14b8a6] text-lg" />
+                      <p className="text-gray-400 text-sm">Total Duration</p>
                     </div>
-
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-4">
-                      <PlayPause
-                        isPlaying={isPlaying}
-                        activeSong={activeSong}
-                        song={track}
-                        handlePause={handlePauseClick}
-                        handlePlay={() => handlePlayClick(track, i)}
-                      />
-                    </div>
+                    <p className="text-white text-xl font-bold">
+                      {Math.floor(
+                        tracks.reduce(
+                          (acc, t) => acc + (t.duration_ms || 0),
+                          0
+                        ) / 60000
+                      )}{" "}
+                      min
+                    </p>
                   </div>
-                ))}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 group hover:border-[#14b8a6]/40 transition-all">
+                    <div className="flex items-center gap-2 mb-2">
+                      <IoMdTime className="text-[#14b8a6] text-lg" />
+                      <p className="text-gray-400 text-sm">Avg Duration</p>
+                    </div>
+                    <p className="text-white text-xl font-bold">
+                      {formatDuration(
+                        tracks.reduce(
+                          (acc, t) => acc + (t.duration_ms || 0),
+                          0
+                        ) / tracks.length
+                      )}
+                    </p>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 group hover:border-[#14b8a6]/40 transition-all">
+                    <div className="flex items-center gap-2 mb-2">
+                      <BsCalendar3 className="text-[#14b8a6] text-lg" />
+                      <p className="text-gray-400 text-sm">Last Updated</p>
+                    </div>
+                    <p className="text-white text-xl font-bold">
+                      {new Date().toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Play All / Shuffle All / Repeat Buttons */}
+                <div className="flex gap-3 mb-6">
+                  <button
+                    onClick={() => handlePlayClick(tracks[0], 0)}
+                    className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M5 4v12l10-6z" />
+                    </svg>
+                    Play All
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Enable shuffle if not already enabled
+                      if (!shuffle) {
+                        dispatch(toggleShuffle());
+                      }
+                      // Play random track
+                      const randomIndex = Math.floor(
+                        Math.random() * tracks.length
+                      );
+                      handlePlayClick(tracks[randomIndex], randomIndex);
+                    }}
+                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border ${
+                      shuffle
+                        ? "bg-[#14b8a6]/20 border-[#14b8a6] text-[#14b8a6]"
+                        : "bg-white/10 hover:bg-white/20 text-white border-white/10"
+                    }`}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v7m0 0l4-4m-4 4l4 4m12 6v-7m0 0l-4 4m4-4l-4-4"
+                      />
+                    </svg>
+                    Shuffle
+                  </button>
+                  <button
+                    onClick={() => dispatch(toggleRepeat())}
+                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border ${
+                      repeat
+                        ? "bg-[#14b8a6]/20 border-[#14b8a6] text-[#14b8a6]"
+                        : "bg-white/10 hover:bg-white/20 text-white border-white/10"
+                    }`}
+                  >
+                    <BsArrowRepeat size={20} />
+                    Repeat
+                  </button>
+                </div>
+
+                {/* Track List Header */}
+                <div className="flex items-center px-4 pb-2 border-b border-white/10 mb-2">
+                  <span className="text-gray-400 text-xs uppercase w-8 text-center">
+                    #
+                  </span>
+                  <span className="text-gray-400 text-xs uppercase ml-3 mr-4">
+                    Title
+                  </span>
+                  <span className="text-gray-400 text-xs uppercase ml-auto mr-4">
+                    Duration
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  {tracks.map((track, i) => {
+                    const isCurrentSong =
+                      activeSong?.key === track.key ||
+                      (activeSong?.id && activeSong.id === track.id) ||
+                      (activeSong?.title === track.title &&
+                        activeSong?.subtitle === track.subtitle);
+
+                    return (
+                      <div
+                        key={track.key || track.id || i}
+                        ref={isCurrentSong ? activeTrackRef : null}
+                        className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200 group relative overflow-hidden ${
+                          isCurrentSong
+                            ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent border-l-4 border-[#14b8a6]"
+                            : "hover:bg-white/5"
+                        }`}
+                        onMouseEnter={() => {
+                          if (!isPreviewCached(track)) {
+                            prefetchPreviewUrl(track, { priority: "high" });
+                          }
+                        }}
+                      >
+                        {/* Track number */}
+                        <span
+                          className={`text-sm w-8 text-center flex-shrink-0 ${
+                            isCurrentSong
+                              ? "text-[#14b8a6] font-bold"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {isCurrentSong && isPlaying ? (
+                            <div className="flex justify-center gap-[2px]">
+                              <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse" />
+                              <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
+                              <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
+                            </div>
+                          ) : (
+                            i + 1
+                          )}
+                        </span>
+
+                        {/* Album art */}
+                        <img
+                          src={track.images?.coverart || placeholderImage}
+                          alt={track.title}
+                          className={`w-12 h-12 rounded-lg ml-3 mr-4 flex-shrink-0 ${
+                            isCurrentSong ? "ring-2 ring-[#14b8a6]" : ""
+                          }`}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = placeholderImage;
+                          }}
+                        />
+
+                        {/* Track info */}
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`font-medium truncate ${
+                              isCurrentSong ? "text-[#14b8a6]" : "text-white"
+                            }`}
+                          >
+                            {track.title}
+                          </p>
+                          <p className="text-gray-400 text-sm truncate">
+                            {track.subtitle}
+                          </p>
+                        </div>
+
+                        {/* Duration */}
+                        <span className="text-gray-400 text-sm mx-4 font-medium bg-black/20 px-2 py-1 rounded">
+                          {formatDuration(track.duration_ms)}
+                        </span>
+
+                        {/* Play button */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <PlayPause
+                            isPlaying={isPlaying}
+                            activeSong={activeSong}
+                            song={track}
+                            handlePause={handlePauseClick}
+                            handlePlay={() => handlePlayClick(track, i)}
+                            size={35}
+                          />
+                        </div>
+
+                        {/* Now playing indicator */}
+                        {isCurrentSong && (
+                          <div className="absolute top-1 right-4 bg-[#14b8a6] text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                            Now Playing
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
