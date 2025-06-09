@@ -107,11 +107,16 @@ const App = () => {
         </div>
       </div>
 
-      {/* Music Player */}
+      {/* Music Player - Now positioned to match content area */}
       {activeSong?.title && (
         <div
-          className={`absolute h-28 bottom-0 left-0 right-0 flex animate-slideup bg-gradient-to-br from-white/10 to-[#2d2467] backdrop-blur-lg rounded-t-3xl z-10 ${
+          className={`fixed h-28 bottom-0 animate-slideup bg-gradient-to-br from-white/10 to-[#2d2467] backdrop-blur-lg rounded-t-3xl z-10 ${
             hideMainPlayer ? "invisible" : "visible"
+          } ${
+            // Responsive positioning - accounting for sidebars with proper spacing
+            showPlaylistPlayer
+              ? "left-0 md:left-[240px] right-0 xl:right-[390px]" // 380px sidebar + 10px buffer
+              : "left-0 md:left-[240px] right-0 xl:right-[410px]" // 400px sidebar + 10px buffer
           }`}
         >
           <MusicPlayer />
