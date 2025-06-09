@@ -33,13 +33,8 @@ const App = () => {
   const location = useLocation();
   const [playlistSession, setPlaylistSession] = useState(false);
 
-  // Determine if we're on a page that should show the PlaylistPlayer
-  const musicPages = ["/", "/playlists", "/top-artists", "/search"];
-  const showPlaylistPlayer = musicPages.some(
-    (page) =>
-      location.pathname === page || location.pathname.startsWith("/search/")
-  );
-  const showMusicSidebar = !showPlaylistPlayer;
+  const showPlaylistPlayer = true;
+  const showMusicSidebar = false;
 
   // Start playlist session when we have a playlist context
   useEffect(() => {

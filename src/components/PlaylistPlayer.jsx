@@ -7,6 +7,8 @@ import {
   toggleRepeat,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { usePlaylistManager } from "../hooks/usePlaylistManager";
+import PlaylistDropdown from "./PlaylistDropdown";
 import {
   BsFillPlayFill,
   BsFillPauseFill,
@@ -32,15 +34,25 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
   const { handleNextSong, handlePrevSong } = useSongNavigation();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached } =
     usePreviewUrl();
+  const { currentPlaylist } = usePlaylistManager();
   const [volume, setVolume] = useState(0.7);
   const [isVolumeHovered, setIsVolumeHovered] = useState(false);
   const [personalQueue, setPersonalQueue] = useState([]);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showManagePanel, setShowManagePanel] = useState(false);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
 
   // Check if we're on a playlist page
   const isPlaylistPage = window.location.pathname === "/playlists";
+
+  // Use current playlist from Redux
+  useEffect(() => {
+    if (currentPlaylist && currentPlaylist.tracks) {
+      setPersonalQueue(currentPlaylist.tracks);
+      setShowWelcome(false);
+    }
+  }, [currentPlaylist]);
 
   // Handle different queue sources
   useEffect(() => {
@@ -112,7 +124,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
             song: songWithPreview,
             data: personalQueue,
             i: index,
-            playlistId: playlist?.id,
+            playlistId: currentPlaylist?.id,
           })
         );
         dispatch(playPause(true));
@@ -126,35 +138,13 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Get current context info
-  const currentPlaylistName = isPlaylistPage
-    ? playlist?.name || "Select a Playlist"
-    : "Your Queue";
-  const currentPlaylistImage =
-    playlist?.images?.[0]?.url ||
-    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzRhNTU2OCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNhMGFlYzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7imao8L3RleHQ+PC9zdmc+";
-
   return (
     <div className="w-[380px] h-[calc(100vh-68px)] bg-gradient-to-b from-[#0f0e2e]/95 to-[#1a1848]/95 backdrop-blur-xl border-l border-white/5 flex flex-col">
       {/* Header with context info */}
       <div className="p-6 border-b border-white/5">
-        <div className="flex items-center gap-4 mb-4">
-          <img
-            src={currentPlaylistImage}
-            alt={currentPlaylistName}
-            className="w-16 h-16 rounded-lg shadow-lg"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-white/60 text-xs uppercase tracking-wider mb-1">
-              {isPlaylistPage ? "Playing from" : "Personal Session"}
-            </p>
-            <h3 className="text-white font-bold text-lg truncate">
-              {currentPlaylistName}
-            </h3>
-            <p className="text-white/60 text-sm">
-              {personalQueue.length || 0} tracks
-            </p>
-          </div>
+        {/* Dropdown Integration */}
+        <div className="mb-4">
+          <PlaylistDropdown onManageClick={() => setShowManagePanel(true)} />
         </div>
 
         {/* Now Playing Section or Welcome */}
@@ -379,7 +369,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
         <div className="px-6 py-3 flex items-center justify-between border-b border-white/5">
           <h4 className="text-white font-semibold flex items-center gap-2">
             <HiOutlineQueueList size={20} />
-            {isPlaylistPage ? "Playlist Queue" : "Your Queue"}
+            Track List
           </h4>
           <span className="text-white/60 text-sm">
             {personalQueue.length > 0
