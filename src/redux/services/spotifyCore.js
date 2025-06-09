@@ -50,7 +50,8 @@ export const spotifyCoreApi = createApi({
   refetchOnMountOrArgChange: false,
   endpoints: (builder) => ({
     getTopCharts: builder.query({
-      query: () => "/search?q=top%2050%20global%202024&type=track&limit=50",
+      query: (market = "US") =>
+        `/search?q=top%2050%20${market}%202024&type=track&limit=50&market=${market}`,
       transformResponse: (response) => {
         const tracks = response.tracks?.items?.map(adaptTrackData) || [];
         return tracks.sort(
