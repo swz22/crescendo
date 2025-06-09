@@ -14,6 +14,7 @@ const initialState = {
   shuffle: false,
   shuffleIndices: [],
   playedIndices: [],
+  repeat: false,
 };
 
 const playerSlice = createSlice({
@@ -242,6 +243,10 @@ const playerSlice = createSlice({
       }
     },
 
+    toggleRepeat: (state) => {
+      state.repeat = !state.repeat;
+    },
+
     playPause: (state, action) => {
       state.isPlaying = action.payload;
     },
@@ -275,6 +280,7 @@ export const {
   prevSong,
   toggleShuffle,
   setShuffleWithStart,
+  toggleRepeat,
   playPause,
   selectGenreListId,
   setModalOpen,

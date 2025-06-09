@@ -4,6 +4,7 @@ import {
   playPause,
   setActiveSong,
   toggleShuffle,
+  toggleRepeat,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import {
@@ -26,13 +27,12 @@ import { useSongNavigation } from "../hooks/useSongNavigation";
 
 const PlaylistPlayer = ({ playlist, tracks }) => {
   const dispatch = useDispatch();
-  const { activeSong, isPlaying, currentIndex, shuffle, currentSongs } =
+  const { activeSong, isPlaying, currentIndex, shuffle, repeat, currentSongs } =
     useSelector((state) => state.player);
   const { handleNextSong, handlePrevSong } = useSongNavigation();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached } =
     usePreviewUrl();
   const [volume, setVolume] = useState(0.7);
-  const [repeat, setRepeat] = useState(false);
   const [isVolumeHovered, setIsVolumeHovered] = useState(false);
   const [personalQueue, setPersonalQueue] = useState([]);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -269,7 +269,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
             {/* Playback controls */}
             <div className="mt-4 flex items-center justify-center gap-4">
               <button
-                onClick={() => setRepeat(!repeat)}
+                onClick={() => dispatch(toggleRepeat())}
                 className={`p-2 rounded-full transition-all ${
                   repeat
                     ? "text-[#14b8a6] bg-white/10"
