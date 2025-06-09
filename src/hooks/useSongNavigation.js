@@ -80,6 +80,13 @@ export const useSongNavigation = () => {
       return;
     }
 
+    // If only one song, just restart it
+    if (currentSongs.length === 1) {
+      dispatch(playPause(false));
+      setTimeout(() => dispatch(playPause(true)), 100);
+      return;
+    }
+
     setIsNavigating(true);
 
     try {
@@ -142,6 +149,13 @@ export const useSongNavigation = () => {
 
   const handlePrevSong = useCallback(async () => {
     if (!currentSongs || currentSongs.length === 0 || isNavigating) {
+      return;
+    }
+
+    // If only one song, just restart it
+    if (currentSongs.length === 1) {
+      dispatch(playPause(false));
+      setTimeout(() => dispatch(playPause(true)), 100);
       return;
     }
 

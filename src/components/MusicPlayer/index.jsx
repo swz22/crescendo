@@ -66,6 +66,11 @@ const MusicPlayer = () => {
 
   // Wrap navigation functions to show loading state
   const handleNextSong = async () => {
+    // Don't show loading if only one song
+    if (!currentSongs || currentSongs.length <= 1) {
+      return;
+    }
+
     setIsChangingTrack(true);
     setIsAudioReady(false);
 
@@ -78,6 +83,11 @@ const MusicPlayer = () => {
   };
 
   const handlePrevSong = async () => {
+    // Don't show loading if only one song
+    if (!currentSongs || currentSongs.length <= 1) {
+      return;
+    }
+
     setIsChangingTrack(true);
     setIsAudioReady(false);
 
