@@ -33,32 +33,18 @@ const ArtistDetails = () => {
     dispatch(playPause(false));
   };
 
-  const handlePlayClick = async (song, i, dataArray) => {
+  const handlePlayClick = async (song, i) => {
     // Always get preview URL (from cache or fetch)
     const songWithPreview = await getPreviewUrl(song);
 
     if (songWithPreview.preview_url) {
-      // Get current queue
-      const currentQueue = store.getState().player.currentSongs || [];
-
-      // Check if song already exists
-      const songExists = currentQueue.some(
-        (s) => s.key === songWithPreview.key
-      );
-
-      let newQueue;
-      let newIndex;
-
-      if (songExists) {
-        newQueue = currentQueue;
-        newIndex = currentQueue.findIndex((s) => s.key === songWithPreview.key);
-      } else {
-        newQueue = [...currentQueue, songWithPreview];
-        newIndex = newQueue.length - 1;
-      }
-
+      // Pass the full topTracks array as the queue
       dispatch(
-        setActiveSong({ song: songWithPreview, data: newQueue, i: newIndex })
+        setActiveSong({
+          song: songWithPreview,
+          data: topTracks || [], // Use the full artist top tracks
+          i: i,
+        })
       );
       dispatch(playPause(true));
     }
