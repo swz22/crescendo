@@ -62,7 +62,9 @@ const TopArtists = () => {
       const artistPromises = uniqueArtists.slice(0, 20).map(async (artist) => {
         try {
           const response = await fetch(
-            `http://localhost:3001/api/spotify/artists/${artist.adamid}`
+            `${import.meta.env.VITE_API_URL}/api/spotify/artists/${
+              artist.adamid
+            }`
           );
           const fullArtist = await response.json();
           return {
