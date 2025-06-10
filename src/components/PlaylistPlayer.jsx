@@ -39,7 +39,6 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
   const [volume, setVolume] = useState(0.7);
   const [isVolumeHovered, setIsVolumeHovered] = useState(false);
   const [personalQueue, setPersonalQueue] = useState([]);
-  const [showWelcome, setShowWelcome] = useState(true);
   const [showManagePanel, setShowManagePanel] = useState(false);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
@@ -51,7 +50,6 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
   useEffect(() => {
     if (currentPlaylist && currentPlaylist.tracks) {
       setPersonalQueue(currentPlaylist.tracks);
-      setShowWelcome(false);
     }
   }, [currentPlaylist]);
 
@@ -60,11 +58,9 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
     if (isPlaylistPage && tracks && tracks.length > 0) {
       // On playlist page, use playlist tracks
       setPersonalQueue(tracks);
-      setShowWelcome(false);
     } else if (currentSongs && currentSongs.length > 0 && !isPlaylistPage) {
       // On other pages, build personal queue from played songs
       setPersonalQueue(currentSongs);
-      setShowWelcome(false);
     }
   }, [tracks, currentSongs, isPlaylistPage]);
 
@@ -158,72 +154,8 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
           <PlaylistDropdown onManageClick={() => setShowManagePanel(true)} />
         </div>
 
-        {/* Now Playing Section or Welcome */}
-        {showWelcome && !activeSong?.title ? (
-          // Welcome instructions
-          <div className="bg-gradient-to-br from-[#14b8a6]/10 to-[#0d9488]/5 rounded-xl p-6 border border-[#14b8a6]/20">
-            <h4 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
-              <HiOutlineSparkles className="text-[#14b8a6]" />
-              Welcome to Crescendo!
-            </h4>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-start gap-3">
-                <BsPlayCircle
-                  className="text-[#14b8a6] mt-0.5 flex-shrink-0"
-                  size={18}
-                />
-                <div>
-                  <p className="text-white font-medium">Click any song</p>
-                  <p className="text-white/60 text-xs">
-                    Songs you play are added to your personal queue
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <BsSearch
-                  className="text-[#14b8a6] mt-0.5 flex-shrink-0"
-                  size={18}
-                />
-                <div>
-                  <p className="text-white font-medium">Explore freely</p>
-                  <p className="text-white/60 text-xs">
-                    Browse Discover, search, or visit artist pages
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <BsCollection
-                  className="text-[#14b8a6] mt-0.5 flex-shrink-0"
-                  size={18}
-                />
-                <div>
-                  <p className="text-white font-medium">Community Playlists</p>
-                  <p className="text-white/60 text-xs">
-                    Load entire curated playlists instantly
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <BsMusicNoteList
-                  className="text-[#14b8a6] mt-0.5 flex-shrink-0"
-                  size={18}
-                />
-                <div>
-                  <p className="text-white font-medium">Your queue persists</p>
-                  <p className="text-white/60 text-xs">
-                    Navigate anywhere while your music plays
-                  </p>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowWelcome(false)}
-              className="mt-4 w-full py-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-lg font-medium transition-colors"
-            >
-              Got it!
-            </button>
-          </div>
-        ) : activeSong?.title ? (
+        {/* Now Playing Section */}
+        {activeSong?.title ? (
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <div className="flex items-center gap-3">
               <img
@@ -359,7 +291,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
             </div>
           </div>
         ) : (
-          // Empty state after dismissing welcome
+          // Empty state
           <div className="bg-gradient-to-br from-white/5 to-white/[0.02] rounded-xl p-8 border border-white/10 text-center">
             <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-[#14b8a6]/20 to-[#0d9488]/10 rounded-lg flex items-center justify-center group hover:scale-110 transition-transform cursor-pointer">
               <BsFillPlayFill

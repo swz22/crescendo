@@ -26,6 +26,7 @@ import PlaylistManager from "./PlaylistManager";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 import PageHeader from "./PageHeader";
 import Portal from "./Portal";
+import OnboardingModal from "./OnboardingModal";
 
 export {
   LeftSidebar,
@@ -56,4 +57,5 @@ export {
   AddToPlaylistDropdown,
   Portal,
   PageHeader,
+  OnboardingModal,
 };

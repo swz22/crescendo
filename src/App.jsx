@@ -9,6 +9,7 @@ import {
   PerformanceMonitor,
   PlaylistPlayer,
 } from "./components";
+import OnboardingModal from "./components/OnboardingModal";
 import {
   AlbumDetails,
   ArtistDetails,
@@ -88,6 +89,7 @@ const App = () => {
       )}
 
       <FloatingMiniPlayer isVisible={showFloatingPlayer} />
+      <OnboardingModal />
     </div>
   );
 };
