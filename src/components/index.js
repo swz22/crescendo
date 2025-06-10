@@ -21,6 +21,9 @@ import TrackLoadingState from "./TrackLoadingState";
 import CacheIndicator from "./CacheIndicator";
 import SkeletonCard from "./SkeletonCard";
 import PlaylistPlayer from "./PlaylistPlayer";
+import PlaylistDropdown from "./PlaylistDropdown";
+import PlaylistManager from "./PlaylistManager";
+import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 
 export {
   LeftSidebar,
@@ -46,4 +49,7 @@ export {
   CacheIndicator,
   SkeletonCard,
   PlaylistPlayer,
+  PlaylistDropdown,
+  PlaylistManager,
+  AddToPlaylistDropdown,
 };

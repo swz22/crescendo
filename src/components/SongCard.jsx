@@ -8,7 +8,9 @@ import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
 import Tooltip from "./Tooltip";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
+import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 import { HiLightningBolt } from "react-icons/hi";
+import { HiPlus } from "react-icons/hi";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
@@ -27,12 +29,10 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     activeSong?.title === song?.title ||
     (activeSong?.key && song?.key && activeSong.key === song.key);
 
-  // Update cache indicator
   useEffect(() => {
     setShowCacheIndicator(isPreviewCached(song) && isAudioReady(songId));
   }, [song, songId, isPreviewCached, isAudioReady]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
@@ -41,7 +41,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     };
   }, []);
 
-  // Hover handler with preloading
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
 
@@ -50,16 +49,13 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     }
 
     hoverTimeoutRef.current = setTimeout(async () => {
-      // First ensure we have the preview URL
       if (!song.preview_url && !isPreviewCached(song) && !hasNoPreview(song)) {
         prefetchPreviewUrl(song, { priority: "high" });
       }
 
-      // If we have a preview URL and audio isn't ready, preload it
       if (songId && !isAudioReady(songId)) {
         let previewUrl = song.preview_url || song.url;
 
-        // If no preview URL but it's cached, get it
         if (!previewUrl && isPreviewCached(song)) {
           const songWithPreview = await getPreviewUrl(song);
           previewUrl = songWithPreview.preview_url;
@@ -94,36 +90,29 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   }, [dispatch]);
 
   const handlePlayClick = useCallback(async () => {
-    // Don't show loading if audio is ready
     if (!songId || !isAudioReady(songId)) {
       setIsLoading(true);
     }
 
     try {
-      // Get preview URL (from cache or fetch)
       const songWithPreview = await getPreviewUrl(song);
 
       if (songWithPreview.preview_url) {
-        // Get current songs from state to build upon
         const currentQueue = store.getState().player.currentSongs || [];
 
-        // Check if song already exists in queue
         const songExists = currentQueue.some(
           (s) => s.key === songWithPreview.key
         );
 
-        // Build new queue
         let newQueue;
         let newIndex;
 
         if (songExists) {
-          // Song already in queue, just play it
           newQueue = currentQueue;
           newIndex = currentQueue.findIndex(
             (s) => s.key === songWithPreview.key
           );
         } else {
-          // Add song to the end of current queue
           newQueue = [...currentQueue, songWithPreview];
           newIndex = newQueue.length - 1;
         }
@@ -180,7 +169,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Cache indicator - subtle lightning icon with pulse */}
       {showCacheIndicator && (
         <div className="absolute top-3 right-3 z-10">
           <HiLightningBolt
@@ -190,7 +178,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         </div>
       )}
 
-      {/* Now Playing indicator */}
       {isCurrentSong && (
         <div className="absolute top-3 left-3 z-10 bg-[#14b8a6]/20 backdrop-blur-sm rounded-full px-2 py-1">
           <span className="text-xs text-[#14b8a6] font-semibold">
@@ -199,8 +186,17 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         </div>
       )}
 
+      {/* Add to Playlist button - Outside image container to prevent clipping */}
+      <AddToPlaylistDropdown
+        track={song}
+        className="absolute top-7 right-7 z-30 opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <button className="p-1 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white/90 hover:scale-110 transition-all shadow-md border border-white/20">
+          <HiPlus size={18} className="text-[#14b8a6]" />
+        </button>
+      </AddToPlaylistDropdown>
+
       <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
-        {/* Play button overlay - simplified approach */}
         {(isHovered || isCurrentSong) && (
           <div
             className="absolute inset-0 bg-black/50 flex items-center justify-center z-20 cursor-pointer backdrop-blur-sm"
@@ -267,7 +263,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
 };
 
 export default React.memo(SongCard, (prevProps, nextProps) => {
-  // Only re-render if these specific props change
   return (
     prevProps.song.key === nextProps.song.key &&
     prevProps.i === nextProps.i &&

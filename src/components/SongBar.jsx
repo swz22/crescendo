@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { store } from "../redux/store";
 import PlayPause from "./PlayPause";
+import AddToPlaylistDropdown from "./AddToPlaylistDropdown.jsx";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 
 const SongBar = ({
@@ -17,14 +18,12 @@ const SongBar = ({
   const { prefetchPreviewUrl, isPreviewCached } = usePreviewUrl();
   const barRef = useRef(null);
 
-  // Prefetch on hover
   const handleMouseEnter = () => {
     if (!isPreviewCached(song)) {
       prefetchPreviewUrl(song, { priority: "high" });
     }
   };
 
-  // Prefetch when visible
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -48,7 +47,6 @@ const SongBar = ({
     };
   }, [song, prefetchPreviewUrl, isPreviewCached]);
 
-  // Handle different image path structures
   const getCoverArt = () => {
     if (song?.images?.coverart) return song.images.coverart;
     if (song?.attributes?.artwork?.url) {
@@ -60,7 +58,6 @@ const SongBar = ({
     return "https://via.placeholder.com/240x240.png?text=No+Image";
   };
 
-  // Get artist info
   const getArtistInfo = () => {
     if (song?.artists?.[0]) {
       return {
@@ -81,22 +78,17 @@ const SongBar = ({
   const songKey = song?.key || song?.id || song?.hub?.actions?.[0]?.id;
 
   const onPlayClick = () => {
-    // Get current queue
     const currentQueue = store.getState().player.currentSongs || [];
 
-    // Check if song already exists in queue
     const songExists = currentQueue.some((s) => s.key === song.key);
 
-    // Build new queue
     let newQueue;
     let newIndex;
 
     if (songExists) {
-      // Song already in queue, just play it
       newQueue = currentQueue;
       newIndex = currentQueue.findIndex((s) => s.key === song.key);
     } else {
-      // Add song to the end of current queue
       newQueue = [...currentQueue, song];
       newIndex = newQueue.length - 1;
     }
@@ -167,6 +159,7 @@ const SongBar = ({
           )}
         </div>
       </div>
+      <AddToPlaylistDropdown track={song} />
       {songKey && (
         <PlayPause
           isPlaying={isPlaying}
