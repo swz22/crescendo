@@ -3,16 +3,21 @@ import Tooltip from "./Tooltip";
 
 const AlbumCard = ({ album, showTrackCount = false }) => {
   const navigate = useNavigate();
-  const albumImage = album.images?.[0]?.url || 'https://via.placeholder.com/400x400.png?text=No+Image';
-  const artistNames = album.artists?.map(artist => artist.name).join(', ') || 'Unknown Artist';
-  const releaseDate = album.release_date ? new Date(album.release_date).getFullYear() : '';
+  const albumImage =
+    album.images?.[0]?.url ||
+    "https://via.placeholder.com/400x400.png?text=No+Image";
+  const artistNames =
+    album.artists?.map((artist) => artist.name).join(", ") || "Unknown Artist";
+  const releaseDate = album.release_date
+    ? new Date(album.release_date).getFullYear()
+    : "";
 
   const handleClick = () => {
     navigate(`/albums/${album.id}`);
   };
 
   return (
-    <div 
+    <div
       onClick={handleClick}
       className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover"
     >
@@ -23,8 +28,10 @@ const AlbumCard = ({ album, showTrackCount = false }) => {
           className="w-full h-full rounded-lg object-cover"
         />
         {showTrackCount && (
-          <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1 border border-white/10 group-hover:bg-black/80 transition-all">
-            <p className="text-xs text-white font-medium">{album.total_tracks} tracks</p>
+          <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm rounded-full px-3 py-1 border border-white/20 group-hover:bg-black/90 transition-all">
+            <p className="text-xs text-white font-medium">
+              {album.total_tracks} tracks
+            </p>
           </div>
         )}
       </div>
@@ -39,9 +46,7 @@ const AlbumCard = ({ album, showTrackCount = false }) => {
             {artistNames}
           </p>
         </Tooltip>
-        <p className="text-xs text-gray-400 mt-1">
-          {releaseDate}
-        </p>
+        <p className="text-xs text-gray-400 mt-1">{releaseDate}</p>
       </div>
     </div>
   );

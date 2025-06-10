@@ -128,35 +128,20 @@ const TopArtists = () => {
               />
 
               {/* Dropdown Content */}
-              <div className="absolute right-0 mt-2 w-64 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden z-20 animate-slidedown">
-                <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
-                  {regions.map((region) => (
-                    <button
-                      key={region.code}
-                      onClick={() => handleRegionSelect(region)}
-                      className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all duration-200 ${
-                        selectedRegion.code === region.code
-                          ? "bg-[#14b8a6]/20 border-l-4 border-[#14b8a6]"
-                          : ""
-                      }`}
-                    >
-                      <span className="text-2xl">{region.flag}</span>
-                      <span
-                        className={`flex-1 text-left ${
-                          selectedRegion.code === region.code
-                            ? "text-white font-semibold"
-                            : "text-gray-200"
-                        }`}
-                      >
-                        {region.name}
-                      </span>
-                      {selectedRegion.code === region.code && (
-                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-3 px-4 py-2.5 bg-white/10 hover:bg-white/15 rounded-lg transition-all duration-200 border border-white/20 hover:border-white/30 group backdrop-blur-sm"
+              >
+                <IoGlobe className="text-[#14b8a6] text-lg" />
+                <span className="text-white font-medium">
+                  {selectedRegion.flag} {selectedRegion.name}
+                </span>
+                <IoChevronDown
+                  className={`text-gray-300 transition-transform duration-200 ${
+                    isDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
             </>
           )}
         </div>

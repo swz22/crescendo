@@ -218,7 +218,7 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
             }}
           />
         )}
-        <div className="absolute bottom-2 right-2 bg-black/70 rounded-full px-3 py-1">
+        <div className="absolute bottom-2 right-2 bg-black/80 rounded-full px-3 py-1 border border-white/20">
           <p className="text-xs text-white font-medium">{totalTracks} tracks</p>
         </div>
       </div>

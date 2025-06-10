@@ -24,7 +24,7 @@ const Track = ({ isPlaying, isActive, activeSong, songImage }) => {
           }}
         />
       </div>
-      <div className="w-[50%]">
+      <div className="w-[50%] flex flex-col justify-center">
         <p className="truncate text-white font-bold text-lg">
           {activeSong?.title ||
             activeSong?.attributes?.name ||
@@ -36,30 +36,30 @@ const Track = ({ isPlaying, isActive, activeSong, songImage }) => {
             activeSong?.artist ||
             "Unknown Artist"}
         </p>
-        {activeSong?.album?.id && (
-          <Link
-            to={`/albums/${activeSong.album.id}`}
-            className="text-xs text-gray-400 hover:text-[#14b8a6] transition-colors inline-flex items-center gap-1 mt-1"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-              />
-            </svg>
-            View Album
-          </Link>
-        )}
         {activeSong && (
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-3 mt-1">
+            {activeSong?.album?.id && (
+              <Link
+                to={`/albums/${activeSong.album.id}`}
+                className="text-xs text-gray-400 hover:text-[#14b8a6] transition-colors inline-flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                  />
+                </svg>
+                View Album
+              </Link>
+            )}
             <AddToPlaylistDropdown track={activeSong}>
               <button className="text-xs text-gray-400 hover:text-[#14b8a6] transition-colors inline-flex items-center gap-1">
                 <svg
