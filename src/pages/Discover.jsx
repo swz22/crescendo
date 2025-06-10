@@ -110,8 +110,8 @@ const Discover = () => {
                   selectedGenre === genre.value
                     ? `bg-gradient-to-r ${
                         genreColors[genre.value] || "from-gray-600 to-gray-700"
-                      } text-white shadow-lg scale-105`
-                    : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white"
+                      } text-white shadow-lg scale-105 ring-2 ring-white/30`
+                    : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white hover:scale-105 backdrop-blur-sm border border-white/10"
                 }`}
               >
                 {genre.title}

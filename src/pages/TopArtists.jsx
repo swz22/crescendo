@@ -105,14 +105,14 @@ const TopArtists = () => {
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-3 px-4 py-2.5 bg-white/10 hover:bg-white/15 rounded-lg transition-all duration-200 border border-white/10 hover:border-white/20 group"
+            className="flex items-center gap-3 px-4 py-2.5 bg-white/10 hover:bg-white/15 rounded-lg transition-all duration-200 border border-white/20 hover:border-white/30 group backdrop-blur-sm"
           >
             <IoGlobe className="text-[#14b8a6] text-lg" />
             <span className="text-white font-medium">
               {selectedRegion.flag} {selectedRegion.name}
             </span>
             <IoChevronDown
-              className={`text-gray-400 transition-transform duration-200 ${
+              className={`text-gray-300 transition-transform duration-200 ${
                 isDropdownOpen ? "rotate-180" : ""
               }`}
             />
@@ -128,7 +128,7 @@ const TopArtists = () => {
               />
 
               {/* Dropdown Content */}
-              <div className="absolute right-0 mt-2 w-64 bg-[#1e1b4b]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden z-20 animate-slidedown">
+              <div className="absolute right-0 mt-2 w-64 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden z-20 animate-slidedown">
                 <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
                   {regions.map((region) => (
                     <button
@@ -144,8 +144,8 @@ const TopArtists = () => {
                       <span
                         className={`flex-1 text-left ${
                           selectedRegion.code === region.code
-                            ? "text-[#14b8a6] font-semibold"
-                            : "text-white"
+                            ? "text-white font-semibold"
+                            : "text-gray-200"
                         }`}
                       >
                         {region.name}

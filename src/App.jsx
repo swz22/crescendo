@@ -69,7 +69,7 @@ const App = () => {
         </div>
       </div>
 
-      <div className="w-[380px] h-full">
+      <div className="w-[380px] h-screen">
         {showMusicSidebar ? (
           <MusicSidebar />
         ) : (
@@ -79,7 +79,7 @@ const App = () => {
 
       {activeSong?.title && (
         <div
-          className={`fixed h-28 bottom-0 left-0 right-0 animate-slideup bg-gradient-to-br from-white/10 to-[#2d2467] backdrop-blur-lg z-10 ${
+          className={`fixed h-28 bottom-0 left-[240px] right-[380px] animate-slideup bg-gradient-to-br from-white/10 to-[#2d2467] backdrop-blur-lg z-10 ${
             hideMainPlayer ? "invisible" : "visible"
           }`}
         >

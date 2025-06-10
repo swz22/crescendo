@@ -27,15 +27,23 @@ const NavLinks = ({ handleClick }) => (
           `flex flex-row justify-start items-center my-8 text-base font-medium 
           ${
             isActive
-              ? "text-[#2dd4bf] bg-white/10 scale-105 shadow-lg shadow-teal-500/20"
-              : "text-gray-400 hover:text-white hover:bg-white/5"
+              ? "text-[#2dd4bf] bg-gradient-to-r from-[#2dd4bf]/20 to-transparent scale-105 shadow-xl shadow-[#2dd4bf]/20 border-l-4 border-[#2dd4bf]"
+              : "text-gray-300 hover:text-white hover:bg-white/10 border-l-4 border-transparent"
           } 
-          px-4 py-3 rounded-lg transition-all duration-200 group`
+          px-4 py-3 rounded-r-xl transition-all duration-300 group relative overflow-hidden`
         }
         onClick={() => handleClick && handleClick()}
       >
-        <item.icon className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
-        <span className="font-semibold">{item.name}</span>
+        <item.icon
+          className={`w-6 h-6 mr-3 transition-all duration-300 ${
+            window.location.pathname === item.to
+              ? "text-[#2dd4bf] drop-shadow-[0_0_8px_rgba(45,212,191,0.6)]"
+              : "group-hover:scale-110 group-hover:text-white"
+          }`}
+        />
+        <span className="font-semibold relative z-10">{item.name}</span>
+        {/* Hover effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
       </NavLink>
     ))}
   </div>
