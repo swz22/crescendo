@@ -4,8 +4,6 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import {
   LeftSidebar,
   MusicPlayer,
-  MusicSidebar,
-  FloatingMiniPlayer,
   PerformanceMonitor,
   PlaylistPlayer,
 } from "./components";
@@ -33,9 +31,6 @@ const App = () => {
   const location = useLocation();
   const [playlistSession, setPlaylistSession] = useState(false);
 
-  const showPlaylistPlayer = true;
-  const showMusicSidebar = false;
-
   useEffect(() => {
     if (playlistContext && location.pathname === "/playlists") {
       setPlaylistSession(true);
@@ -48,7 +43,6 @@ const App = () => {
     }
   }, [location.pathname]);
 
-  const showFloatingPlayer = false;
   const hideMainPlayer = isModalOpen;
 
   return (
@@ -71,11 +65,7 @@ const App = () => {
       </div>
 
       <div className="w-[380px] h-screen">
-        {showMusicSidebar ? (
-          <MusicSidebar />
-        ) : (
-          <PlaylistPlayer playlist={currentPlaylist} tracks={currentSongs} />
-        )}
+        <PlaylistPlayer playlist={currentPlaylist} tracks={currentSongs} />
       </div>
 
       {activeSong?.title && (
@@ -88,7 +78,7 @@ const App = () => {
         </div>
       )}
 
-      <FloatingMiniPlayer isVisible={showFloatingPlayer} />
+      <PerformanceMonitor />
       <OnboardingModal />
     </div>
   );
