@@ -139,8 +139,18 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const formatDuration = (ms) => {
+    if (!ms) return "--:--";
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  const placeholderImage =
+    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE1NTY4Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2EwYWVjMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
+
   return (
-    <div className="w-[380px] h-[calc(100vh-68px)] bg-gradient-to-b from-[#0f0e2e]/95 to-[#1a1848]/95 backdrop-blur-xl border-l border-white/5 flex flex-col">
+    <div className="w-full h-full bg-gradient-to-b from-[#0f0e2e]/95 to-[#1a1848]/95 backdrop-blur-xl border-l border-white/5 flex flex-col">
       {/* Header with context info */}
       <div className="p-6 border-b border-white/5">
         {/* Dropdown Integration */}
@@ -392,10 +402,10 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                 <div
                   key={track.key || index}
                   ref={isActive ? activeTrackRef : null}
-                  className={`group flex items-center gap-3 p-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                  className={`group flex items-center gap-3 p-4 rounded-xl transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent border-l-2 border-[#14b8a6]"
-                      : "hover:bg-white/5"
+                      ? "bg-gradient-to-r from-[#14b8a6]/30 via-[#14b8a6]/20 to-transparent border-l-4 border-[#14b8a6] shadow-lg shadow-[#14b8a6]/10"
+                      : "hover:bg-white/10 hover:pl-5 border-l-4 border-transparent"
                   }`}
                   onClick={() => handlePlayClick(track, index)}
                   onMouseEnter={() => {
@@ -406,9 +416,13 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                 >
                   <div className="relative w-10 h-10 flex-shrink-0">
                     <img
-                      src={track.images?.coverart || "/placeholder.png"}
+                      src={track.images?.coverart || placeholderImage}
                       alt={track.title}
-                      className="w-full h-full rounded object-cover"
+                      className={`w-full h-full rounded object-cover shadow-lg ${
+                        isCurrentSong
+                          ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-[#0f0e2e]"
+                          : ""
+                      }`}
                     />
                     {isCurrentSong && (
                       <div className="absolute inset-0 bg-black/60 rounded flex items-center justify-center">
@@ -440,7 +454,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                     </p>
                   </div>
 
-                  <span className="text-white/40 text-sm">
+                  <span className="text-white/40 text-sm bg-black/20 px-2 py-1 rounded-lg group-hover:bg-black/30 transition-all">
                     {track.duration_ms
                       ? formatTime(track.duration_ms / 1000)
                       : "--:--"}

@@ -75,10 +75,10 @@ const PerformanceMonitor = () => {
 
   return (
     <>
-      {/* Settings Button - positioned fixed in bottom left */}
+      {/* Settings Button */}
       <button
         onClick={handleToggle}
-        className="fixed bottom-36 left-4 z-50 bg-gradient-to-r from-[#14b8a6]/20 to-[#2dd4bf]/20 hover:from-[#14b8a6]/30 hover:to-[#2dd4bf]/30 text-white p-2.5 rounded-full transition-all duration-300 group hover:shadow-[0_0_20px_rgba(20,184,166,0.5)] hover:scale-110"
+        className="fixed bottom-32 left-6 z-50 bg-gradient-to-r from-[#14b8a6]/30 to-[#2dd4bf]/30 hover:from-[#14b8a6]/40 hover:to-[#2dd4bf]/40 text-white p-3 rounded-xl transition-all duration-300 group hover:shadow-[0_0_30px_rgba(20,184,166,0.6)] hover:scale-110 backdrop-blur-sm border border-white/20"
         title="Performance Monitor"
       >
         <svg
@@ -147,11 +147,11 @@ const PerformanceMonitor = () => {
                   </h3>
                   <button
                     onClick={handleToggle}
-                    className="text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-lg transition-all duration-300 hover:rotate-90 border border-white/10 hover:border-white/20"
-                    title="Close (ESC)"
+                    className="fixed bottom-[140px] left-6 z-50 bg-gradient-to-r from-[#14b8a6]/40 to-[#2dd4bf]/40 hover:from-[#14b8a6]/60 hover:to-[#2dd4bf]/60 text-white p-3 rounded-xl transition-all duration-300 group hover:shadow-[0_0_30px_rgba(20,184,166,0.6)] hover:scale-110 backdrop-blur-md border border-white/20"
+                    title="Performance Monitor"
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -159,8 +159,14 @@ const PerformanceMonitor = () => {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={3}
-                        d="M6 18L18 6M6 6l12 12"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                       />
                     </svg>
                   </button>
