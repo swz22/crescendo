@@ -37,21 +37,155 @@ const initialState = {
   shuffleIndices: [],
   playedIndices: [],
   repeat: false,
-  // New playlist management state
+  // Playlist management
   playlists: loadPlaylistsFromStorage(),
   activePlaylistId: null,
-  activePlaylistType: "queue", // "queue", "playlist", "recent"
+  activePlaylistType: "queue",
+  // Queue source tracking
+  queueSource: null, // 'discover', 'album', 'playlist', 'search', etc
+  queueName: "Your Queue",
 };
 
 const playerSlice = createSlice({
   name: "player",
   initialState,
   reducers: {
-    // Existing reducers remain the same
+    // Add single track to queue and play
+    addToQueueAndPlay: (state, action) => {
+      const { song, source } = action.payload;
+
+      // Add to recently played
+      const songKey = song.key || song.id || song.track_id;
+      if (songKey && song.title) {
+        state.recentlyPlayed = [
+          song,
+          ...state.recentlyPlayed.filter((s) => {
+            const sKey = s.key || s.id || s.track_id;
+            return sKey !== songKey;
+          }),
+        ].slice(0, 10);
+      }
+
+      // Check if song already in queue
+      const existingIndex = state.currentSongs.findIndex(
+        (s) => (s.key || s.id) === (song.key || song.id)
+      );
+
+      if (existingIndex !== -1) {
+        // Song exists, just jump to it
+        state.currentIndex = existingIndex;
+      } else {
+        // Add to queue and play
+        state.currentSongs.push(song);
+        state.currentIndex = state.currentSongs.length - 1;
+      }
+
+      state.activeSong = song;
+      state.isActive = true;
+      state.isPlaying = true;
+      state.queueSource = source || "manual";
+    },
+
+    // Add to end of queue without playing
+    addToQueue: (state, action) => {
+      const { song } = action.payload;
+
+      // Check if already in queue
+      const exists = state.currentSongs.some(
+        (s) => (s.key || s.id) === (song.key || song.id)
+      );
+
+      if (!exists) {
+        state.currentSongs.push(song);
+      }
+    },
+
+    // Add track to play next (after current)
+    playNext: (state, action) => {
+      const { song } = action.payload;
+
+      // Check if already in queue
+      const exists = state.currentSongs.some(
+        (s) => (s.key || s.id) === (song.key || song.id)
+      );
+
+      if (!exists) {
+        const insertIndex = state.currentIndex + 1;
+        state.currentSongs.splice(insertIndex, 0, song);
+      }
+    },
+
+    // Replace entire queue
+    replaceQueue: (state, action) => {
+      const { songs, source, startIndex = 0 } = action.payload;
+
+      state.currentSongs = songs;
+      state.currentIndex = startIndex;
+      state.activeSong = songs[startIndex];
+      state.isActive = true;
+      state.queueSource = source;
+
+      // Reset shuffle if active
+      if (state.shuffle) {
+        const indices = Array.from(
+          { length: songs.length },
+          (_, i) => i
+        ).filter((i) => i !== startIndex);
+
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+
+        state.shuffleIndices = indices;
+        state.playedIndices = [startIndex];
+      }
+    },
+
+    // Clear queue
+    clearQueue: (state) => {
+      state.currentSongs = [];
+      state.currentIndex = 0;
+      state.activeSong = {};
+      state.isActive = false;
+      state.isPlaying = false;
+      state.queueSource = null;
+    },
+
+    // Remove track from queue
+    removeFromQueue: (state, action) => {
+      const { index } = action.payload;
+
+      if (index >= 0 && index < state.currentSongs.length) {
+        state.currentSongs.splice(index, 1);
+
+        // Adjust current index if needed
+        if (index < state.currentIndex) {
+          state.currentIndex--;
+        } else if (index === state.currentIndex) {
+          // Current song was removed
+          if (state.currentSongs.length === 0) {
+            state.activeSong = {};
+            state.isActive = false;
+            state.isPlaying = false;
+          } else {
+            // Play next song or previous if last
+            const newIndex = Math.min(
+              state.currentIndex,
+              state.currentSongs.length - 1
+            );
+            state.currentIndex = newIndex;
+            state.activeSong = state.currentSongs[newIndex];
+          }
+        }
+      }
+    },
+
+    // Legacy setActiveSong - kept for compatibility
     setActiveSong: (state, action) => {
       state.activeSong = action.payload.song;
 
-      // Add to recently played (avoid duplicates, keep last 10)
+      // Add to recently played
       const newSong = action.payload.song;
       if (newSong && newSong.title) {
         const songKey = newSong.key || newSong.id || newSong.track_id;
@@ -84,14 +218,13 @@ const playerSlice = createSlice({
         state.currentPlaylist = action.payload.playlist;
       }
 
-      // If shuffle is active and we have new songs, create new shuffle indices
+      // Handle shuffle
       if (state.shuffle && state.currentSongs.length > 0) {
         const indices = Array.from(
           { length: state.currentSongs.length },
           (_, i) => i
         ).filter((i) => i !== action.payload.i);
 
-        // Fisher-Yates shuffle
         for (let i = indices.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [indices[i], indices[j]] = [indices[j], indices[i]];
@@ -117,16 +250,6 @@ const playerSlice = createSlice({
           id: song.id,
         });
         return;
-      }
-
-      if (!song.title || !song.images) {
-        console.warn("Song data incomplete:", {
-          hasTitle: !!song.title,
-          hasSubtitle: !!song.subtitle,
-          hasImages: !!song.images,
-          hasArtists: !!song.artists,
-          songKeys: Object.keys(song),
-        });
       }
 
       let fullSong = song;
@@ -298,7 +421,7 @@ const playerSlice = createSlice({
       state.currentPlaylist = null;
     },
 
-    // New playlist management actions
+    // Playlist management actions
     createPlaylist: (state, action) => {
       const newPlaylist = {
         id: `playlist_${Date.now()}`,
@@ -407,6 +530,14 @@ const playerSlice = createSlice({
 });
 
 export const {
+  // New queue actions
+  addToQueueAndPlay,
+  addToQueue,
+  playNext,
+  replaceQueue,
+  clearQueue,
+  removeFromQueue,
+  // Legacy actions
   setActiveSong,
   changeTrackAndPlay,
   nextSong,
@@ -420,7 +551,7 @@ export const {
   clearPlaylistContext,
   setCurrentPlaylist,
   clearCurrentPlaylist,
-  // New exports
+  // Playlist management
   createPlaylist,
   deletePlaylist,
   renamePlaylist,
