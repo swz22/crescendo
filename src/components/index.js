@@ -24,6 +24,7 @@ import PlaylistPlayer from "./PlaylistPlayer";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
+import Portal from "./Portal";
 
 export {
   LeftSidebar,
@@ -52,4 +53,5 @@ export {
   PlaylistDropdown,
   PlaylistManager,
   AddToPlaylistDropdown,
+  Portal,
 };

@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
-import { HiPlus, HiCheck } from "react-icons/hi";
+import { HiPlus, HiCheck, HiOutlineSparkles } from "react-icons/hi";
 import { BsMusicNoteList } from "react-icons/bs";
+import Portal from "./Portal";
 
 const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [addedToPlaylists, setAddedToPlaylists] = useState(new Set());
-  const dropdownRef = useRef(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
   const {
     playlists,
     handleAddToPlaylist,
@@ -16,7 +19,10 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        buttonRef.current &&
+        !event.target.closest(".playlist-dropdown-content")
+      ) {
         setIsOpen(false);
       }
     };
@@ -28,9 +34,43 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownWidth = 280;
+      const dropdownHeight = 400; // Approximate max height
+
+      let left = rect.right - dropdownWidth;
+      let top = rect.bottom + 12;
+
+      // Check right edge
+      if (rect.right + 20 > window.innerWidth) {
+        left = rect.left - dropdownWidth;
+      }
+
+      // Check left edge
+      if (left < 10) {
+        left = 10;
+      }
+
+      // Check bottom edge
+      if (top + dropdownHeight > window.innerHeight - 20) {
+        top = rect.top - dropdownHeight - 12;
+      }
+
+      setDropdownPosition({ top, left });
+    }
+  }, [isOpen]);
+
   const handleAdd = (playlistId) => {
     handleAddToPlaylist(playlistId, track);
     setAddedToPlaylists(new Set([...addedToPlaylists, playlistId]));
+
+    setShowSuccess(true);
+    setTimeout(() => {
+      setShowSuccess(false);
+      setIsOpen(false);
+    }, 1500);
 
     setTimeout(() => {
       setAddedToPlaylists((prev) => {
@@ -49,7 +89,11 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
 
       setTimeout(() => {
         handleAddToPlaylist(newPlaylistId, track);
-        setIsOpen(false);
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          setIsOpen(false);
+        }, 1500);
       }, 100);
     }
   };
@@ -57,12 +101,14 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
   const trackId = track?.key || track?.id || track?.track_id;
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <>
       <div
+        ref={buttonRef}
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
+        className={className}
       >
         {children || (
           <button className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white">
@@ -72,69 +118,125 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
       </div>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden z-50 animate-fadeIn">
-          <div className="p-3">
-            <h4 className="text-white font-semibold text-sm mb-3">
-              Add to playlist
-            </h4>
+        <Portal>
+          <div
+            className="fixed inset-0 bg-black/40 z-[998]"
+            onClick={() => setIsOpen(false)}
+          />
 
-            <button
-              onClick={handleCreateNew}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-white mb-2"
-            >
-              <HiPlus className="w-4 h-4" />
-              <span className="text-sm font-medium">Create New Playlist</span>
-            </button>
+          <div
+            className="fixed w-[280px] z-[999] animate-slideInDown playlist-dropdown-content"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+            }}
+          >
+            <div className="bg-[#0f0e2e]/95 backdrop-blur-2xl rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] border border-white/15 overflow-hidden">
+              <div className="p-4 border-b border-white/10 bg-gradient-to-r from-[#14b8a6]/10 to-transparent">
+                <h4 className="text-white font-semibold text-sm flex items-center gap-2">
+                  <HiOutlineSparkles className="text-[#14b8a6]" />
+                  Add to playlist
+                </h4>
+              </div>
 
-            {playlists.length > 0 && (
-              <>
-                <div className="border-t border-white/10 my-2" />
-                <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                  {playlists.map((playlist) => {
-                    const isInPlaylist = isTrackInPlaylist(
-                      playlist.id,
-                      trackId
-                    );
-                    const justAdded = addedToPlaylists.has(playlist.id);
-
-                    return (
-                      <button
-                        key={playlist.id}
-                        onClick={() => !isInPlaylist && handleAdd(playlist.id)}
-                        disabled={isInPlaylist}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
-                          isInPlaylist
-                            ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-white/10"
-                        } text-white`}
-                      >
-                        <BsMusicNoteList className="w-4 h-4 flex-shrink-0" />
-                        <span className="text-sm flex-1 text-left truncate">
-                          {playlist.name}
-                        </span>
-                        {(isInPlaylist || justAdded) && (
-                          <HiCheck
-                            className={`w-4 h-4 ${
-                              justAdded ? "text-[#14b8a6]" : "text-white/40"
-                            }`}
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
+              {showSuccess && (
+                <div className="absolute inset-0 bg-[#0f0e2e]/98 backdrop-blur-xl z-10 flex items-center justify-center animate-fadeIn">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-[#14b8a6]/20 rounded-full flex items-center justify-center mx-auto mb-3 animate-successPulse">
+                      <HiCheck className="w-8 h-8 text-[#14b8a6]" />
+                    </div>
+                    <p className="text-white font-medium">Added to playlist!</p>
+                  </div>
                 </div>
-              </>
-            )}
+              )}
 
-            {playlists.length === 0 && (
-              <p className="text-white/60 text-sm text-center py-4">
-                No playlists yet. Create one to get started!
-              </p>
-            )}
+              <div className="p-2">
+                <button
+                  onClick={handleCreateNew}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-[#14b8a6]/10 to-transparent hover:from-[#14b8a6]/20 hover:to-[#0d9488]/10 transition-all duration-200 text-white mb-2 group"
+                >
+                  <div className="w-8 h-8 bg-[#14b8a6]/20 rounded-lg flex items-center justify-center group-hover:bg-[#14b8a6]/30 transition-colors">
+                    <HiPlus className="w-5 h-5 text-[#14b8a6]" />
+                  </div>
+                  <span className="text-sm font-medium">
+                    Create New Playlist
+                  </span>
+                </button>
+
+                {playlists.length > 0 && (
+                  <>
+                    <div className="border-t border-white/5 my-2" />
+                    <div className="max-h-[240px] overflow-y-auto custom-scrollbar pr-1">
+                      {playlists.map((playlist) => {
+                        const isInPlaylist = isTrackInPlaylist(
+                          playlist.id,
+                          trackId
+                        );
+                        const justAdded = addedToPlaylists.has(playlist.id);
+
+                        return (
+                          <button
+                            key={playlist.id}
+                            onClick={() =>
+                              !isInPlaylist && handleAdd(playlist.id)
+                            }
+                            disabled={isInPlaylist}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+                              isInPlaylist
+                                ? "opacity-50 cursor-not-allowed bg-white/5"
+                                : "hover:bg-white/10 active:scale-[0.98]"
+                            } text-white group`}
+                          >
+                            <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                              <BsMusicNoteList className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 text-left">
+                              <span className="text-sm font-medium block truncate">
+                                {playlist.name}
+                              </span>
+                              <span className="text-xs text-white/40">
+                                {playlist.tracks?.length || 0} tracks
+                              </span>
+                            </div>
+                            {(isInPlaylist || justAdded) && (
+                              <div
+                                className={`transition-all duration-300 ${
+                                  justAdded ? "scale-125" : "scale-100"
+                                }`}
+                              >
+                                <HiCheck
+                                  className={`w-5 h-5 ${
+                                    justAdded
+                                      ? "text-[#14b8a6]"
+                                      : "text-white/40"
+                                  }`}
+                                />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {playlists.length === 0 && (
+                  <div className="py-8 text-center">
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <BsMusicNoteList className="w-8 h-8 text-white/20" />
+                    </div>
+                    <p className="text-white/60 text-sm">No playlists yet</p>
+                    <p className="text-white/40 text-xs mt-1">
+                      Create one to get started!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
-    </div>
+    </>
   );
 };
 

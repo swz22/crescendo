@@ -170,7 +170,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       onMouseLeave={handleMouseLeave}
     >
       {showCacheIndicator && (
-        <div className="absolute top-3 right-3 z-10">
+        <div className="absolute top-3 left-3 z-10">
           <HiLightningBolt
             className="w-4 h-4 text-[#14b8a6] opacity-80 animate-pulse"
             title="Instant playback ready"
@@ -186,20 +186,18 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         </div>
       )}
 
-      {/* Add to Playlist button - Outside image container to prevent clipping */}
-      <AddToPlaylistDropdown
-        track={song}
-        className="absolute top-7 right-7 z-30 opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <button className="p-1 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white/90 hover:scale-110 transition-all shadow-md border border-white/20">
-          <HiPlus size={18} className="text-[#14b8a6]" />
-        </button>
-      </AddToPlaylistDropdown>
+      <div className="absolute top-6 right-6 z-30">
+        <AddToPlaylistDropdown track={song}>
+          <button className="w-8 h-8 bg-[#14b8a6] rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg shadow-[#14b8a6]/40 hover:shadow-[#14b8a6]/60 flex items-center justify-center">
+            <HiPlus size={16} className="text-white" />
+          </button>
+        </AddToPlaylistDropdown>
+      </div>
 
       <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
         {(isHovered || isCurrentSong) && (
           <div
-            className="absolute inset-0 bg-black/50 flex items-center justify-center z-20 cursor-pointer backdrop-blur-sm"
+            className="absolute inset-0 flex items-center justify-center z-20 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               if (!isLoading) {
@@ -209,6 +207,14 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
               }
             }}
           >
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%)",
+              }}
+            />
+
             {isLoading ? (
               <MusicLoadingSpinner size="md" />
             ) : (
