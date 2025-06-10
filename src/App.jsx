@@ -79,7 +79,7 @@ const App = () => {
 
       {activeSong?.title && (
         <div
-          className={`fixed h-28 bottom-0 left-[240px] right-[380px] animate-slideup bg-gradient-to-br from-white/10 to-[#2d2467] backdrop-blur-lg z-10 ${
+          className={`fixed h-28 bottom-0 left-[240px] right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-10 rounded-t-2xl border-t border-x border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] ${
             hideMainPlayer ? "invisible" : "visible"
           }`}
         >
