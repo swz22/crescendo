@@ -3,7 +3,7 @@ import { useState } from "react";
 import Tooltip from "./Tooltip";
 
 // Create a simple placeholder as data URI to avoid network requests
-const createPlaceholder = (text = 'Artist') => {
+const createPlaceholder = (text = "Artist") => {
   const svg = `
     <svg width="240" height="240" xmlns="http://www.w3.org/2000/svg">
       <rect width="100%" height="100%" fill="#4a5568"/>
@@ -16,37 +16,37 @@ const createPlaceholder = (text = 'Artist') => {
 const ArtistCard = ({ track }) => {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
-  
+
   const artist = track?.artists?.[0];
   if (!artist) return null;
 
   const artistId = artist.adamid || artist.id;
-  const artistName = artist.alias || artist.name || 'Unknown Artist';
-  
+  const artistName = artist.alias || artist.name || "Unknown Artist";
+
   // Get artist image with fallbacks
   const getArtistImage = () => {
     if (imageError) {
-      return createPlaceholder('Artist');
+      return createPlaceholder("Artist");
     }
-    
+
     if (artist.avatar) return artist.avatar;
     if (artist.coverart) return artist.coverart;
     if (track?.images?.background) return track.images.background;
     if (track?.images?.coverart) return track.images.coverart;
     if (track?.share?.avatar) return track.share.avatar;
-    return createPlaceholder('Artist');
+    return createPlaceholder("Artist");
   };
 
   const handleImageError = (e) => {
     if (!imageError) {
       setImageError(true);
-      e.target.src = createPlaceholder('No Image');
+      e.target.src = createPlaceholder("No Image");
     }
   };
 
   return (
     <div
-      className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover"
+      className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group"
       onClick={() => navigate(`/artists/${artistId}`)}
     >
       <img

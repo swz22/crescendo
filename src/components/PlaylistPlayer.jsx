@@ -414,18 +414,42 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                     }
                   }}
                 >
-                  <div className="relative w-10 h-10 flex-shrink-0">
+                  {/* Track number/playing indicator */}
+                  <span
+                    className={`text-sm w-8 text-center flex-shrink-0 font-medium ${
+                      isCurrentSong
+                        ? "text-[#14b8a6]"
+                        : "text-gray-500 group-hover:text-gray-300"
+                    }`}
+                  >
+                    {isCurrentSong && isPlaying ? (
+                      <div className="flex justify-center gap-[2px]">
+                        <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse" />
+                        <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
+                        <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
+                      </div>
+                    ) : (
+                      index + 1
+                    )}
+                  </span>
+
+                  {/* Album art */}
+                  <div className="relative w-12 h-12 flex-shrink-0">
                     <img
                       src={track.images?.coverart || placeholderImage}
                       alt={track.title}
-                      className={`w-full h-full rounded object-cover shadow-lg ${
+                      className={`w-full h-full rounded-lg object-cover shadow-lg transition-all duration-300 ${
                         isCurrentSong
                           ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-[#0f0e2e]"
                           : ""
                       }`}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = placeholderImage;
+                      }}
                     />
                     {isCurrentSong && (
-                      <div className="absolute inset-0 bg-black/60 rounded flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
                         {isPlaying ? (
                           <div className="flex gap-[2px]">
                             <div className="w-[2px] h-3 bg-white rounded-full animate-pulse" />
@@ -439,22 +463,24 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                     )}
                   </div>
 
+                  {/* Track info with better typography */}
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`font-medium truncate ${
+                      className={`font-medium truncate transition-colors ${
                         isActive
                           ? "text-[#14b8a6]"
                           : "text-white group-hover:text-[#14b8a6]"
-                      } transition-colors`}
+                      }`}
                     >
                       {track.title}
                     </p>
-                    <p className="text-white/60 text-sm truncate">
+                    <p className="text-gray-400 text-sm truncate group-hover:text-gray-300 transition-colors">
                       {track.subtitle}
                     </p>
                   </div>
 
-                  <span className="text-white/40 text-sm bg-black/20 px-2 py-1 rounded-lg group-hover:bg-black/30 transition-all">
+                  {/* Duration with better styling */}
+                  <span className="text-gray-400 text-sm font-medium bg-black/20 px-2.5 py-1 rounded-lg group-hover:bg-black/30 transition-all">
                     {track.duration_ms
                       ? formatTime(track.duration_ms / 1000)
                       : "--:--"}

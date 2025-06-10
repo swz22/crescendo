@@ -345,6 +345,40 @@ a,
   }
 }
 
+@keyframes pulse-teal {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(20, 184, 166, 0.5);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 30px rgba(20, 184, 166, 0.8);
+  }
+}
+
+.animate-pulse-teal {
+  animation: pulse-teal 2s ease-in-out infinite;
+}
+
+/* Enhanced glass effect */
+.glass-enhanced {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Smooth hover transitions */
+.smooth-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(20, 184, 166, 0.2);
+}
+
 /* Musical note animations */
 @keyframes float-note-1 {
   0%,
