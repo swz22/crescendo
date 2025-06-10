@@ -24,6 +24,7 @@ import PlaylistPlayer from "./PlaylistPlayer";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
+import PageHeader from "./PageHeader";
 import Portal from "./Portal";
 
 export {
@@ -54,4 +55,5 @@ export {
   PlaylistManager,
   AddToPlaylistDropdown,
   Portal,
+  PageHeader,
 };

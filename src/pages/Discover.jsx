@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Error, Loader, SongCard } from "../components";
+import { Error, Loader, SongCard, Searchbar } from "../components";
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -20,11 +20,9 @@ const Discover = () => {
 
   const { data, isFetching, error } = useGetSongsByGenreQuery(selectedGenre);
 
-  // Memoize both filtering and shuffling - only recalculate when data changes
   const shuffledSongs = useMemo(() => {
     if (!data) return [];
 
-    // Filter out duplicates
     const uniqueSongs = data.filter((song, index, self) => {
       return (
         index ===
@@ -36,17 +34,13 @@ const Discover = () => {
       );
     });
 
-    // Shuffle the unique songs
     return [...uniqueSongs].sort(() => Math.random() - 0.5);
   }, [data]);
 
-  // Page-specific prefetch strategy
   useEffect(() => {
     if (shuffledSongs.length > 0) {
       const strategy = getPagePrefetchStrategy(location.pathname);
-      // Wait before starting prefetch
       const timeoutId = setTimeout(() => {
-        // Prefetch based on strategy
         shuffledSongs.slice(0, strategy.maxSongs).forEach((song, index) => {
           setTimeout(() => {
             prefetchPreviewUrl(song, { priority: strategy.priority });
@@ -66,7 +60,6 @@ const Discover = () => {
   if (isFetching) return <Loader title="Loading songs..." />;
   if (error) return <Error />;
 
-  // Updated color mapping with new scheme
   const genreColors = {
     POP: "from-pink-500 to-rose-500",
     HIP_HOP_RAP: "from-[#6366f1] to-[#0ea5e9]",
@@ -96,12 +89,16 @@ const Discover = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="w-full mb-6 mt-2">
-        <h2 className="font-bold text-3xl text-white mb-4">
-          Discover {genreTitle}
-        </h2>
+      <div className="w-full mb-6 mt-8">
+        <div className="flex items-center justify-between gap-8 mb-4">
+          <h2 className="font-bold text-3xl text-white">
+            Discover {genreTitle}
+          </h2>
+          <div className="flex-1 max-w-2xl">
+            <Searchbar />
+          </div>
+        </div>
 
-        {/* Genre Pills */}
         <div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto genre-pills-container p-1">
           {[...genres]
             .sort((a, b) => a.title.localeCompare(b.title))
@@ -123,7 +120,6 @@ const Discover = () => {
         </div>
       </div>
 
-      {/* Updated grid to show 6 cards per row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
         {shuffledSongs.map((song, i) => (
           <SongCard
@@ -131,7 +127,7 @@ const Discover = () => {
             song={song}
             isPlaying={isPlaying}
             activeSong={activeSong}
-            data={shuffledSongs} // Pass the shuffled array so prev/next work with the randomized order
+            data={shuffledSongs}
             i={i}
           />
         ))}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ArtistCard, Error, Loader } from "../components";
 import { useGetTopChartsQuery } from "../redux/services/spotifyCore";
 import { IoChevronDown, IoGlobe } from "react-icons/io5";
+import { PageHeader } from "../components";
 
 // Region configuration with Spotify market codes
 const regions = [

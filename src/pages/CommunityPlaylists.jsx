@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Error, Loader } from "../components";
+import { Error, Loader, PageHeader } from "../components";
 import PlaylistCard from "../components/PlaylistCard";
 import PlaylistModal from "../components/PlaylistModal";
 import {
@@ -45,15 +45,10 @@ const CommunityPlaylists = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="mb-6">
-        <h2 className="font-bold text-3xl text-white text-left mt-4 mb-2">
-          Community Playlists
-        </h2>
-        <p className="text-gray-400 text-lg">
-          Discover music curated by the community
-        </p>
-      </div>
-
+      <PageHeader
+        title="Community Playlists"
+        subtitle="Discover music curated by the community"
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {data?.playlists && data.playlists.length > 0 ? (
           [...data.playlists]

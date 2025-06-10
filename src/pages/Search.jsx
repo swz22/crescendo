@@ -9,11 +9,12 @@ const Search = () => {
   const { data, isFetching, error } = useGetSongsBySearchQuery(searchTerm);
 
   // Extract songs from search results - handle different response structures
-  const songs = data?.tracks?.hits?.map(hit => hit.track) || 
-                data?.tracks || 
-                data?.hits?.map(hit => hit.track) || 
-                data || 
-                [];
+  const songs =
+    data?.tracks?.hits?.map((hit) => hit.track) ||
+    data?.tracks ||
+    data?.hits?.map((hit) => hit.track) ||
+    data ||
+    [];
 
   if (isFetching) return <Loader title={`Searching ${searchTerm}...`} />;
 
@@ -38,7 +39,9 @@ const Search = () => {
             />
           ))
         ) : (
-          <p className="text-gray-400 text-2xl">No results found for "{searchTerm}"</p>
+          <p className="text-gray-400 text-2xl">
+            No results found for "{searchTerm}"
+          </p>
         )}
       </div>
     </div>

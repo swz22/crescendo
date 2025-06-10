@@ -75,10 +75,10 @@ const PerformanceMonitor = () => {
 
   return (
     <>
-      {/* Settings Button - positioned fixed in top right */}
+      {/* Settings Button - positioned fixed in bottom left */}
       <button
         onClick={handleToggle}
-        className="fixed top-3 right-6 z-50 bg-gradient-to-r from-[#14b8a6]/20 to-[#2dd4bf]/20 hover:from-[#14b8a6]/30 hover:to-[#2dd4bf]/30 text-white p-2.5 rounded-full transition-all duration-300 group hover:shadow-[0_0_20px_rgba(20,184,166,0.5)]"
+        className="fixed bottom-36 left-4 z-50 bg-gradient-to-r from-[#14b8a6]/20 to-[#2dd4bf]/20 hover:from-[#14b8a6]/30 hover:to-[#2dd4bf]/30 text-white p-2.5 rounded-full transition-all duration-300 group hover:shadow-[0_0_20px_rgba(20,184,166,0.5)] hover:scale-110"
         title="Performance Monitor"
       >
         <svg
