@@ -42,6 +42,11 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     x: 0,
     y: 0,
   });
+  const [showPlaylistDropdown, setShowPlaylistDropdown] = useState(false);
+  const [playlistDropdownPosition, setPlaylistDropdownPosition] = useState({
+    x: 0,
+    y: 0,
+  });
   const hoverTimeoutRef = useRef(null);
   const { showToast } = useToast();
 
@@ -52,51 +57,8 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     (activeSong?.key && song?.key && activeSong.key === song.key);
 
   useEffect(() => {
-    // Check if song has a preview URL already (from API or cache)
-    const hasPreviewUrl = !!(song.preview_url || song.url);
-
-    // Check if preview URL is cached
-    const cached = isPreviewCached(song);
-
-    // Check if audio is preloaded
-    const audioReady = songId ? isAudioReady(songId) : false;
-
-    // Show indicator if any condition is true
-    const shouldShow = hasPreviewUrl || cached === true || audioReady === true;
-    setShowCacheIndicator(shouldShow);
+    setShowCacheIndicator(isPreviewCached(song) && isAudioReady(songId));
   }, [song, songId, isPreviewCached, isAudioReady]);
-
-  // Force re-check when hovering (after prefetch might complete)
-  useEffect(() => {
-    if (isHovered) {
-      const checkInterval = setInterval(() => {
-        const hasUrl = !!(song.preview_url || song.url);
-        const cached = isPreviewCached(song);
-        const audioReady = songId ? isAudioReady(songId) : false;
-
-        const shouldShow = hasUrl || cached === true || audioReady === true;
-        if (shouldShow && !showCacheIndicator) {
-          setShowCacheIndicator(true);
-          clearInterval(checkInterval);
-        }
-      }, 250); // Check every 250ms while hovering
-
-      // Clear after 2 seconds to prevent infinite checking
-      const timeout = setTimeout(() => clearInterval(checkInterval), 2000);
-
-      return () => {
-        clearInterval(checkInterval);
-        clearTimeout(timeout);
-      };
-    }
-  }, [
-    isHovered,
-    song,
-    songId,
-    isPreviewCached,
-    isAudioReady,
-    showCacheIndicator,
-  ]);
 
   useEffect(() => {
     return () => {
@@ -186,21 +148,9 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Calculate position accounting for viewport and scroll
-    const menuWidth = 200;
-    const menuHeight = 150; // Approximate height
-
-    let x = e.clientX;
-    let y = e.clientY;
-
-    // Prevent menu from going off screen
-    if (x + menuWidth > window.innerWidth) {
-      x = window.innerWidth - menuWidth - 10;
-    }
-
-    if (y + menuHeight > window.innerHeight) {
-      y = window.innerHeight - menuHeight - 10;
-    }
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = Math.min(e.clientX, window.innerWidth - 200);
+    const y = e.clientY;
 
     setContextMenuPosition({ x, y });
     setShowContextMenu(true);
@@ -245,33 +195,41 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         onContextMenu={handleContextMenu}
       >
         {showCacheIndicator && (
-          <div className="absolute top-5 left-5 z-10">
+          <div className="absolute top-3 left-3 z-10">
             <HiLightningBolt
-              className="w-4 h-4 text-[#14b8a6] drop-shadow-[0_0_10px_rgba(20,184,166,0.8)]"
+              className="w-4 h-4 text-[#14b8a6] opacity-80 animate-pulse"
               title="Instant playback ready"
             />
           </div>
         )}
 
         {isCurrentSong && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] z-10">
-            <div className="h-full bg-white/30 animate-pulse" />
+          <div className="absolute top-3 left-3 z-10 bg-[#14b8a6]/20 backdrop-blur-sm rounded-full px-2 py-1">
+            <span className="text-xs text-[#14b8a6] font-semibold">
+              Now Playing
+            </span>
           </div>
         )}
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleContextMenu(e);
-          }}
-          className="absolute bottom-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        >
-          <div className="relative transform hover:scale-110 transition-transform duration-200">
-            <div className="bg-black/70 rounded-full p-2 border border-white/20 hover:border-[#14b8a6]/50 shadow-[0_0_20px_rgba(20,184,166,0.5)]">
-              <HiOutlineDotsHorizontal size={16} className="text-white" />
-            </div>
+        {/* Context menu button - vertically centered with text */}
+        <div className="absolute bottom-0 right-3 z-30 opacity-0 group-hover:opacity-90 transition-all duration-300">
+          <div className="relative -translate-y-[12px]">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleContextMenu(e);
+              }}
+              className="w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm hover:scale-110 flex items-center justify-center ring-1 ring-[#14b8a6]/40 hover:ring-[#14b8a6]/60 shadow-[0_0_8px_rgba(20,184,166,0.4)] hover:shadow-[0_0_12px_rgba(20,184,166,0.6)] transition-all duration-200"
+            >
+              {/* Three horizontal dots */}
+              <div className="flex items-center gap-0.5">
+                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+              </div>
+            </button>
           </div>
-        </button>
+        </div>
 
         <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
           {(isHovered || isCurrentSong) && (
@@ -345,13 +303,36 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         </div>
       </div>
 
-      {/* Context menu - rendered outside card for proper positioning */}
+      {/* Context menu */}
       {showContextMenu && (
         <SongContextMenu
           song={song}
           position={contextMenuPosition}
           onClose={() => setShowContextMenu(false)}
+          onAddToPlaylist={(pos) => {
+            setPlaylistDropdownPosition(pos);
+            setShowPlaylistDropdown(true);
+            setShowContextMenu(false);
+          }}
         />
+      )}
+
+      {/* Playlist dropdown */}
+      {showPlaylistDropdown && (
+        <div
+          className="fixed z-50"
+          style={{
+            left: `${playlistDropdownPosition.x}px`,
+            top: `${playlistDropdownPosition.y}px`,
+          }}
+        >
+          <AddToPlaylistDropdown track={song} forceOpen={true}>
+            <button
+              className="hidden"
+              onClick={() => setShowPlaylistDropdown(false)}
+            />
+          </AddToPlaylistDropdown>
+        </div>
       )}
     </>
   );

@@ -1,13 +1,11 @@
-import ReactDOM from "react-dom";
 import { useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { playNext, addToQueue } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useToast } from "../context/ToastContext";
 import { dispatchQueueEvent } from "../utils/queueEvents";
-import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 
-const SongContextMenu = ({ song, position, onClose }) => {
+const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
   const dispatch = useDispatch();
   const menuRef = useRef(null);
   const { getPreviewUrl } = usePreviewUrl();
@@ -44,10 +42,16 @@ const SongContextMenu = ({ song, position, onClose }) => {
     onClose();
   };
 
-  return ReactDOM.createPortal(
+  const handleAddToPlaylist = () => {
+    if (onAddToPlaylist) {
+      onAddToPlaylist(position);
+    }
+  };
+
+  return (
     <div
       ref={menuRef}
-      className="fixed z-[100] bg-[#1e1b4b]/95 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 py-2 min-w-[180px]"
+      className="fixed z-50 bg-[#1e1b4b]/95 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 py-2 min-w-[180px]"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -96,26 +100,26 @@ const SongContextMenu = ({ song, position, onClose }) => {
 
       <div className="border-t border-white/10 my-1" />
 
-      <AddToPlaylistDropdown track={song}>
-        <button className="w-full px-4 py-2.5 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 text-sm">
-          <svg
-            className="w-4 h-4 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          <span>Add to Playlist</span>
-        </button>
-      </AddToPlaylistDropdown>
-    </div>,
-    document.body
+      <button
+        onClick={handleAddToPlaylist}
+        className="w-full px-4 py-2.5 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 text-sm"
+      >
+        <svg
+          className="w-4 h-4 flex-shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+          />
+        </svg>
+        <span>Add to Playlist</span>
+      </button>
+    </div>
   );
 };
 

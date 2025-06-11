@@ -4,8 +4,21 @@ import { HiPlus, HiCheck, HiOutlineSparkles } from "react-icons/hi";
 import { BsMusicNoteList } from "react-icons/bs";
 import Portal from "./Portal";
 
-const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const AddToPlaylistDropdown = ({
+  track,
+  children,
+  className = "",
+  forceOpen = false,
+}) => {
+  const [isOpen, setIsOpen] = useState(forceOpen);
+
+  // Debug logging
+  console.log("AddToPlaylistDropdown mounted", {
+    track: track?.title,
+    forceOpen,
+    isOpen,
+    hasChildren: !!children,
+  });
   const [addedToPlaylists, setAddedToPlaylists] = useState(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -38,6 +51,17 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
   }, [isOpen]);
 
   useEffect(() => {
+    if (forceOpen) {
+      setIsOpen(true);
+    }
+  }, [forceOpen]);
+
+  useEffect(() => {
+    console.log("Positioning effect", {
+      isOpen,
+      hasButtonRef: !!buttonRef.current,
+      buttonRect: buttonRef.current?.getBoundingClientRect(),
+    });
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const dropdownWidth = 280;
@@ -107,6 +131,11 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
   };
 
   const trackId = track?.key || track?.id || track?.track_id;
+  console.log("AddToPlaylistDropdown render", {
+    isOpen,
+    dropdownPosition,
+    isPortalRendering: isOpen && !!Portal,
+  });
 
   return (
     <>
