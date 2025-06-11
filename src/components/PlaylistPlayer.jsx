@@ -5,6 +5,8 @@ import {
   setActiveSong,
   toggleShuffle,
   toggleRepeat,
+  removeFromQueue,
+  clearQueue,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
@@ -43,7 +45,6 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
   const [showManagePanel, setShowManagePanel] = useState(false);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
-  // const { showToast } = useToast();
 
   // Check if we're on a playlist page
   const isPlaylistPage = window.location.pathname === "/playlists";
@@ -111,25 +112,6 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
       });
     }
   }, [currentIndex, personalQueue, prefetchPreviewUrl, isPreviewCached]);
-
-  // useEffect(() => {
-  //   if (currentPlaylist?.tracks?.length > 0) {
-  //     const prevLength = useRef(currentPlaylist.tracks.length);
-  //     if (
-  //       prevLength.current !== currentPlaylist.tracks.length &&
-  //       prevLength.current !== undefined
-  //     ) {
-  //       const diff = currentPlaylist.tracks.length - prevLength.current;
-  //       if (diff > 0) {
-  //         showToast(
-  //           `${diff} track${diff > 1 ? "s" : ""} added to queue`,
-  //           "info"
-  //         );
-  //       }
-  //     }
-  //     prevLength.current = currentPlaylist.tracks.length;
-  //   }
-  // }, [currentPlaylist?.tracks?.length, showToast]);
 
   const handlePlayClick = async (track, index) => {
     if (activeSong?.key === track.key && isPlaying) {
@@ -347,100 +329,170 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
           className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2"
         >
           {personalQueue && personalQueue.length > 0 ? (
-            personalQueue.map((track, index) => {
-              const isActive = currentIndex === index;
-              const isCurrentSong = activeSong?.key === track.key;
+            <>
+              {/* Track List with enhanced controls */}
+              <div className="space-y-1">
+                {personalQueue.map((track, index) => {
+                  const isActive = currentIndex === index;
+                  const isCurrentSong = activeSong?.key === track.key;
 
-              return (
-                <div
-                  key={track.key || index}
-                  ref={isActive ? activeTrackRef : null}
-                  className={`group flex items-center gap-3 p-4 rounded-xl transition-all duration-200 cursor-pointer ${
-                    isActive
-                      ? "bg-gradient-to-r from-[#14b8a6]/30 via-[#14b8a6]/20 to-transparent border-l-4 border-[#14b8a6] shadow-lg shadow-[#14b8a6]/10"
-                      : "hover:bg-white/10 hover:pl-5 border-l-4 border-transparent"
-                  }`}
-                  onClick={() => handlePlayClick(track, index)}
-                  onMouseEnter={() => {
-                    if (!isPreviewCached(track)) {
-                      prefetchPreviewUrl(track, { priority: "high" });
-                    }
-                  }}
-                >
-                  {/* Track number/playing indicator */}
-                  <span
-                    className={`text-sm w-8 text-center flex-shrink-0 font-medium ${
-                      isCurrentSong
-                        ? "text-[#14b8a6]"
-                        : "text-gray-500 group-hover:text-gray-300"
-                    }`}
-                  >
-                    {isCurrentSong && isPlaying ? (
-                      <div className="flex justify-center gap-[2px]">
-                        <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse" />
-                        <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
-                        <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
-                      </div>
-                    ) : (
-                      index + 1
-                    )}
-                  </span>
-
-                  {/* Album art */}
-                  <div className="relative w-12 h-12 flex-shrink-0">
-                    <img
-                      src={track.images?.coverart || placeholderImage}
-                      alt={track.title}
-                      className={`w-full h-full rounded-lg object-cover shadow-lg transition-all duration-300 ${
-                        isCurrentSong
-                          ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-[#0f0e2e]"
-                          : ""
+                  return (
+                    <div
+                      key={track.key || index}
+                      ref={isActive ? activeTrackRef : null}
+                      className={`group flex items-center gap-3 p-4 rounded-xl transition-all duration-200 cursor-pointer relative overflow-hidden ${
+                        isActive
+                          ? "bg-gradient-to-r from-[#14b8a6]/30 via-[#14b8a6]/20 to-transparent border-l-4 border-[#14b8a6] shadow-lg shadow-[#14b8a6]/10"
+                          : "hover:bg-white/10 hover:pl-5 border-l-4 border-transparent"
                       }`}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = placeholderImage;
+                      onMouseEnter={() => {
+                        if (!isPreviewCached(track)) {
+                          prefetchPreviewUrl(track, { priority: "high" });
+                        }
                       }}
-                    />
-                    {isCurrentSong && (
-                      <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
-                        {isPlaying ? (
-                          <div className="flex gap-[2px]">
-                            <div className="w-[2px] h-3 bg-white rounded-full animate-pulse" />
-                            <div className="w-[2px] h-3 bg-white rounded-full animate-pulse delay-75" />
-                            <div className="w-[2px] h-3 bg-white rounded-full animate-pulse delay-150" />
+                    >
+                      {/* Track number/playing indicator */}
+                      <span
+                        className={`text-sm w-8 text-center flex-shrink-0 font-medium ${
+                          isCurrentSong
+                            ? "text-[#14b8a6]"
+                            : "text-gray-500 group-hover:text-gray-300"
+                        }`}
+                      >
+                        {isCurrentSong && isPlaying ? (
+                          <div className="flex justify-center gap-[2px]">
+                            <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse" />
+                            <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
+                            <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
                           </div>
                         ) : (
-                          <BsFillPlayFill className="text-white" size={16} />
+                          index + 1
                         )}
+                      </span>
+
+                      {/* Album art with play overlay */}
+                      <div
+                        className="relative w-12 h-12 flex-shrink-0 group/art"
+                        onClick={() => handlePlayClick(track, index)}
+                      >
+                        <img
+                          src={track.images?.coverart || placeholderImage}
+                          alt={track.title}
+                          className={`w-full h-full rounded-lg object-cover shadow-lg transition-all duration-300 ${
+                            isCurrentSong
+                              ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-[#0f0e2e]"
+                              : ""
+                          }`}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = placeholderImage;
+                          }}
+                        />
+                        {/* Play overlay on hover */}
+                        <div className="absolute inset-0 bg-black/60 rounded-lg opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
+                          {isCurrentSong && isPlaying ? (
+                            <BsFillPauseFill className="text-white w-5 h-5" />
+                          ) : (
+                            <BsFillPlayFill className="text-white w-5 h-5" />
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Track info with better typography */}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`font-medium truncate transition-colors ${
-                        isActive
-                          ? "text-[#14b8a6]"
-                          : "text-white group-hover:text-[#14b8a6]"
-                      }`}
+                      {/* Track info */}
+                      <div
+                        className="flex-1 min-w-0"
+                        onClick={() => handlePlayClick(track, index)}
+                      >
+                        <p
+                          className={`font-medium truncate transition-colors ${
+                            isActive
+                              ? "text-[#14b8a6]"
+                              : "text-white group-hover:text-[#14b8a6]"
+                          }`}
+                        >
+                          {track.title}
+                        </p>
+                        <p className="text-gray-400 text-sm truncate group-hover:text-gray-300 transition-colors">
+                          {track.subtitle}
+                        </p>
+                      </div>
+
+                      {/* Duration */}
+                      <span className="text-gray-400 text-sm font-medium bg-black/20 px-2.5 py-1 rounded-lg group-hover:bg-black/30 transition-all">
+                        {track.duration_ms
+                          ? formatTime(track.duration_ms / 1000)
+                          : "--:--"}
+                      </span>
+
+                      {/* Remove button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dispatch(removeFromQueue({ index }));
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-white/10 rounded-lg"
+                        title="Remove from queue"
+                      >
+                        <svg
+                          className="w-4 h-4 text-gray-400 hover:text-red-400 transition-colors"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+
+                      {/* Position indicator for current song */}
+                      {isCurrentSong && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#14b8a6] animate-pulse" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add a queue summary at the bottom */}
+              {personalQueue.length > 0 && (
+                <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-[#14b8a6]/20 to-[#0d9488]/10 rounded-lg flex items-center justify-center">
+                        <HiOutlineQueueList className="w-5 h-5 text-[#14b8a6]" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">Queue Summary</p>
+                        <p className="text-gray-400 text-sm">
+                          {personalQueue.length} tracks •{" "}
+                          {Math.floor(
+                            personalQueue.reduce(
+                              (acc, t) => acc + (t.duration_ms || 0),
+                              0
+                            ) / 60000
+                          )}{" "}
+                          minutes
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (confirm("Clear entire queue?")) {
+                          dispatch(clearQueue());
+                        }
+                      }}
+                      className="text-gray-400 hover:text-red-400 text-sm font-medium transition-colors"
                     >
-                      {track.title}
-                    </p>
-                    <p className="text-gray-400 text-sm truncate group-hover:text-gray-300 transition-colors">
-                      {track.subtitle}
-                    </p>
+                      Clear All
+                    </button>
                   </div>
-
-                  {/* Duration with better styling */}
-                  <span className="text-gray-400 text-sm font-medium bg-black/20 px-2.5 py-1 rounded-lg group-hover:bg-black/30 transition-all">
-                    {track.duration_ms
-                      ? formatTime(track.duration_ms / 1000)
-                      : "--:--"}
-                  </span>
                 </div>
-              );
-            })
+              )}
+            </>
           ) : (
             // Empty queue state
             <div className="flex flex-col items-center justify-center h-full py-12 text-center px-6">

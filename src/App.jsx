@@ -6,6 +6,7 @@ import {
   MusicPlayer,
   PerformanceMonitor,
   PlaylistPlayer,
+  QueueIndicator,
 } from "./components";
 import OnboardingModal from "./components/OnboardingModal";
 import {
@@ -80,6 +81,7 @@ const App = () => {
 
       <PerformanceMonitor />
       <OnboardingModal />
+      <QueueIndicator />
     </div>
   );
 };

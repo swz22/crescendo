@@ -25,6 +25,7 @@ import PageHeader from "./PageHeader";
 import Portal from "./Portal";
 import OnboardingModal from "./OnboardingModal";
 import Toast from "./Toast";
+import QueueIndicator from "./QueueIndicator";
 
 export {
   LeftSidebar,
@@ -54,4 +55,5 @@ export {
   PageHeader,
   OnboardingModal,
   Toast,
+  QueueIndicator,
 };
