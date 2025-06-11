@@ -7,6 +7,9 @@ import {
   setCurrentPlaylist,
   toggleShuffle,
   toggleRepeat,
+  addToQueueAndPlay,
+  addToQueue,
+  replaceQueue,
 } from "../redux/features/playerSlice";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -18,8 +21,10 @@ import {
   BsClock,
   BsArrowRepeat,
   BsCalendar3,
+  BsShuffle,
 } from "react-icons/bs";
 import { IoMdTime } from "react-icons/io";
+import { HiPlus } from "react-icons/hi";
 
 const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
@@ -116,20 +121,15 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
       dispatch(playPause(false));
     }
 
-    // Always get preview URL (from cache or fetch)
     const songWithPreview = await getPreviewUrl(song);
 
     if (songWithPreview.preview_url) {
       dispatch(
-        setActiveSong({
+        addToQueueAndPlay({
           song: songWithPreview,
-          data: tracks,
-          i,
-          playlistId: playlist.id,
-          playlist: playlist,
+          source: "playlist",
         })
       );
-      dispatch(playPause(true));
     }
   };
 
@@ -148,6 +148,23 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  const showToast = (message) => {
+    const toast = document.createElement("div");
+    toast.className =
+      "fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-[#14b8a6] text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slideup flex items-center gap-2";
+    toast.innerHTML = `
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add("animate-slidedown");
+      setTimeout(() => document.body.removeChild(toast), 300);
+    }, 2000);
   };
 
   return (
@@ -371,10 +388,22 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   </div>
                 </div>
 
-                {/* Play All / Shuffle All / Repeat Buttons */}
+                {/* Play All / Add to Queue / Shuffle Buttons */}
                 <div className="flex gap-3 mb-6">
                   <button
-                    onClick={() => handlePlayClick(tracks[0], 0)}
+                    onClick={() => {
+                      if (tracks && tracks.length > 0) {
+                        dispatch(
+                          replaceQueue({
+                            songs: tracks,
+                            source: "playlist",
+                            startIndex: 0,
+                          })
+                        );
+                        dispatch(playPause(true));
+                        showToast("Playing playlist");
+                      }
+                    }}
                     className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                   >
                     <svg
@@ -388,47 +417,40 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   </button>
                   <button
                     onClick={() => {
-                      // Enable shuffle if not already enabled
-                      if (!shuffle) {
-                        dispatch(toggleShuffle());
+                      if (tracks && tracks.length > 0) {
+                        tracks.forEach((track) => {
+                          dispatch(addToQueue({ song: track }));
+                        });
+                        showToast(`Added ${tracks.length} tracks to queue`);
                       }
-                      // Play random track
-                      const randomIndex = Math.floor(
-                        Math.random() * tracks.length
-                      );
-                      handlePlayClick(tracks[randomIndex], randomIndex);
                     }}
-                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border ${
-                      shuffle
-                        ? "bg-[#14b8a6]/20 border-[#14b8a6] text-[#14b8a6]"
-                        : "bg-white/10 hover:bg-white/20 text-white border-white/10"
-                    }`}
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border border-white/10"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v7m0 0l4-4m-4 4l4 4m12 6v-7m0 0l-4 4m4-4l-4-4"
-                      />
-                    </svg>
-                    Shuffle
+                    <HiPlus className="w-5 h-5" />
+                    Add to Queue
                   </button>
                   <button
-                    onClick={() => dispatch(toggleRepeat())}
-                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border ${
-                      repeat
-                        ? "bg-[#14b8a6]/20 border-[#14b8a6] text-[#14b8a6]"
-                        : "bg-white/10 hover:bg-white/20 text-white border-white/10"
-                    }`}
+                    onClick={() => {
+                      if (tracks && tracks.length > 0) {
+                        const randomIndex = Math.floor(
+                          Math.random() * tracks.length
+                        );
+                        dispatch(
+                          replaceQueue({
+                            songs: tracks,
+                            source: "playlist",
+                            startIndex: randomIndex,
+                          })
+                        );
+                        dispatch(toggleShuffle());
+                        dispatch(playPause(true));
+                        showToast("Shuffling playlist");
+                      }
+                    }}
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border border-white/10"
                   >
-                    <BsArrowRepeat size={20} />
-                    Repeat
+                    <BsShuffle className="w-5 h-5" />
+                    Shuffle
                   </button>
                 </div>
 

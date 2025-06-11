@@ -5,6 +5,9 @@ import {
   playPause,
   setActiveSong,
   setShuffleWithStart,
+  addToQueueAndPlay,
+  addToQueue,
+  replaceQueue,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import {
@@ -19,7 +22,7 @@ import {
   BsVinyl,
   BsClock,
 } from "react-icons/bs";
-import { HiOutlineSparkles } from "react-icons/hi";
+import { HiOutlineSparkles, HiPlus } from "react-icons/hi";
 import { IoMdTime } from "react-icons/io";
 
 const AlbumDetails = () => {
@@ -97,6 +100,21 @@ const AlbumDetails = () => {
         },
       };
 
+      dispatch(
+        addToQueueAndPlay({
+          song: trackWithAlbumArt,
+          source: "album",
+        })
+      );
+    }
+  };
+
+  const handlePauseClick = () => {
+    dispatch(playPause(false));
+  };
+
+  const handlePlayAll = () => {
+    if (tracks && tracks.length > 0) {
       const tracksWithAlbumArt = tracks.map((t) => ({
         ...t,
         images: {
@@ -106,34 +124,53 @@ const AlbumDetails = () => {
       }));
 
       dispatch(
-        setActiveSong({
-          song: trackWithAlbumArt,
-          data: tracksWithAlbumArt,
-          i: index,
+        replaceQueue({
+          songs: tracksWithAlbumArt,
+          source: "album",
+          startIndex: 0,
         })
       );
       dispatch(playPause(true));
     }
   };
-  const handlePauseClick = () => {
-    dispatch(playPause(false));
-  };
 
-  const handlePlayAll = () => {
+  const handleAddAllToQueue = () => {
     if (tracks && tracks.length > 0) {
-      handlePlayClick(tracks[0], 0);
+      const tracksWithAlbumArt = tracks.map((t) => ({
+        ...t,
+        images: {
+          ...t.images,
+          coverart: albumData?.images?.[0]?.url || t.images?.coverart,
+        },
+      }));
+
+      tracksWithAlbumArt.forEach((track) => {
+        dispatch(addToQueue({ song: track }));
+      });
+      // Show toast
+      showToast(`Added ${tracks.length} tracks to queue`);
     }
   };
 
-  const handleShuffle = async () => {
+  const handleShuffle = () => {
     if (tracks && tracks.length > 0) {
-      const randomIndex = Math.floor(Math.random() * tracks.length);
+      const tracksWithAlbumArt = tracks.map((t) => ({
+        ...t,
+        images: {
+          ...t.images,
+          coverart: albumData?.images?.[0]?.url || t.images?.coverart,
+        },
+      }));
 
-      // Set shuffle mode and start playing
-      dispatch(setShuffleWithStart({ startIndex: randomIndex }));
-
-      // Play the random track
-      await handlePlayClick(tracks[randomIndex], randomIndex);
+      dispatch(
+        replaceQueue({
+          songs: tracksWithAlbumArt,
+          source: "album",
+          startIndex: Math.floor(Math.random() * tracks.length),
+        })
+      );
+      dispatch(setShuffleWithStart({ startIndex: 0 }));
+      dispatch(playPause(true));
     }
   };
 
@@ -160,6 +197,23 @@ const AlbumDetails = () => {
   const releaseYear = albumData?.release_date
     ? new Date(albumData.release_date).getFullYear()
     : "";
+
+  const showToast = (message) => {
+    const toast = document.createElement("div");
+    toast.className =
+      "fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-[#14b8a6] text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slideup flex items-center gap-2";
+    toast.innerHTML = `
+    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+    </svg>
+    <span>${message}</span>
+  `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add("animate-slidedown");
+      setTimeout(() => document.body.removeChild(toast), 300);
+    }, 2000);
+  };
 
   return (
     <div className="flex flex-col">
@@ -239,9 +293,17 @@ const AlbumDetails = () => {
       <div className="px-6 py-6 flex items-center gap-4">
         <button
           onClick={handlePlayAll}
-          className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-full p-4 transition-all hover:scale-105 shadow-lg shadow-[#14b8a6]/25"
+          className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-full px-6 py-3 transition-all hover:scale-105 shadow-lg shadow-[#14b8a6]/25 flex items-center gap-2 font-semibold"
         >
-          <BsFillPlayFill size={28} className="translate-x-0.5" />
+          <BsFillPlayFill size={24} className="translate-x-0.5" />
+          Play Album
+        </button>
+        <button
+          onClick={handleAddAllToQueue}
+          className="border border-white/20 hover:border-white/40 text-white rounded-full px-6 py-3 transition-all hover:scale-105 flex items-center gap-2"
+        >
+          <HiPlus size={20} />
+          Add to Queue
         </button>
         <button
           onClick={handleShuffle}
