@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useCallback, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useState,
+  Fragment,
+} from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import PlayPause from "./PlayPause";
@@ -14,7 +20,11 @@ import Tooltip from "./Tooltip";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 import SongContextMenu from "./SongContextMenu";
-import { HiLightningBolt, HiDotsVertical } from "react-icons/hi";
+import {
+  HiLightningBolt,
+  HiDotsVertical,
+  HiOutlineDotsHorizontal,
+} from "react-icons/hi";
 import { useToast } from "../context/ToastContext";
 import { dispatchQueueEvent } from "../utils/queueEvents";
 
@@ -42,8 +52,51 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     (activeSong?.key && song?.key && activeSong.key === song.key);
 
   useEffect(() => {
-    setShowCacheIndicator(isPreviewCached(song) && isAudioReady(songId));
+    // Check if song has a preview URL already (from API or cache)
+    const hasPreviewUrl = !!(song.preview_url || song.url);
+
+    // Check if preview URL is cached
+    const cached = isPreviewCached(song);
+
+    // Check if audio is preloaded
+    const audioReady = songId ? isAudioReady(songId) : false;
+
+    // Show indicator if any condition is true
+    const shouldShow = hasPreviewUrl || cached === true || audioReady === true;
+    setShowCacheIndicator(shouldShow);
   }, [song, songId, isPreviewCached, isAudioReady]);
+
+  // Force re-check when hovering (after prefetch might complete)
+  useEffect(() => {
+    if (isHovered) {
+      const checkInterval = setInterval(() => {
+        const hasUrl = !!(song.preview_url || song.url);
+        const cached = isPreviewCached(song);
+        const audioReady = songId ? isAudioReady(songId) : false;
+
+        const shouldShow = hasUrl || cached === true || audioReady === true;
+        if (shouldShow && !showCacheIndicator) {
+          setShowCacheIndicator(true);
+          clearInterval(checkInterval);
+        }
+      }, 250); // Check every 250ms while hovering
+
+      // Clear after 2 seconds to prevent infinite checking
+      const timeout = setTimeout(() => clearInterval(checkInterval), 2000);
+
+      return () => {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [
+    isHovered,
+    song,
+    songId,
+    isPreviewCached,
+    isAudioReady,
+    showCacheIndicator,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -133,9 +186,21 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = Math.min(e.clientX, window.innerWidth - 200);
-    const y = e.clientY;
+    // Calculate position accounting for viewport and scroll
+    const menuWidth = 200;
+    const menuHeight = 150; // Approximate height
+
+    let x = e.clientX;
+    let y = e.clientY;
+
+    // Prevent menu from going off screen
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 10;
+    }
+
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - 10;
+    }
 
     setContextMenuPosition({ x, y });
     setShowContextMenu(true);
@@ -169,115 +234,118 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     song.subtitle || song.attributes?.artistName || "Unknown Artist";
 
   return (
-    <div
-      ref={cardRef}
-      className={`flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group
-  ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}
-  `}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onContextMenu={handleContextMenu}
-    >
-      {showCacheIndicator && (
-        <div className="absolute top-3 left-3 z-10">
-          <HiLightningBolt
-            className="w-4 h-4 text-[#14b8a6] opacity-80 animate-pulse"
-            title="Instant playback ready"
-          />
-        </div>
-      )}
-
-      {isCurrentSong && (
-        <div className="absolute top-3 left-3 z-10 bg-[#14b8a6]/20 backdrop-blur-sm rounded-full px-2 py-1">
-          <span className="text-xs text-[#14b8a6] font-semibold">
-            Now Playing
-          </span>
-        </div>
-      )}
-
-      {/* Context menu button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleContextMenu(e);
-        }}
-        className="absolute top-3 right-3 z-30 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-black/60 flex items-center justify-center"
+    <>
+      <div
+        ref={cardRef}
+        className={`flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group
+    ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}
+    `}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onContextMenu={handleContextMenu}
       >
-        <HiDotsVertical size={16} className="text-white" />
-      </button>
-
-      <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
-        {(isHovered || isCurrentSong) && (
-          <div
-            className="absolute inset-0 flex items-center justify-center z-20 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isLoading) {
-                isCurrentSong && isPlaying
-                  ? handlePauseClick()
-                  : handlePlayClick();
-              }
-            }}
-          >
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%)",
-              }}
+        {showCacheIndicator && (
+          <div className="absolute top-5 left-5 z-10">
+            <HiLightningBolt
+              className="w-4 h-4 text-[#14b8a6] drop-shadow-[0_0_10px_rgba(20,184,166,0.8)]"
+              title="Instant playback ready"
             />
+          </div>
+        )}
 
-            {isLoading ? (
-              <MusicLoadingSpinner size="md" />
-            ) : (
-              <PlayPause
-                isPlaying={isPlaying}
-                activeSong={activeSong}
-                song={song}
-                handlePause={handlePauseClick}
-                handlePlay={handlePlayClick}
-                size={50}
+        {isCurrentSong && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] z-10">
+            <div className="h-full bg-white/30 animate-pulse" />
+          </div>
+        )}
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleContextMenu(e);
+          }}
+          className="absolute bottom-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        >
+          <div className="relative transform hover:scale-110 transition-transform duration-200">
+            <div className="bg-black/70 rounded-full p-2 border border-white/20 hover:border-[#14b8a6]/50 shadow-[0_0_20px_rgba(20,184,166,0.5)]">
+              <HiOutlineDotsHorizontal size={16} className="text-white" />
+            </div>
+          </div>
+        </button>
+
+        <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
+          {(isHovered || isCurrentSong) && (
+            <div
+              className="absolute inset-0 flex items-center justify-center z-20 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isLoading) {
+                  isCurrentSong && isPlaying
+                    ? handlePauseClick()
+                    : handlePlayClick();
+                }
+              }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%)",
+                }}
               />
-            )}
-          </div>
-        )}
 
-        {coverArt ? (
-          <img
-            alt="song_img"
-            src={coverArt}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#14b8a6] to-[#0891b2] flex items-center justify-center">
-            <span className="text-white/50 text-6xl">♪</span>
-          </div>
-        )}
+              {isLoading ? (
+                <MusicLoadingSpinner size="md" />
+              ) : (
+                <PlayPause
+                  isPlaying={isPlaying}
+                  activeSong={activeSong}
+                  song={song}
+                  handlePause={handlePauseClick}
+                  handlePlay={handlePlayClick}
+                  size={50}
+                />
+              )}
+            </div>
+          )}
+
+          {coverArt ? (
+            <img
+              alt="song_img"
+              src={coverArt}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-[#14b8a6] to-[#0891b2] flex items-center justify-center">
+              <span className="text-white/50 text-6xl">♪</span>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 flex flex-col">
+          <Tooltip text={songTitle}>
+            <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
+              <Link to={`/songs/${song?.key || song?.id}`}>{songTitle}</Link>
+            </p>
+          </Tooltip>
+          <Tooltip text={artistName}>
+            <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
+              {artistId ? (
+                <Link
+                  to={`/artists/${artistId}`}
+                  className="hover:text-[#14b8a6] transition-colors"
+                >
+                  {artistName}
+                </Link>
+              ) : (
+                artistName
+              )}
+            </p>
+          </Tooltip>
+        </div>
       </div>
 
-      <div className="mt-4 flex flex-col">
-        <Tooltip text={songTitle}>
-          <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
-            <Link to={`/songs/${song?.key || song?.id}`}>{songTitle}</Link>
-          </p>
-        </Tooltip>
-        <Tooltip text={artistName}>
-          <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
-            {artistId ? (
-              <Link
-                to={`/artists/${artistId}`}
-                className="hover:text-[#14b8a6] transition-colors"
-              >
-                {artistName}
-              </Link>
-            ) : (
-              artistName
-            )}
-          </p>
-        </Tooltip>
-      </div>
-
-      {/* Context menu */}
+      {/* Context menu - rendered outside card for proper positioning */}
       {showContextMenu && (
         <SongContextMenu
           song={song}
@@ -285,7 +353,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           onClose={() => setShowContextMenu(false)}
         />
       )}
-    </div>
+    </>
   );
 };
 

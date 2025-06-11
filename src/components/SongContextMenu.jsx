@@ -1,3 +1,4 @@
+import ReactDOM from "react-dom";
 import { useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { playNext, addToQueue } from "../redux/features/playerSlice";
@@ -43,10 +44,10 @@ const SongContextMenu = ({ song, position, onClose }) => {
     onClose();
   };
 
-  return (
+  return ReactDOM.createPortal(
     <div
       ref={menuRef}
-      className="fixed z-50 bg-[#1e1b4b]/95 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 py-2 min-w-[180px]"
+      className="fixed z-[100] bg-[#1e1b4b]/95 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 py-2 min-w-[180px]"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -113,7 +114,8 @@ const SongContextMenu = ({ song, position, onClose }) => {
           <span>Add to Playlist</span>
         </button>
       </AddToPlaylistDropdown>
-    </div>
+    </div>,
+    document.body
   );
 };
 
