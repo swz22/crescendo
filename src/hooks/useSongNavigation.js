@@ -1,87 +1,21 @@
 import { useCallback, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  changeTrackAndPlay,
-  playPause,
-  toggleShuffle,
-} from "../redux/features/playerSlice";
-import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { store } from "../redux/store";
+import { navigateTrack, playPause } from "../redux/features/playerSlice";
 
 export const useSongNavigation = () => {
   const dispatch = useDispatch();
-  const {
-    currentSongs,
-    currentIndex,
-    playlistContext,
-    shuffle,
-    shuffleIndices,
-    playedIndices,
-  } = useSelector((state) => state.player);
-  const { getPreviewUrl, isPreviewCached } = usePreviewUrl();
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const getOptimizedSong = useCallback(
-    async (rawSong, songIndex) => {
-      let songData = rawSong;
-      const trackId = songData?.key || songData?.id || songData?.track_id;
-
-      if (songData?.preview_url) {
-        return songData;
-      }
-
-      if (songData?.url) {
-        return {
-          ...songData,
-          preview_url: songData.url,
-        };
-      }
-
-      if (trackId && isPreviewCached(songData)) {
-        const cachedResponse = await getPreviewUrl(songData);
-
-        let finalSong;
-        if (cachedResponse && typeof cachedResponse === "object") {
-          if (cachedResponse.title && cachedResponse.preview_url) {
-            finalSong = cachedResponse;
-          } else {
-            finalSong = {
-              ...songData,
-              preview_url: cachedResponse.preview_url || cachedResponse.url,
-              url: cachedResponse.preview_url || cachedResponse.url,
-            };
-          }
-        } else {
-          finalSong = songData;
-        }
-
-        return finalSong;
-      }
-
-      const fetchedSong = await getPreviewUrl(songData);
-
-      if (fetchedSong && fetchedSong.preview_url) {
-        return fetchedSong;
-      }
-
-      return {
-        ...songData,
-        ...fetchedSong,
-        title: songData.title || fetchedSong?.title,
-        subtitle: songData.subtitle || fetchedSong?.subtitle,
-        artists: songData.artists || fetchedSong?.artists,
-        images: songData.images || fetchedSong?.images,
-      };
-    },
-    [getPreviewUrl, isPreviewCached]
-  );
-
   const handleNextSong = useCallback(async () => {
-    if (!currentSongs || currentSongs.length === 0 || isNavigating) {
+    const { queue, isActive } = store.getState().player;
+
+    if (!isActive || queue.tracks.length === 0 || isNavigating) {
       return;
     }
 
-    // If only one song, just restart it
-    if (currentSongs.length === 1) {
+    // If only one song, restart it
+    if (queue.tracks.length === 1) {
       dispatch(playPause(false));
       setTimeout(() => dispatch(playPause(true)), 100);
       return;
@@ -90,70 +24,23 @@ export const useSongNavigation = () => {
     setIsNavigating(true);
 
     try {
-      console.log("Shuffle state:", shuffle);
-      console.log("Shuffle indices:", shuffleIndices);
-      console.log("Played indices:", playedIndices);
-      console.log("Current index:", currentIndex);
-      dispatch(playPause(false));
-
-      let nextIndex;
-
-      if (shuffle && shuffleIndices.length > 0) {
-        // Find next unplayed song in shuffle order
-        const remainingIndices = shuffleIndices.filter(
-          (index) => !playedIndices.includes(index)
-        );
-
-        if (remainingIndices.length > 0) {
-          nextIndex = remainingIndices[0];
-        } else {
-          // All songs played, restart shuffle
-          dispatch(toggleShuffle());
-          dispatch(toggleShuffle());
-          nextIndex = shuffleIndices[0];
-        }
-      } else {
-        // Normal sequential playback
-        nextIndex = (currentIndex + 1) % currentSongs.length;
-      }
-
-      let nextSongData = currentSongs[nextIndex];
-      const optimizedSong = await getOptimizedSong(nextSongData, nextIndex);
-
-      if (!optimizedSong || !optimizedSong.preview_url) {
-        setIsNavigating(false);
-        return;
-      }
-
-      dispatch(
-        changeTrackAndPlay({
-          song: optimizedSong,
-          index: nextIndex,
-        })
-      );
+      dispatch(navigateTrack({ direction: "next" }));
     } catch (error) {
       console.error("Error in handleNextSong:", error);
     } finally {
       setTimeout(() => setIsNavigating(false), 100);
     }
-  }, [
-    currentSongs,
-    currentIndex,
-    dispatch,
-    getOptimizedSong,
-    isNavigating,
-    shuffle,
-    shuffleIndices,
-    playedIndices,
-  ]);
+  }, [dispatch, isNavigating]);
 
   const handlePrevSong = useCallback(async () => {
-    if (!currentSongs || currentSongs.length === 0 || isNavigating) {
+    const { queue, isActive } = store.getState().player;
+
+    if (!isActive || queue.tracks.length === 0 || isNavigating) {
       return;
     }
 
-    // If only one song, just restart it
-    if (currentSongs.length === 1) {
+    // If only one song, restart it
+    if (queue.tracks.length === 1) {
       dispatch(playPause(false));
       setTimeout(() => dispatch(playPause(true)), 100);
       return;
@@ -162,47 +49,13 @@ export const useSongNavigation = () => {
     setIsNavigating(true);
 
     try {
-      dispatch(playPause(false));
-
-      let prevIndex;
-
-      if (shuffle && playedIndices.length > 1) {
-        // Go back in shuffle history
-        prevIndex = playedIndices[playedIndices.length - 2];
-      } else {
-        // Normal sequential playback
-        prevIndex =
-          currentIndex === 0 ? currentSongs.length - 1 : currentIndex - 1;
-      }
-
-      let prevSongData = currentSongs[prevIndex];
-      const optimizedSong = await getOptimizedSong(prevSongData, prevIndex);
-
-      if (!optimizedSong || !optimizedSong.preview_url) {
-        setIsNavigating(false);
-        return;
-      }
-
-      dispatch(
-        changeTrackAndPlay({
-          song: optimizedSong,
-          index: prevIndex,
-        })
-      );
+      dispatch(navigateTrack({ direction: "prev" }));
     } catch (error) {
       console.error("Error in handlePrevSong:", error);
     } finally {
       setTimeout(() => setIsNavigating(false), 100);
     }
-  }, [
-    currentSongs,
-    currentIndex,
-    dispatch,
-    getOptimizedSong,
-    isNavigating,
-    shuffle,
-    playedIndices,
-  ]);
+  }, [dispatch, isNavigating]);
 
   return { handleNextSong, handlePrevSong, isNavigating };
 };

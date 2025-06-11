@@ -10,9 +10,8 @@ import { useDispatch, useSelector } from "react-redux";
 import PlayPause from "./PlayPause";
 import {
   playPause,
-  addToQueueAndPlay,
+  playTrack,
   addToQueue,
-  playNext,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
@@ -130,8 +129,8 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         else if (path.includes("/artists/")) source = "artist";
 
         dispatch(
-          addToQueueAndPlay({
-            song: songWithPreview,
+          playTrack({
+            track: songWithPreview,
             source,
           })
         );

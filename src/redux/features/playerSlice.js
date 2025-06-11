@@ -1,5 +1,33 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+// Helper functions
+const generateShuffleOrder = (length, currentIndex) => {
+  const indices = Array.from({ length }, (_, i) => i).filter(
+    (i) => i !== currentIndex
+  );
+
+  // Fisher-Yates shuffle
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  return indices;
+};
+
+const addToHistory = (state, song) => {
+  if (!song || !song.title) return;
+
+  const songKey = song.key || song.id || song.track_id;
+  state.recentlyPlayed = [
+    song,
+    ...state.recentlyPlayed.filter((s) => {
+      const sKey = s.key || s.id || s.track_id;
+      return sKey !== songKey;
+    }),
+  ].slice(0, 50); // Keep last 50
+};
+
 // Load playlists from localStorage
 const loadPlaylistsFromStorage = () => {
   try {
@@ -23,26 +51,46 @@ const savePlaylistsToStorage = (playlists) => {
 };
 
 const initialState = {
-  currentSongs: [],
-  currentIndex: 0,
+  // Core queue state - single source of truth
+  queue: {
+    tracks: [],
+    currentIndex: 0,
+    source: null, // 'discover', 'album', 'playlist', 'search', etc
+    sourceId: null, // ID of playlist/album/artist if applicable
+    name: "Your Queue",
+  },
+
+  // Playback state
   isActive: false,
   isPlaying: false,
   activeSong: {},
-  genreListId: "POP",
-  recentlyPlayed: [],
-  isModalOpen: false,
-  playlistContext: null,
-  currentPlaylist: null,
+
+  // Playback modes
   shuffle: false,
-  shuffleIndices: [],
-  playedIndices: [],
-  repeat: false,
+  shuffleOrder: [], // Pre-computed shuffle order
+  repeat: false, // false, 'track', 'queue'
+
+  // History
+  recentlyPlayed: [],
+  playHistory: [], // Indices of played tracks in current session
+
+  // UI state
+  genreListId: "POP",
+  isModalOpen: false,
+
   // Playlist management
   playlists: loadPlaylistsFromStorage(),
+
+  // Deprecated - to be removed after migration
+  currentSongs: [],
+  currentIndex: 0,
+  playlistContext: null,
+  currentPlaylist: null,
+  shuffleIndices: [],
+  playedIndices: [],
   activePlaylistId: null,
   activePlaylistType: "queue",
-  // Queue source tracking
-  queueSource: null, // 'discover', 'album', 'playlist', 'search', etc
+  queueSource: null,
   queueName: "Your Queue",
 };
 
@@ -50,69 +98,103 @@ const playerSlice = createSlice({
   name: "player",
   initialState,
   reducers: {
-    // Add single track to queue and play
-    addToQueueAndPlay: (state, action) => {
-      const { song, source } = action.payload;
+    // Single action for all play scenarios
+    playTrack: (state, action) => {
+      const { track, source, sourceId, index, queue } = action.payload;
 
-      // Add to recently played
-      const songKey = song.key || song.id || song.track_id;
-      if (songKey && song.title) {
-        state.recentlyPlayed = [
-          song,
-          ...state.recentlyPlayed.filter((s) => {
-            const sKey = s.key || s.id || s.track_id;
-            return sKey !== songKey;
-          }),
-        ].slice(0, 10);
+      // Update queue if provided (for album/playlist play)
+      if (queue && queue.length > 0) {
+        state.queue.tracks = queue;
+        state.queue.currentIndex = index || 0;
+        state.queue.source = source;
+        state.queue.sourceId = sourceId;
+        state.queue.name = action.payload.queueName || "Your Queue";
+
+        // Reset shuffle if queue changed
+        if (state.shuffle) {
+          state.shuffleOrder = generateShuffleOrder(queue.length, index || 0);
+        }
+      } else if (track) {
+        // Single track play - add to queue if not exists
+        const existingIndex = state.queue.tracks.findIndex(
+          (t) => (t.key || t.id) === (track.key || track.id)
+        );
+
+        if (existingIndex !== -1) {
+          state.queue.currentIndex = existingIndex;
+        } else {
+          state.queue.tracks.push(track);
+          state.queue.currentIndex = state.queue.tracks.length - 1;
+        }
       }
 
-      // Check if song already in queue
-      const existingIndex = state.currentSongs.findIndex(
-        (s) => (s.key || s.id) === (song.key || song.id)
-      );
-
-      if (existingIndex !== -1) {
-        // Song exists, just jump to it
-        state.currentIndex = existingIndex;
-      } else {
-        // Add to queue and play
-        state.currentSongs.push(song);
-        state.currentIndex = state.currentSongs.length - 1;
-      }
-
-      state.activeSong = song;
+      // Update playback state
+      state.activeSong = track || state.queue.tracks[state.queue.currentIndex];
       state.isActive = true;
       state.isPlaying = true;
-      state.queueSource = source || "manual";
+
+      // Add to history
+      addToHistory(state, state.activeSong);
+
+      // Legacy support - remove in next phase
+      state.currentSongs = state.queue.tracks;
+      state.currentIndex = state.queue.currentIndex;
     },
 
-    // Add to end of queue without playing
+    // Add to queue without playing
     addToQueue: (state, action) => {
-      const { song } = action.payload;
+      const { track, playNext = false } = action.payload;
 
-      // Check if already in queue
-      const exists = state.currentSongs.some(
-        (s) => (s.key || s.id) === (song.key || song.id)
+      const exists = state.queue.tracks.some(
+        (t) => (t.key || t.id) === (track.key || track.id)
       );
 
       if (!exists) {
-        state.currentSongs.push(song);
+        if (
+          playNext &&
+          state.queue.currentIndex < state.queue.tracks.length - 1
+        ) {
+          state.queue.tracks.splice(state.queue.currentIndex + 1, 0, track);
+        } else {
+          state.queue.tracks.push(track);
+        }
+
+        // Update shuffle order if active
+        if (state.shuffle) {
+          state.shuffleOrder = generateShuffleOrder(
+            state.queue.tracks.length,
+            state.queue.currentIndex
+          );
+        }
       }
+
+      // Legacy support
+      state.currentSongs = state.queue.tracks;
     },
 
-    // Add track to play next (after current)
-    playNext: (state, action) => {
-      const { song } = action.payload;
+    // Clear and replace queue
+    setQueue: (state, action) => {
+      const { tracks, source, sourceId, name, startIndex = 0 } = action.payload;
 
-      // Check if already in queue
-      const exists = state.currentSongs.some(
-        (s) => (s.key || s.id) === (song.key || song.id)
-      );
+      state.queue.tracks = tracks;
+      state.queue.currentIndex = startIndex;
+      state.queue.source = source;
+      state.queue.sourceId = sourceId;
+      state.queue.name = name || "Your Queue";
 
-      if (!exists) {
-        const insertIndex = state.currentIndex + 1;
-        state.currentSongs.splice(insertIndex, 0, song);
+      // Reset playback
+      state.activeSong = tracks[startIndex] || {};
+      state.isActive = tracks.length > 0;
+      state.playHistory = [startIndex];
+
+      // Handle shuffle
+      if (state.shuffle) {
+        state.shuffleOrder = generateShuffleOrder(tracks.length, startIndex);
       }
+
+      // Legacy support
+      state.currentSongs = tracks;
+      state.currentIndex = startIndex;
     },
 
     // Replace entire queue
@@ -292,60 +374,68 @@ const playerSlice = createSlice({
       }
     },
 
-    nextSong: (state, action) => {
-      const newIndex = action.payload;
+    navigateTrack: (state, action) => {
+      const { direction } = action.payload; // 'next' or 'prev'
 
-      if (state.currentSongs[newIndex]?.track) {
-        state.activeSong = state.currentSongs[newIndex].track;
+      if (state.queue.tracks.length === 0) return;
+
+      let newIndex;
+
+      if (state.shuffle) {
+        // Handle shuffle navigation
+        if (direction === "next") {
+          const currentPosInShuffle =
+            state.playHistory[state.playHistory.length - 1];
+          const remainingIndices = state.shuffleOrder.filter(
+            (i) => !state.playHistory.includes(i)
+          );
+
+          if (remainingIndices.length > 0) {
+            newIndex = remainingIndices[0];
+            state.playHistory.push(newIndex);
+          } else if (state.repeat === "queue") {
+            // Restart shuffle
+            state.shuffleOrder = generateShuffleOrder(
+              state.queue.tracks.length,
+              state.queue.currentIndex
+            );
+            state.playHistory = [state.shuffleOrder[0]];
+            newIndex = state.shuffleOrder[0];
+          } else {
+            return; // No more tracks
+          }
+        } else {
+          // Previous in shuffle
+          if (state.playHistory.length > 1) {
+            state.playHistory.pop();
+            newIndex = state.playHistory[state.playHistory.length - 1];
+          } else {
+            newIndex = state.queue.currentIndex;
+          }
+        }
       } else {
-        state.activeSong = state.currentSongs[newIndex];
+        // Sequential navigation
+        if (direction === "next") {
+          newIndex = (state.queue.currentIndex + 1) % state.queue.tracks.length;
+          if (newIndex === 0 && state.repeat !== "queue") {
+            return; // Don't loop if repeat is off
+          }
+        } else {
+          newIndex =
+            state.queue.currentIndex === 0
+              ? state.queue.tracks.length - 1
+              : state.queue.currentIndex - 1;
+        }
       }
 
-      // Add to recently played
-      if (state.activeSong) {
-        const songKey =
-          state.activeSong.key ||
-          state.activeSong.id ||
-          state.activeSong.track_id;
-        state.recentlyPlayed = [
-          state.activeSong,
-          ...state.recentlyPlayed.filter((song) => {
-            const sKey = song.key || song.id || song.track_id;
-            return sKey !== songKey;
-          }),
-        ].slice(0, 10);
-      }
+      // Update state
+      state.queue.currentIndex = newIndex;
+      state.activeSong = state.queue.tracks[newIndex];
+      addToHistory(state, state.activeSong);
 
+      // Legacy support
       state.currentIndex = newIndex;
-      state.isActive = true;
-    },
-
-    prevSong: (state, action) => {
-      const newIndex = action.payload;
-
-      if (state.currentSongs[newIndex]?.track) {
-        state.activeSong = state.currentSongs[newIndex].track;
-      } else {
-        state.activeSong = state.currentSongs[newIndex];
-      }
-
-      // Add to recently played
-      if (state.activeSong) {
-        const songKey =
-          state.activeSong.key ||
-          state.activeSong.id ||
-          state.activeSong.track_id;
-        state.recentlyPlayed = [
-          state.activeSong,
-          ...state.recentlyPlayed.filter((song) => {
-            const sKey = song.key || song.id || song.track_id;
-            return sKey !== songKey;
-          }),
-        ].slice(0, 10);
-      }
-
-      state.currentIndex = newIndex;
-      state.isActive = true;
+      state.currentSongs = state.queue.tracks;
     },
 
     toggleShuffle: (state) => {
@@ -530,14 +620,17 @@ const playerSlice = createSlice({
 });
 
 export const {
-  // New queue actions
-  addToQueueAndPlay,
+  // Unified queue actions
+  playTrack,
   addToQueue,
-  playNext,
-  replaceQueue,
+  setQueue,
+  navigateTrack,
   clearQueue,
   removeFromQueue,
-  // Legacy actions
+  // Legacy actions (to be deprecated)
+  addToQueueAndPlay,
+  playNext,
+  replaceQueue,
   setActiveSong,
   changeTrackAndPlay,
   nextSong,

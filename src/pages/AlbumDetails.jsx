@@ -116,9 +116,11 @@ const AlbumDetails = () => {
       }));
 
       dispatch(
-        replaceQueue({
-          songs: tracksWithAlbumArt,
+        setQueue({
+          tracks: tracksWithAlbumArt,
           source: "album",
+          sourceId: albumId,
+          name: albumData?.name || "Album",
           startIndex: 0,
         })
       );

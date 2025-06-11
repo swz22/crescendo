@@ -25,8 +25,7 @@ const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
   const handlePlayNext = async () => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
-      dispatch(playNext({ song: songWithPreview }));
-      dispatchQueueEvent("Will play next");
+      dispatch(addToQueue({ track: songWithPreview, playNext: true }));
       showToast("Will play next");
     }
     onClose();
@@ -35,8 +34,7 @@ const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
   const handleAddToQueue = async () => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
-      dispatch(addToQueue({ song: songWithPreview }));
-      dispatchQueueEvent("Added to queue");
+      dispatch(addToQueue({ track: songWithPreview }));
       showToast("Added to queue");
     }
     onClose();

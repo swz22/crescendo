@@ -90,12 +90,11 @@ const SongBar = ({
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
       dispatch(
-        addToQueueAndPlay({
-          song: songWithPreview,
+        playTrack({
+          track: songWithPreview,
           source,
         })
       );
-      dispatchQueueEvent("Track added to queue");
     }
   };
 
