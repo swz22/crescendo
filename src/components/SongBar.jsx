@@ -5,6 +5,7 @@ import { addToQueueAndPlay } from "../redux/features/playerSlice";
 import PlayPause from "./PlayPause";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown.jsx";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { dispatchQueueEvent } from "../utils/queueEvents";
 
 const SongBar = ({
   song,
@@ -94,6 +95,7 @@ const SongBar = ({
           source,
         })
       );
+      dispatchQueueEvent("Track added to queue");
     }
   };
 
@@ -160,16 +162,37 @@ const SongBar = ({
           )}
         </div>
       </div>
-      <AddToPlaylistDropdown track={song} />
-      {songKey && (
-        <PlayPause
-          isPlaying={isPlaying}
-          activeSong={activeSong}
-          song={song}
-          handlePause={handlePauseClick}
-          handlePlay={onPlayClick}
-        />
-      )}
+
+      {/* Action buttons with proper spacing */}
+      <div className="flex items-center gap-3">
+        <AddToPlaylistDropdown track={song}>
+          <button className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </button>
+        </AddToPlaylistDropdown>
+
+        {songKey && (
+          <PlayPause
+            isPlaying={isPlaying}
+            activeSong={activeSong}
+            song={song}
+            handlePause={handlePauseClick}
+            handlePlay={onPlayClick}
+          />
+        )}
+      </div>
     </div>
   );
 };

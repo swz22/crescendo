@@ -424,7 +424,7 @@ const playerSlice = createSlice({
     // Playlist management actions
     createPlaylist: (state, action) => {
       const newPlaylist = {
-        id: `playlist_${Date.now()}`,
+        id: action.payload.id || `playlist_${Date.now()}`,
         name: action.payload.name || "New Playlist",
         tracks: [],
         createdAt: new Date().toISOString(),

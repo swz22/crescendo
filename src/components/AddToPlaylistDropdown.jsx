@@ -10,6 +10,7 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
   const {
     playlists,
     handleAddToPlaylist,
@@ -20,8 +21,10 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
         buttonRef.current &&
-        !event.target.closest(".playlist-dropdown-content")
+        !buttonRef.current.contains(event.target)
       ) {
         setIsOpen(false);
       }
@@ -38,14 +41,14 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const dropdownWidth = 280;
-      const dropdownHeight = 400; // Approximate max height
+      const dropdownHeight = 400;
 
-      let left = rect.right - dropdownWidth;
-      let top = rect.bottom + 12;
+      let left = rect.left;
+      let top = rect.bottom + 8;
 
       // Check right edge
-      if (rect.right + 20 > window.innerWidth) {
-        left = rect.left - dropdownWidth;
+      if (left + dropdownWidth > window.innerWidth - 20) {
+        left = rect.right - dropdownWidth;
       }
 
       // Check left edge
@@ -55,12 +58,17 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
 
       // Check bottom edge
       if (top + dropdownHeight > window.innerHeight - 20) {
-        top = rect.top - dropdownHeight - 12;
+        top = rect.top - dropdownHeight - 8;
       }
 
       setDropdownPosition({ top, left });
     }
   }, [isOpen]);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
 
   const handleAdd = (playlistId) => {
     handleAddToPlaylist(playlistId, track);
@@ -84,9 +92,9 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
   const handleCreateNew = () => {
     const name = prompt("Enter playlist name:");
     if (name?.trim()) {
-      const newPlaylistId = `playlist_${Date.now()}`;
-      handleCreatePlaylist(name.trim());
+      const newPlaylistId = handleCreatePlaylist(name.trim());
 
+      // Add track to the newly created playlist
       setTimeout(() => {
         handleAddToPlaylist(newPlaylistId, track);
         setShowSuccess(true);
@@ -102,14 +110,7 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
 
   return (
     <>
-      <div
-        ref={buttonRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        className={className}
-      >
+      <div ref={buttonRef} onClick={handleClick} className={className}>
         {children || (
           <button className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white">
             <HiPlus size={20} />
@@ -120,12 +121,13 @@ const AddToPlaylistDropdown = ({ track, children, className = "" }) => {
       {isOpen && (
         <Portal>
           <div
-            className="fixed inset-0 bg-black/40 z-[998]"
+            className="fixed inset-0 z-[998]"
             onClick={() => setIsOpen(false)}
           />
 
           <div
-            className="fixed w-[280px] z-[999] animate-slideInDown playlist-dropdown-content"
+            ref={dropdownRef}
+            className="fixed w-[280px] z-[999] animate-slideInDown"
             style={{
               top: `${dropdownPosition.top}px`,
               left: `${dropdownPosition.left}px`,

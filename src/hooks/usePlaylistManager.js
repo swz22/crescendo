@@ -24,9 +24,8 @@ export const usePlaylistManager = () => {
   // Create new playlist
   const handleCreatePlaylist = useCallback(
     (name) => {
-      dispatch(createPlaylist({ name }));
-      // Return the new playlist ID
       const newId = `playlist_${Date.now()}`;
+      dispatch(createPlaylist({ name, id: newId }));
       return newId;
     },
     [dispatch]
