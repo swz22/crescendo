@@ -24,6 +24,7 @@ import {
 } from "react-icons/bs";
 import { HiOutlineSparkles, HiPlus } from "react-icons/hi";
 import { IoMdTime } from "react-icons/io";
+import { useToast } from "../context/ToastContext";
 
 const AlbumDetails = () => {
   const { id: albumId } = useParams();
@@ -33,6 +34,7 @@ const AlbumDetails = () => {
     usePreviewUrl();
   const [dominantColor, setDominantColor] = useState("rgb(20, 184, 166)");
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const { showToast } = useToast();
 
   const {
     data: albumData,
@@ -147,7 +149,7 @@ const AlbumDetails = () => {
       tracksWithAlbumArt.forEach((track) => {
         dispatch(addToQueue({ song: track }));
       });
-      // Show toast
+
       showToast(`Added ${tracks.length} tracks to queue`);
     }
   };
@@ -197,23 +199,6 @@ const AlbumDetails = () => {
   const releaseYear = albumData?.release_date
     ? new Date(albumData.release_date).getFullYear()
     : "";
-
-  const showToast = (message) => {
-    const toast = document.createElement("div");
-    toast.className =
-      "fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-[#14b8a6] text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slideup flex items-center gap-2";
-    toast.innerHTML = `
-    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-    </svg>
-    <span>${message}</span>
-  `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.classList.add("animate-slidedown");
-      setTimeout(() => document.body.removeChild(toast), 300);
-    }, 2000);
-  };
 
   return (
     <div className="flex flex-col">

@@ -14,6 +14,7 @@ import Tooltip from "./Tooltip";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 import { HiLightningBolt, HiPlus, HiDotsVertical } from "react-icons/hi";
+import { useToast } from "../context/ToastContext";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
@@ -31,6 +32,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     y: 0,
   });
   const hoverTimeoutRef = useRef(null);
+  const { showToast } = useToast();
 
   const songId = song?.key || song?.id || song?.track_id;
   const isCurrentSong =
@@ -148,34 +150,19 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
       dispatch(addToQueue({ song: songWithPreview }));
-      // Show toast notification
       showToast("Added to queue");
     }
     setShowContextMenu(false);
-  }, [song, dispatch, getPreviewUrl]);
+  }, [song, dispatch, getPreviewUrl, showToast]);
 
   const handlePlayNext = useCallback(async () => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
       dispatch(playNext({ song: songWithPreview }));
-      // Show toast notification
       showToast("Will play next");
     }
     setShowContextMenu(false);
-  }, [song, dispatch, getPreviewUrl]);
-
-  // Simple toast notification
-  const showToast = (message) => {
-    const toast = document.createElement("div");
-    toast.className =
-      "fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-[#14b8a6] text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slideup";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.classList.add("animate-slidedown");
-      setTimeout(() => document.body.removeChild(toast), 300);
-    }, 2000);
-  };
+  }, [song, dispatch, getPreviewUrl, showToast]);
 
   const handleContextMenu = (e) => {
     e.preventDefault();

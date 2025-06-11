@@ -27,6 +27,7 @@ import {
 } from "react-icons/bs";
 import { HiOutlineQueueList, HiOutlineSparkles } from "react-icons/hi2";
 import { useSongNavigation } from "../hooks/useSongNavigation";
+// import { useToast } from "../context/ToastContext";
 
 const PlaylistPlayer = ({ playlist, tracks }) => {
   const dispatch = useDispatch();
@@ -42,6 +43,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
   const [showManagePanel, setShowManagePanel] = useState(false);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
+  // const { showToast } = useToast();
 
   // Check if we're on a playlist page
   const isPlaylistPage = window.location.pathname === "/playlists";
@@ -109,6 +111,25 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
       });
     }
   }, [currentIndex, personalQueue, prefetchPreviewUrl, isPreviewCached]);
+
+  // useEffect(() => {
+  //   if (currentPlaylist?.tracks?.length > 0) {
+  //     const prevLength = useRef(currentPlaylist.tracks.length);
+  //     if (
+  //       prevLength.current !== currentPlaylist.tracks.length &&
+  //       prevLength.current !== undefined
+  //     ) {
+  //       const diff = currentPlaylist.tracks.length - prevLength.current;
+  //       if (diff > 0) {
+  //         showToast(
+  //           `${diff} track${diff > 1 ? "s" : ""} added to queue`,
+  //           "info"
+  //         );
+  //       }
+  //     }
+  //     prevLength.current = currentPlaylist.tracks.length;
+  //   }
+  // }, [currentPlaylist?.tracks?.length, showToast]);
 
   const handlePlayClick = async (track, index) => {
     if (activeSong?.key === track.key && isPlaying) {
