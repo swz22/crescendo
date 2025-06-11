@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { store } from "../redux/store";
+import { addToQueueAndPlay } from "../redux/features/playerSlice";
 import PlayPause from "./PlayPause";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown.jsx";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -78,22 +78,12 @@ const SongBar = ({
   const songKey = song?.key || song?.id || song?.hub?.actions?.[0]?.id;
 
   const onPlayClick = () => {
-    const currentQueue = store.getState().player.currentSongs || [];
+    const path = window.location.pathname;
+    let source = "manual";
+    if (path.includes("/artists/")) source = "artist";
+    else if (path.includes("/albums/")) source = "album";
 
-    const songExists = currentQueue.some((s) => s.key === song.key);
-
-    let newQueue;
-    let newIndex;
-
-    if (songExists) {
-      newQueue = currentQueue;
-      newIndex = currentQueue.findIndex((s) => s.key === song.key);
-    } else {
-      newQueue = [...currentQueue, song];
-      newIndex = newQueue.length - 1;
-    }
-
-    handlePlayClick(song, newIndex, newQueue);
+    handlePlayClick(song, index);
   };
 
   return (

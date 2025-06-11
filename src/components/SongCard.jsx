@@ -1,16 +1,19 @@
 import React, { useEffect, useRef, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { store } from "../redux/store";
 import PlayPause from "./PlayPause";
-import { playPause, setActiveSong } from "../redux/features/playerSlice";
+import {
+  playPause,
+  addToQueueAndPlay,
+  addToQueue,
+  playNext,
+} from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
 import Tooltip from "./Tooltip";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
-import { HiLightningBolt } from "react-icons/hi";
-import { HiPlus } from "react-icons/hi";
+import { HiLightningBolt, HiPlus, HiDotsVertical } from "react-icons/hi";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
@@ -18,9 +21,15 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     usePreviewUrl();
   const { preloadAudio, isAudioReady } = useAudioPreload();
   const cardRef = useRef(null);
+  const contextMenuRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCacheIndicator, setShowCacheIndicator] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({
+    x: 0,
+    y: 0,
+  });
   const hoverTimeoutRef = useRef(null);
 
   const songId = song?.key || song?.id || song?.track_id;
@@ -40,6 +49,23 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        contextMenuRef.current &&
+        !contextMenuRef.current.contains(event.target)
+      ) {
+        setShowContextMenu(false);
+      }
+    };
+
+    if (showContextMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showContextMenu]);
 
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
@@ -90,48 +116,78 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   }, [dispatch]);
 
   const handlePlayClick = useCallback(async () => {
-    if (!songId || !isAudioReady(songId)) {
-      setIsLoading(true);
-    }
+    setIsLoading(true);
 
     try {
       const songWithPreview = await getPreviewUrl(song);
 
       if (songWithPreview.preview_url) {
-        const currentQueue = store.getState().player.currentSongs || [];
-
-        const songExists = currentQueue.some(
-          (s) => s.key === songWithPreview.key
-        );
-
-        let newQueue;
-        let newIndex;
-
-        if (songExists) {
-          newQueue = currentQueue;
-          newIndex = currentQueue.findIndex(
-            (s) => s.key === songWithPreview.key
-          );
-        } else {
-          newQueue = [...currentQueue, songWithPreview];
-          newIndex = newQueue.length - 1;
-        }
+        // Determine source from URL path
+        const path = window.location.pathname;
+        let source = "manual";
+        if (path === "/") source = "discover";
+        else if (path.includes("/search")) source = "search";
+        else if (path.includes("/top-artists")) source = "top-artists";
+        else if (path.includes("/artists/")) source = "artist";
 
         dispatch(
-          setActiveSong({
+          addToQueueAndPlay({
             song: songWithPreview,
-            data: newQueue,
-            i: newIndex,
+            source,
           })
         );
-        dispatch(playPause(true));
       }
     } catch (error) {
       console.error("Error playing song:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [song, songId, dispatch, getPreviewUrl, isAudioReady]);
+  }, [song, dispatch, getPreviewUrl]);
+
+  const handleAddToQueue = useCallback(async () => {
+    const songWithPreview = await getPreviewUrl(song);
+    if (songWithPreview.preview_url) {
+      dispatch(addToQueue({ song: songWithPreview }));
+      // Show toast notification
+      showToast("Added to queue");
+    }
+    setShowContextMenu(false);
+  }, [song, dispatch, getPreviewUrl]);
+
+  const handlePlayNext = useCallback(async () => {
+    const songWithPreview = await getPreviewUrl(song);
+    if (songWithPreview.preview_url) {
+      dispatch(playNext({ song: songWithPreview }));
+      // Show toast notification
+      showToast("Will play next");
+    }
+    setShowContextMenu(false);
+  }, [song, dispatch, getPreviewUrl]);
+
+  // Simple toast notification
+  const showToast = (message) => {
+    const toast = document.createElement("div");
+    toast.className =
+      "fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-[#14b8a6] text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slideup";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add("animate-slidedown");
+      setTimeout(() => document.body.removeChild(toast), 300);
+    }, 2000);
+  };
+
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rect = cardRef.current.getBoundingClientRect();
+    setContextMenuPosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setShowContextMenu(true);
+  };
 
   const getCoverArt = () => {
     if (song.images?.coverart) return song.images.coverart;
@@ -168,6 +224,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onContextMenu={handleContextMenu}
     >
       {showCacheIndicator && (
         <div className="absolute top-3 left-3 z-10">
@@ -186,13 +243,86 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         </div>
       )}
 
-      <div className="absolute top-6 right-6 z-30">
-        <AddToPlaylistDropdown track={song}>
-          <button className="w-8 h-8 bg-[#14b8a6] rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg shadow-[#14b8a6]/40 hover:shadow-[#14b8a6]/60 flex items-center justify-center">
-            <HiPlus size={16} className="text-white" />
+      {/* Context menu button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleContextMenu(e);
+        }}
+        className="absolute top-3 right-3 z-30 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-black/60 flex items-center justify-center"
+      >
+        <HiDotsVertical size={16} className="text-white" />
+      </button>
+
+      {/* Context menu dropdown */}
+      {showContextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="absolute z-40 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 py-2 min-w-[160px]"
+          style={{
+            left: `${Math.min(contextMenuPosition.x, 90)}px`,
+            top: `${contextMenuPosition.y}px`,
+          }}
+        >
+          <button
+            onClick={handlePlayNext}
+            className="w-full px-4 py-2 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 5l7 7-7 7M5 5l7 7-7 7"
+              />
+            </svg>
+            Play Next
           </button>
-        </AddToPlaylistDropdown>
-      </div>
+          <button
+            onClick={handleAddToQueue}
+            className="w-full px-4 py-2 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            Add to Queue
+          </button>
+          <div className="border-t border-white/10 my-1" />
+          <AddToPlaylistDropdown track={song}>
+            <button className="w-full px-4 py-2 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Add to Playlist
+            </button>
+          </AddToPlaylistDropdown>
+        </div>
+      )}
 
       <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
         {(isHovered || isCurrentSong) && (

@@ -24,6 +24,7 @@ import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 import PageHeader from "./PageHeader";
 import Portal from "./Portal";
 import OnboardingModal from "./OnboardingModal";
+import Toast from "./Toast";
 
 export {
   LeftSidebar,
@@ -52,4 +53,5 @@ export {
   Portal,
   PageHeader,
   OnboardingModal,
+  Toast,
 };
