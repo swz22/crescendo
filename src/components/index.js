@@ -12,7 +12,6 @@ import PlayPause from "./PlayPause";
 import AlbumCard from "./AlbumCard";
 import PlaylistCard from "./PlaylistCard";
 import PlaylistModal from "./PlaylistModal";
-import Tooltip from "./Tooltip";
 import PerformanceMonitor from "./PerformanceMonitor";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import TrackLoadingState from "./TrackLoadingState";
@@ -42,7 +41,6 @@ export {
   AlbumCard,
   PlaylistCard,
   PlaylistModal,
-  Tooltip,
   PerformanceMonitor,
   MusicLoadingSpinner,
   TrackLoadingState,

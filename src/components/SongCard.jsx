@@ -16,7 +16,6 @@ import {
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
-import Tooltip from "./Tooltip";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 import SongContextMenu from "./SongContextMenu";
@@ -280,26 +279,27 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           )}
         </div>
 
-        <div className="mt-4 flex flex-col">
-          <Tooltip text={songTitle}>
-            <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
-              <Link to={`/songs/${song?.key || song?.id}`}>{songTitle}</Link>
-            </p>
-          </Tooltip>
-          <Tooltip text={artistName}>
-            <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
-              {artistId ? (
-                <Link
-                  to={`/artists/${artistId}`}
-                  className="hover:text-[#14b8a6] transition-colors"
-                >
-                  {artistName}
-                </Link>
-              ) : (
-                artistName
-              )}
-            </p>
-          </Tooltip>
+        <div className="mt-4 flex flex-col pr-10">
+          <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
+            <Link
+              to={`/songs/${song?.key || song?.id}`}
+              className="hover:text-[#14b8a6] transition-colors duration-200"
+            >
+              {songTitle}
+            </Link>
+          </p>
+          <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
+            {artistId ? (
+              <Link
+                to={`/artists/${artistId}`}
+                className="hover:text-[#14b8a6] transition-colors"
+              >
+                {artistName}
+              </Link>
+            ) : (
+              artistName
+            )}
+          </p>
         </div>
       </div>
 

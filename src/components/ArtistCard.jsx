@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import Tooltip from "./Tooltip";
 
 // Create a simple placeholder as data URI to avoid network requests
 const createPlaceholder = (text = "Artist") => {
@@ -55,11 +54,9 @@ const ArtistCard = ({ track }) => {
         onError={handleImageError}
         className="w-full aspect-square rounded-lg object-cover"
       />
-      <Tooltip text={artistName}>
-        <p className="mt-4 font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
-          {artistName}
-        </p>
-      </Tooltip>
+      <p className="mt-4 font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
+        {artistName}
+      </p>
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import Tooltip from "./Tooltip";
 
 const AlbumCard = ({ album, showTrackCount = false }) => {
   const navigate = useNavigate();
@@ -36,16 +35,12 @@ const AlbumCard = ({ album, showTrackCount = false }) => {
         )}
       </div>
       <div className="mt-4 flex flex-col">
-        <Tooltip text={album.name}>
-          <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
-            {album.name}
-          </p>
-        </Tooltip>
-        <Tooltip text={artistNames}>
-          <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
-            {artistNames}
-          </p>
-        </Tooltip>
+        <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
+          {album.name}
+        </p>
+        <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
+          {artistNames}
+        </p>
         <p className="text-xs text-gray-400 mt-1">{releaseDate}</p>
       </div>
     </div>
