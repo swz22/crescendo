@@ -17,6 +17,43 @@ const attemptedTracks = new Set(); // Track which songs we've already tried
 // Cache duration: 5 minutes for successful URLs, 30 seconds for failures
 const CACHE_DURATION_SUCCESS = 5 * 60 * 1000;
 const CACHE_DURATION_FAILURE = 30 * 1000;
+// LRU Cache implementation
+class LRUCache {
+  constructor(maxSize = 500) {
+    this.maxSize = maxSize;
+    this.cache = new Map();
+  }
+
+  get(key) {
+    if (!this.cache.has(key)) return undefined;
+    const value = this.cache.get(key);
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+  }
+
+  set(key, value) {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    this.cache.set(key, value);
+  }
+
+  has(key) {
+    return this.cache.has(key);
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  get size() {
+    return this.cache.size;
+  }
+}
 
 // Load cached previews from localStorage on initialization
 const loadFromLocalStorage = () => {
@@ -90,76 +127,140 @@ const isCacheValid = (trackId) => {
   if (!timestamp) return false;
 
   const cachedValue = previewCache.get(trackId);
-  const duration =
-    cachedValue === null ? CACHE_DURATION_FAILURE : CACHE_DURATION_SUCCESS;
+
+  // Different cache durations based on result
+  let duration;
+  if (cachedValue === null) {
+    // For failures, use shorter cache but increase if we've seen many failures
+    const baseFailureDuration = 30 * 1000; // 30 seconds
+    const failureMultiplier = Math.min(consecutiveErrors + 1, 10);
+    duration = baseFailureDuration * failureMultiplier;
+  } else {
+    duration = CACHE_DURATION_SUCCESS;
+  }
 
   return Date.now() - timestamp < duration;
+};
+// Rate limiting queue
+const fetchQueue = [];
+let isProcessingQueue = false;
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 1000;
+let consecutiveErrors = 0;
+const MAX_RETRIES = 3;
+
+// Exponential backoff calculation
+const getBackoffDelay = (errorCount) => {
+  return Math.min(1000 * Math.pow(2, errorCount), 30000); // Max 30s
+};
+
+// Process fetch queue with rate limiting
+const processFetchQueue = async () => {
+  if (isProcessingQueue || fetchQueue.length === 0) return;
+
+  isProcessingQueue = true;
+
+  while (fetchQueue.length > 0) {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    const backoffDelay = getBackoffDelay(consecutiveErrors);
+    const requiredDelay = Math.max(MIN_REQUEST_INTERVAL, backoffDelay);
+
+    if (timeSinceLastRequest < requiredDelay) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, requiredDelay - timeSinceLastRequest)
+      );
+    }
+
+    const { trackId, resolve, reject, retryCount = 0 } = fetchQueue.shift();
+    lastRequestTime = Date.now();
+
+    try {
+      const response = await fetch(`${API_URL}/api/preview/${trackId}`);
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          // Rate limited - increase backoff and retry
+          consecutiveErrors++;
+          if (retryCount < MAX_RETRIES) {
+            fetchQueue.push({
+              trackId,
+              resolve,
+              reject,
+              retryCount: retryCount + 1,
+            });
+            continue;
+          }
+        }
+
+        // Cache failure with shorter TTL
+        previewCache.set(trackId, null);
+        cacheTimestamps.set(trackId, Date.now());
+        resolve(null);
+        continue;
+      }
+
+      // Success - reset error count
+      consecutiveErrors = 0;
+      const data = await response.json();
+      const previewUrl = data.preview_url || null;
+
+      // Cache result
+      previewCache.set(trackId, previewUrl);
+      cacheTimestamps.set(trackId, Date.now());
+
+      if (previewUrl) {
+        saveToLocalStorage(trackId, previewUrl);
+      }
+
+      resolve(previewUrl);
+    } catch (error) {
+      if (retryCount < MAX_RETRIES) {
+        fetchQueue.push({
+          trackId,
+          resolve,
+          reject,
+          retryCount: retryCount + 1,
+        });
+      } else {
+        reject(error);
+      }
+    }
+  }
+
+  isProcessingQueue = false;
 };
 
 const fetchPreviewUrl = async (trackId) => {
   // Check cache first
   if (previewCache.has(trackId) && isCacheValid(trackId)) {
     const cachedValue = previewCache.get(trackId);
-
-    // Update last used timestamp for localStorage
     if (cachedValue) {
       updateLastUsed(trackId);
     }
-
     return cachedValue;
   }
 
-  // Check if we're already fetching this track
-  if (fetchPromises.has(trackId)) {
-    return fetchPromises.get(trackId);
+  // Check if already queued
+  const existingRequest = fetchPromises.get(trackId);
+  if (existingRequest) {
+    return existingRequest;
   }
 
-  // Create fetch promise
-  const fetchPromise = (async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/preview/${trackId}`);
+  // Create promise and queue request
+  const promise = new Promise((resolve, reject) => {
+    fetchQueue.push({ trackId, resolve, reject });
+    processFetchQueue();
+  });
 
-      // Check if response is ok
-      if (!response.ok) {
-        const errorData = await response.json();
+  fetchPromises.set(trackId, promise);
 
-        // Handle rate limiting differently
-        if (response.status === 429) {
-          // Don't cache rate limit errors
-          return null;
-        }
+  // Clean up promise when done
+  promise.finally(() => {
+    fetchPromises.delete(trackId);
+  });
 
-        // Cache other failures
-        previewCache.set(trackId, null);
-        cacheTimestamps.set(trackId, Date.now());
-        return null;
-      }
-
-      const data = await response.json();
-
-      // Cache the result with timestamp
-      const previewUrl = data.preview_url || null;
-      previewCache.set(trackId, previewUrl);
-      cacheTimestamps.set(trackId, Date.now());
-
-      // Save successful URLs to localStorage
-      if (previewUrl) {
-        saveToLocalStorage(trackId, previewUrl);
-      }
-
-      return previewUrl;
-    } catch (error) {
-      console.error("Failed to fetch preview URL:", error);
-      // Don't cache network errors
-      return null;
-    } finally {
-      // Clean up promise cache
-      fetchPromises.delete(trackId);
-    }
-  })();
-
-  fetchPromises.set(trackId, fetchPromise);
-  return fetchPromise;
+  return promise;
 };
 
 export const usePreviewUrl = () => {
@@ -241,45 +342,36 @@ export const usePreviewUrl = () => {
     const trackId = song.key || song.id || song.track_id;
     if (!trackId) return;
 
-    // Skip if we've already attempted this track
-    if (attemptedTracks.has(trackId)) {
+    // Check if already cached or in progress
+    if (previewCache.has(trackId) && isCacheValid(trackId)) {
       return;
     }
 
-    // Already cached (including null values) or being fetched
-    if (previewCache.has(trackId) || fetchPromises.has(trackId)) {
+    if (fetchPromises.has(trackId)) {
       return;
     }
 
-    // Limit concurrent prefetch queue
-    if (prefetchQueue.size >= 3) {
-      return;
-    }
-
-    // Mark as attempted
-    attemptedTracks.add(trackId);
-
-    // Add to prefetch queue
-    prefetchQueue.add(trackId);
-
-    const doPrefetch = async () => {
-      try {
-        await fetchPreviewUrl(trackId);
-      } catch (error) {
-        console.error(`Prefetch failed for ${trackId}:`, error);
-      } finally {
-        prefetchQueue.delete(trackId);
-      }
-    };
-
-    // High priority: fetch immediately
-    // Low priority: respect rate limits
+    // Queue the fetch with appropriate priority
     if (priority === "high") {
-      doPrefetch();
+      // High priority goes to front of queue
+      fetchQueue.unshift({
+        trackId,
+        resolve: () => {},
+        reject: () => {},
+        isPrefetch: true,
+      });
     } else {
-      // Add delay for low priority to prevent rate limits
-      setTimeout(doPrefetch, 1000);
+      // Low priority goes to back
+      fetchQueue.push({
+        trackId,
+        resolve: () => {},
+        reject: () => {},
+        isPrefetch: true,
+      });
     }
+
+    // Process queue if not already processing
+    processFetchQueue();
   }, []);
 
   const prefetchMultiple = useCallback(
