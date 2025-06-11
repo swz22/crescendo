@@ -15,7 +15,6 @@ export const genres = [
   { title: "Latin", value: "LATIN" },
   { title: "Film & TV", value: "FILM_TV" },
   { title: "Country", value: "COUNTRY" },
-  { title: "Worldwide", value: "WORLDWIDE" },
   { title: "Reggae", value: "REGGAE" },
   { title: "House", value: "HOUSE" },
   { title: "K-Pop", value: "K_POP" },

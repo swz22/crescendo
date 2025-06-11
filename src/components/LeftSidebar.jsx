@@ -6,9 +6,11 @@ import {
   HiOutlineUserGroup,
   HiOutlineSparkles,
   HiOutlineCollection,
+  HiOutlineCog,
 } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
 import { logo } from "../assets";
+import PerformanceMonitor from "./PerformanceMonitor";
 
 const links = [
   { name: "Discover", to: "/", icon: HiOutlineHome },
@@ -51,6 +53,7 @@ const NavLinks = ({ handleClick }) => (
 
 const LeftSidebar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
 
   return (
     <>
@@ -62,6 +65,18 @@ const LeftSidebar = () => {
           className="w-full h-14 object-contain cursor-pointer transition-transform hover:scale-105"
         />
         <NavLinks />
+
+        {/* Performance Monitor Button - positioned at bottom */}
+        <div className="mt-auto mb-4">
+          <button
+            onClick={() => setShowPerformanceMonitor(true)}
+            className="w-full flex items-center justify-start px-4 py-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+            title="Performance Monitor"
+          >
+            <HiOutlineCog className="w-5 h-5 mr-3 group-hover:rotate-180 transition-transform duration-500" />
+            <span className="text-sm font-medium">Performance</span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile sidebar */}
@@ -90,7 +105,26 @@ const LeftSidebar = () => {
           className="w-full h-14 object-contain mt-8"
         />
         <NavLinks handleClick={() => setMobileMenuOpen(false)} />
+
+        {/* Performance Monitor Button for mobile */}
+        <div className="absolute bottom-6 left-6 right-6">
+          <button
+            onClick={() => {
+              setShowPerformanceMonitor(true);
+              setMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center justify-start px-4 py-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+          >
+            <HiOutlineCog className="w-5 h-5 mr-3 group-hover:rotate-180 transition-transform duration-500" />
+            <span className="text-sm font-medium">Performance</span>
+          </button>
+        </div>
       </div>
+
+      {/* Performance Monitor Component - Now controlled by sidebar */}
+      {showPerformanceMonitor && (
+        <PerformanceMonitor onClose={() => setShowPerformanceMonitor(false)} />
+      )}
     </>
   );
 };

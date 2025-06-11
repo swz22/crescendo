@@ -4,7 +4,6 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import {
   LeftSidebar,
   MusicPlayer,
-  PerformanceMonitor,
   PlaylistPlayer,
   QueueIndicator,
 } from "./components";
@@ -79,7 +78,6 @@ const App = () => {
         </div>
       )}
 
-      <PerformanceMonitor />
       <OnboardingModal />
       <QueueIndicator />
     </div>
