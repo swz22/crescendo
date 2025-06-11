@@ -2,12 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  playPause,
   setActiveSong,
-  setShuffleWithStart,
+  playPause,
   addToQueueAndPlay,
-  addToQueue,
-  replaceQueue,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import {
@@ -90,22 +87,15 @@ const AlbumDetails = () => {
 
   if (albumError || tracksError) return <Error />;
 
-  const handlePlayClick = async (track, index) => {
-    const songWithPreview = await getPreviewUrl(track);
-    if (songWithPreview.preview_url) {
-      const trackWithAlbumArt = {
-        ...songWithPreview,
-        images: {
-          ...songWithPreview.images,
-          coverart:
-            albumData?.images?.[0]?.url || songWithPreview.images?.coverart,
-        },
-      };
+  const handlePlayClick = async (song, i) => {
+    // Always get preview URL (from cache or fetch)
+    const songWithPreview = await getPreviewUrl(song);
 
+    if (songWithPreview.preview_url) {
       dispatch(
         addToQueueAndPlay({
-          song: trackWithAlbumArt,
-          source: "album",
+          song: songWithPreview,
+          source: "artist",
         })
       );
     }

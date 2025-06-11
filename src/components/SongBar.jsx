@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { addToQueueAndPlay } from "../redux/features/playerSlice";
 import PlayPause from "./PlayPause";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown.jsx";
@@ -17,6 +17,9 @@ const SongBar = ({
 }) => {
   const { prefetchPreviewUrl, isPreviewCached } = usePreviewUrl();
   const barRef = useRef(null);
+
+  const dispatch = useDispatch();
+  const { getPreviewUrl } = usePreviewUrl();
 
   const handleMouseEnter = () => {
     if (!isPreviewCached(song)) {
@@ -77,13 +80,21 @@ const SongBar = ({
   const artist = getArtistInfo();
   const songKey = song?.key || song?.id || song?.hub?.actions?.[0]?.id;
 
-  const onPlayClick = () => {
+  const onPlayClick = async () => {
     const path = window.location.pathname;
     let source = "manual";
     if (path.includes("/artists/")) source = "artist";
     else if (path.includes("/albums/")) source = "album";
 
-    handlePlayClick(song, index);
+    const songWithPreview = await getPreviewUrl(song);
+    if (songWithPreview.preview_url) {
+      dispatch(
+        addToQueueAndPlay({
+          song: songWithPreview,
+          source,
+        })
+      );
+    }
   };
 
   return (
