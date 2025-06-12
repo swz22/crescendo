@@ -20,11 +20,13 @@ import PlaylistPlayer from "./PlaylistPlayer";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
+import OnboardingModal from "./OnboardingModal";
+import QueueIndicator from "./QueueIndicator";
+import FloatingQueueButton from "./FloatingQueueButton";
+import MobileQueueSheet from "./MobileQueueSheet";
 import PageHeader from "./PageHeader";
 import Portal from "./Portal";
-import OnboardingModal from "./OnboardingModal";
 import Toast from "./Toast";
-import QueueIndicator from "./QueueIndicator";
 
 export {
   LeftSidebar,
@@ -54,4 +56,6 @@ export {
   OnboardingModal,
   Toast,
   QueueIndicator,
+  FloatingQueueButton,
+  MobileQueueSheet,
 };

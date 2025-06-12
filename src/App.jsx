@@ -6,6 +6,8 @@ import {
   MusicPlayer,
   PlaylistPlayer,
   QueueIndicator,
+  FloatingQueueButton,
+  MobileQueueSheet,
 } from "./components";
 import OnboardingModal from "./components/OnboardingModal";
 import {
@@ -30,6 +32,7 @@ const App = () => {
   } = useSelector((state) => state.player);
   const location = useLocation();
   const [playlistSession, setPlaylistSession] = useState(false);
+  const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
 
   useEffect(() => {
     if (playlistContext && location.pathname === "/playlists") {
@@ -64,13 +67,24 @@ const App = () => {
         </div>
       </div>
 
-      <div className="w-[380px] h-screen">
+      {/* Desktop Queue - Hidden on mobile */}
+      <div className="w-[380px] h-screen hidden lg:block">
         <PlaylistPlayer playlist={currentPlaylist} tracks={currentSongs} />
       </div>
 
+      {/* Mobile Queue Button */}
+      <FloatingQueueButton onClick={() => setMobileQueueOpen(true)} />
+
+      {/* Mobile Queue Sheet */}
+      <MobileQueueSheet
+        isOpen={mobileQueueOpen}
+        onClose={() => setMobileQueueOpen(false)}
+      />
+
+      {/* Music Player - Responsive positioning */}
       {activeSong?.title && (
         <div
-          className={`fixed h-28 bottom-0 left-[240px] right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-10 rounded-t-2xl border-t border-x border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] ${
+          className={`fixed h-28 bottom-0 left-0 lg:left-[240px] right-0 lg:right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-10 rounded-t-2xl border-t border-x border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] ${
             hideMainPlayer ? "invisible" : "visible"
           }`}
         >

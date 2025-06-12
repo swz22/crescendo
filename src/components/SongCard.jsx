@@ -61,7 +61,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     setShowCacheIndicator(isCached);
   }, [song, isPreviewCached, isPrefetched]);
 
-  // Replace the useEffect at line 41
   useEffect(() => {
     const currentCardRef = cardRef.current;
 
@@ -343,20 +342,26 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
 
       {/* Playlist dropdown */}
       {showPlaylistDropdown && (
-        <div
-          className="fixed z-50"
-          style={{
-            left: `${playlistDropdownPosition.x}px`,
-            top: `${playlistDropdownPosition.y}px`,
-          }}
-        >
-          <AddToPlaylistDropdown track={song} forceOpen={true}>
-            <button
-              className="hidden"
-              onClick={() => setShowPlaylistDropdown(false)}
+        <Portal>
+          <div
+            className="fixed z-50"
+            style={{
+              left: `${playlistDropdownPosition.x}px`,
+              top: `${playlistDropdownPosition.y}px`,
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowPlaylistDropdown(false);
+              }
+            }}
+          >
+            <AddToPlaylistDropdown
+              track={song}
+              forceOpen={true}
+              onClose={() => setShowPlaylistDropdown(false)}
             />
-          </AddToPlaylistDropdown>
-        </div>
+          </div>
+        </Portal>
       )}
     </>
   );

@@ -11,14 +11,6 @@ const AddToPlaylistDropdown = ({
   forceOpen = false,
 }) => {
   const [isOpen, setIsOpen] = useState(forceOpen);
-
-  // Debug logging
-  console.log("AddToPlaylistDropdown mounted", {
-    track: track?.title,
-    forceOpen,
-    isOpen,
-    hasChildren: !!children,
-  });
   const [addedToPlaylists, setAddedToPlaylists] = useState(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -131,11 +123,6 @@ const AddToPlaylistDropdown = ({
   };
 
   const trackId = track?.key || track?.id || track?.track_id;
-  console.log("AddToPlaylistDropdown render", {
-    isOpen,
-    dropdownPosition,
-    isPortalRendering: isOpen && !!Portal,
-  });
 
   return (
     <>

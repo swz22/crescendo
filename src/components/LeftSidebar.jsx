@@ -32,18 +32,20 @@ const NavLinks = ({ handleClick }) => (
               ? "text-[#2dd4bf] bg-gradient-to-r from-[#2dd4bf]/20 to-transparent scale-105 shadow-xl shadow-[#2dd4bf]/20 border-l-4 border-[#2dd4bf]"
               : "text-gray-300 hover:text-white hover:bg-white/10 border-l-4 border-transparent"
           } 
-          px-4 py-3 rounded-r-xl transition-all duration-300 group relative overflow-hidden`
+          px-2 sm:px-4 py-3 rounded-r-xl transition-all duration-300 group relative overflow-hidden`
         }
         onClick={() => handleClick && handleClick()}
       >
         <item.icon
-          className={`w-6 h-6 mr-3 transition-all duration-300 ${
+          className={`w-6 h-6 sm:mr-3 transition-all duration-300 ${
             window.location.pathname === item.to
               ? "text-[#2dd4bf] drop-shadow-[0_0_8px_rgba(45,212,191,0.6)]"
               : "group-hover:scale-110 group-hover:text-white"
           }`}
         />
-        <span className="font-semibold relative z-10">{item.name}</span>
+        <span className="font-semibold relative z-10 hidden sm:inline">
+          {item.name}
+        </span>
         {/* Hover effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
       </NavLink>
@@ -57,30 +59,38 @@ const LeftSidebar = () => {
 
   return (
     <>
-      <div className="md:flex hidden flex-col w-[240px] h-full py-10 px-4 bg-gradient-to-b from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-md border-r border-white/5">
+      <div className="hidden sm:flex flex-col w-[60px] sm:w-[240px] h-full py-10 px-2 sm:px-4 bg-gradient-to-b from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-md border-r border-white/5 transition-all duration-300">
         <img
           src={logo}
           alt="logo"
           onClick={() => (window.location.href = "/")}
-          className="w-full h-14 object-contain cursor-pointer transition-transform hover:scale-105"
+          className="w-full h-14 object-contain cursor-pointer transition-transform hover:scale-105 hidden sm:block"
         />
+        {/* Mobile icon version */}
+        <div className="sm:hidden flex justify-center mb-6">
+          <div className="w-10 h-10 bg-[#14b8a6] rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-xl">C</span>
+          </div>
+        </div>
         <NavLinks />
 
         {/* Performance Monitor Button - positioned at bottom */}
         <div className="mt-auto mb-4">
           <button
             onClick={() => setShowPerformanceMonitor(true)}
-            className="w-full flex items-center justify-start px-4 py-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+            className="w-full flex items-center justify-start px-2 sm:px-4 py-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
             title="Performance Monitor"
           >
-            <HiOutlineCog className="w-5 h-5 mr-3 group-hover:rotate-180 transition-transform duration-500" />
-            <span className="text-sm font-medium">Performance</span>
+            <HiOutlineCog className="w-5 h-5 sm:mr-3 group-hover:rotate-180 transition-transform duration-500" />
+            <span className="text-sm font-medium hidden sm:inline">
+              Performance
+            </span>
           </button>
         </div>
       </div>
 
       {/* Mobile sidebar */}
-      <div className="absolute md:hidden block top-6 right-3 z-50">
+      <div className="absolute sm:hidden block top-6 right-3 z-50">
         {!mobileMenuOpen ? (
           <HiOutlineMenu
             className="w-6 h-6 mr-2 text-white"
@@ -95,7 +105,7 @@ const LeftSidebar = () => {
       </div>
 
       <div
-        className={`absolute top-0 h-screen w-2/3 bg-gradient-to-br from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-lg z-50 p-6 md:hidden smooth-transition ${
+        className={`absolute top-0 h-screen w-2/3 bg-gradient-to-br from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-lg z-50 p-6 sm:hidden smooth-transition ${
           mobileMenuOpen ? "left-0" : "-left-full"
         }`}
       >
