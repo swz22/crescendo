@@ -12,7 +12,7 @@ const Searchbar = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      navigate(`/search/${searchTerm}`);
+      navigate(`/search/${searchTerm.trim()}`);
     }
   };
 
