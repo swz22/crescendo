@@ -61,10 +61,17 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     setShowCacheIndicator(isCached);
   }, [song, isPreviewCached, isPrefetched]);
 
+  // Replace the useEffect at line 41
   useEffect(() => {
+    const currentCardRef = cardRef.current;
+
     return () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
+      }
+      // Clean up any pending prefetch
+      if (currentCardRef) {
+        // Component cleanup
       }
     };
   }, []);

@@ -29,6 +29,7 @@ const SongBar = ({
   };
 
   useEffect(() => {
+    const currentBarRef = barRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -40,14 +41,15 @@ const SongBar = ({
       { threshold: 0.5 }
     );
 
-    if (barRef.current) {
-      observer.observe(barRef.current);
+    if (currentBarRef) {
+      observer.observe(currentBarRef);
     }
 
     return () => {
-      if (barRef.current) {
-        observer.unobserve(barRef.current);
+      if (currentBarRef) {
+        observer.unobserve(currentBarRef);
       }
+      observer.disconnect();
     };
   }, [song, prefetchPreviewUrl, isPreviewCached]);
 
