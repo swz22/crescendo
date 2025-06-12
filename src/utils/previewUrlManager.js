@@ -1,55 +1,170 @@
-// Centralized preview URL management
+// Centralized preview URL management with request deduplication
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 class PreviewUrlManager {
   constructor() {
-    this.subscribers = new Set();
-    this.batchQueue = [];
-    this.batchTimeout = null;
-    this.batchSize = 5;
-    this.batchDelay = 1000;
+    this.cache = new Map();
+    this.pendingRequests = new Map();
+    this.failureCount = new Map();
+    this.lastRequestTime = 0;
+    this.minRequestInterval = 250;
+    this.maxRetries = 3;
+    this.circuitBreakerThreshold = 10;
+    this.circuitBreakerResetTime = 60000;
+    this.consecutiveFailures = 0;
+    this.circuitBreakerTrippedAt = null;
+    this.loadPersistedCache();
   }
 
-  subscribe(callback) {
-    this.subscribers.add(callback);
-    return () => this.subscribers.delete(callback);
-  }
+  async getPreviewUrl(trackId) {
+    if (this.isCircuitBreakerOpen()) {
+      console.log("Circuit breaker is open, returning null");
+      return null;
+    }
 
-  notify(trackId, url) {
-    this.subscribers.forEach((callback) => callback(trackId, url));
-  }
-
-  async batchFetch(trackIds) {
-    trackIds.forEach((trackId) => {
-      if (!this.batchQueue.includes(trackId)) {
-        this.batchQueue.push(trackId);
+    const cached = this.cache.get(trackId);
+    if (cached) {
+      const age = Date.now() - cached.timestamp;
+      const maxAge = cached.url ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+      if (age < maxAge) {
+        return cached.url;
       }
-    });
-
-    if (this.batchTimeout) {
-      clearTimeout(this.batchTimeout);
     }
 
-    this.batchTimeout = setTimeout(() => {
-      this.processBatch();
-    }, this.batchDelay);
+    if (this.pendingRequests.has(trackId)) {
+      return this.pendingRequests.get(trackId);
+    }
+
+    const requestPromise = this.fetchPreviewUrl(trackId);
+    this.pendingRequests.set(trackId, requestPromise);
+
+    try {
+      const url = await requestPromise;
+      return url;
+    } finally {
+      this.pendingRequests.delete(trackId);
+    }
   }
 
-  async processBatch() {
-    const batch = this.batchQueue.splice(0, this.batchSize);
-
-    // Process batch with staggered delays
-    batch.forEach((trackId, index) => {
-      setTimeout(() => {
-        // This will use the existing queue system
-        fetchPreviewUrl(trackId, PRIORITY_LEVELS.LOW);
-      }, index * 200);
-    });
-
-    // Process remaining items
-    if (this.batchQueue.length > 0) {
-      this.batchTimeout = setTimeout(() => {
-        this.processBatch();
-      }, this.batchDelay);
+  async fetchPreviewUrl(trackId) {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest)
+      );
     }
+    this.lastRequestTime = Date.now();
+
+    const failures = this.failureCount.get(trackId) || 0;
+    if (failures >= this.maxRetries) {
+      this.cache.set(trackId, { url: null, timestamp: Date.now() });
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/preview/${trackId}`, {
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (response.status === 429) {
+        this.consecutiveFailures++;
+        const backoffTime = Math.min(1000 * Math.pow(2, failures), 30000);
+        await new Promise((resolve) => setTimeout(resolve, backoffTime));
+        this.failureCount.set(trackId, failures + 1);
+        throw new Error("Rate limited");
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const url = data.preview_url || null;
+
+      this.cache.set(trackId, { url, timestamp: Date.now() });
+      this.consecutiveFailures = 0;
+      this.failureCount.delete(trackId);
+
+      this.persistCache();
+
+      return url;
+    } catch (error) {
+      this.failureCount.set(trackId, failures + 1);
+      this.consecutiveFailures++;
+
+      if (this.consecutiveFailures >= this.circuitBreakerThreshold) {
+        this.circuitBreakerTrippedAt = Date.now();
+        console.warn("Circuit breaker tripped due to consecutive failures");
+      }
+
+      if (failures + 1 >= this.maxRetries) {
+        this.cache.set(trackId, { url: null, timestamp: Date.now() });
+      }
+
+      console.error(`Failed to fetch preview for ${trackId}:`, error.message);
+      return null;
+    }
+  }
+
+  isCircuitBreakerOpen() {
+    if (!this.circuitBreakerTrippedAt) return false;
+    const elapsed = Date.now() - this.circuitBreakerTrippedAt;
+    if (elapsed > this.circuitBreakerResetTime) {
+      this.circuitBreakerTrippedAt = null;
+      this.consecutiveFailures = 0;
+      return false;
+    }
+    return true;
+  }
+
+  persistCache() {
+    try {
+      const entries = Array.from(this.cache.entries())
+        .filter(([_, data]) => data.url !== null)
+        .sort((a, b) => b[1].timestamp - a[1].timestamp)
+        .slice(0, 500);
+
+      const cacheData = Object.fromEntries(entries);
+      localStorage.setItem(
+        "crescendo_preview_cache_v2",
+        JSON.stringify(cacheData)
+      );
+    } catch (error) {
+      console.error("Failed to persist cache:", error);
+    }
+  }
+
+  loadPersistedCache() {
+    try {
+      const stored = localStorage.getItem("crescendo_preview_cache_v2");
+      if (stored) {
+        const data = JSON.parse(stored);
+        Object.entries(data).forEach(([trackId, cacheData]) => {
+          this.cache.set(trackId, cacheData);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load persisted cache:", error);
+    }
+  }
+
+  clearCache() {
+    this.cache.clear();
+    this.pendingRequests.clear();
+    this.failureCount.clear();
+    this.consecutiveFailures = 0;
+    this.circuitBreakerTrippedAt = null;
+    localStorage.removeItem("crescendo_preview_cache_v2");
+  }
+
+  getCacheStats() {
+    return {
+      cached: this.cache.size,
+      pending: this.pendingRequests.size,
+      failed: this.failureCount.size,
+      circuitBreakerOpen: this.isCircuitBreakerOpen(),
+    };
   }
 }
 

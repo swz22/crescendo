@@ -13,7 +13,14 @@ const PerformanceMonitor = ({ onClose }) => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setStats(getCacheStats());
+      const cacheStats = getCacheStats();
+      setStats({
+        ...cacheStats,
+        memoryCache: cacheStats.cached,
+        localStorage: cacheStats.cached,
+        prefetchQueue: cacheStats.pending,
+        attemptedTracks: cacheStats.failed,
+      });
       setAudioStats(getAudioStats());
     }, 1000);
 
@@ -140,24 +147,24 @@ const PerformanceMonitor = ({ onClose }) => {
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       {
-                        label: "Memory",
-                        value: stats.memoryCache,
-                        sub: "Cached tracks",
+                        label: "Cached",
+                        value: stats.cached,
+                        sub: "Track URLs",
                       },
                       {
-                        label: "Storage",
-                        value: stats.localStorage,
-                        sub: "Saved locally",
+                        label: "Pending",
+                        value: stats.pending,
+                        sub: "In progress",
                       },
                       {
-                        label: "Queue",
-                        value: stats.prefetchQueue,
-                        sub: "Loading",
+                        label: "Failed",
+                        value: stats.failed,
+                        sub: "Retry later",
                       },
                       {
-                        label: "Total Cached",
-                        value: stats.attemptedTracks,
-                        sub: "All time",
+                        label: "Circuit",
+                        value: stats.circuitBreakerOpen ? "OPEN" : "OK",
+                        sub: stats.circuitBreakerOpen ? "Paused" : "Active",
                       },
                     ].map(({ label, value, sub }) => (
                       <div
