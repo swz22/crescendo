@@ -417,19 +417,23 @@ export const usePreviewUrl = () => {
   const prefetchPreviewUrl = useCallback((song, options = {}) => {
     const { priority = "low" } = options;
 
-    if (!song || song.preview_url) return;
+    if (!song || song.preview_url) return Promise.resolve(false);
 
     const trackId = song.key || song.id || song.track_id;
-    if (!trackId) return;
+    if (!trackId) return Promise.resolve(false);
 
     // Map string priority to numeric
     const numericPriority =
       priority === "high" ? PRIORITY_LEVELS.HIGH : PRIORITY_LEVELS.LOW;
 
-    // Fire and forget prefetch
-    fetchPreviewUrl(trackId, numericPriority).catch(() => {
-      // Silently handle prefetch failures
-    });
+    // Return the promise so caller can know when it completes
+    return fetchPreviewUrl(trackId, numericPriority)
+      .then((url) => {
+        return url !== null; // Return true if we got a preview URL
+      })
+      .catch(() => {
+        return false; // Return false on error
+      });
   }, []);
 
   const prefetchMultiple = useCallback(

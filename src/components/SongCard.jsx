@@ -45,6 +45,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     x: 0,
     y: 0,
   });
+  const [isPrefetched, setIsPrefetched] = useState(false);
   const hoverTimeoutRef = useRef(null);
   const { showToast } = useToast();
 
@@ -55,8 +56,10 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     (activeSong?.key && song?.key && activeSong.key === song.key);
 
   useEffect(() => {
-    setShowCacheIndicator(isPreviewCached(song) && isAudioReady(songId));
-  }, [song, songId, isPreviewCached, isAudioReady]);
+    // Check if already cached or if prefetched
+    const isCached = isPreviewCached(song) || isPrefetched;
+    setShowCacheIndicator(isCached);
+  }, [song, isPreviewCached, isPrefetched]);
 
   useEffect(() => {
     return () => {
@@ -65,6 +68,13 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    // If this is the current song and it's playing, it must be cached
+    if (isCurrentSong && activeSong?.preview_url) {
+      setIsPrefetched(true);
+    }
+  }, [isCurrentSong, activeSong]);
 
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
@@ -75,7 +85,15 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
 
     hoverTimeoutRef.current = setTimeout(async () => {
       if (!song.preview_url && !isPreviewCached(song) && !hasNoPreview(song)) {
-        prefetchPreviewUrl(song, { priority: "high" });
+        // Await the prefetch to know when it completes
+        const prefetchSuccess = await prefetchPreviewUrl(song, {
+          priority: "high",
+        });
+
+        // If prefetch was successful, update state
+        if (prefetchSuccess) {
+          setIsPrefetched(true);
+        }
       }
 
       if (songId && !isAudioReady(songId)) {
@@ -193,9 +211,9 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         onContextMenu={handleContextMenu}
       >
         {showCacheIndicator && (
-          <div className="absolute top-3 left-3 z-10">
+          <div className="absolute top-2 left-2 z-20 bg-black/60 backdrop-blur-sm rounded-full p-1.5">
             <HiLightningBolt
-              className="w-4 h-4 text-[#14b8a6] opacity-80 animate-pulse"
+              className="w-4 h-4 text-[#14b8a6] drop-shadow-[0_0_8px_rgba(20,184,166,0.8)]"
               title="Instant playback ready"
             />
           </div>
