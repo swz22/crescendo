@@ -19,6 +19,125 @@ const PRIORITY_LEVELS = {
   LOW: 2, // Background prefetch
 };
 
+// Save to localStorage
+const saveToLocalStorage = (trackId, url) => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const cached = stored ? JSON.parse(stored) : {};
+
+    // Add new entry
+    cached[trackId] = {
+      url,
+      timestamp: Date.now(),
+      lastUsed: Date.now(),
+    };
+
+    // Limit storage size - remove oldest entries if needed
+    const entries = Object.entries(cached);
+    if (entries.length > MAX_STORAGE_ITEMS) {
+      // Sort by lastUsed and keep most recent
+      entries.sort((a, b) => b[1].lastUsed - a[1].lastUsed);
+      const keepEntries = entries.slice(0, MAX_STORAGE_ITEMS);
+      const newCached = Object.fromEntries(keepEntries);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newCached));
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+    }
+  } catch (error) {
+    console.error("Failed to save to localStorage:", error);
+  }
+};
+
+// Update last used timestamp when retrieving from cache
+const updateLastUsed = (trackId) => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const cached = JSON.parse(stored);
+      if (cached[trackId]) {
+        cached[trackId].lastUsed = Date.now();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+      }
+    }
+  } catch (error) {
+    // Silently fail - not critical
+  }
+};
+
+// IndexedDB support for better storage
+const DB_NAME = "CrescendoCache";
+const DB_VERSION = 1;
+const STORE_NAME = "previewUrls";
+
+let db = null;
+
+const initIndexedDB = async () => {
+  if (db) return db;
+
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      db = request.result;
+      resolve(db);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const database = event.target.result;
+      if (!database.objectStoreNames.contains(STORE_NAME)) {
+        const store = database.createObjectStore(STORE_NAME, {
+          keyPath: "trackId",
+        });
+        store.createIndex("timestamp", "timestamp", { unique: false });
+        store.createIndex("lastUsed", "lastUsed", { unique: false });
+      }
+    };
+  });
+};
+
+const saveToIndexedDB = async (trackId, url) => {
+  try {
+    const database = await initIndexedDB();
+    const transaction = database.transaction([STORE_NAME], "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+
+    await store.put({
+      trackId,
+      url,
+      timestamp: Date.now(),
+      lastUsed: Date.now(),
+    });
+  } catch (error) {
+    console.error("IndexedDB save error:", error);
+  }
+};
+
+const loadFromIndexedDB = async () => {
+  try {
+    const database = await initIndexedDB();
+    const transaction = database.transaction([STORE_NAME], "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+
+    return new Promise((resolve) => {
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const results = request.result || [];
+        results.forEach((item) => {
+          if (item.url) {
+            previewCache.set(item.trackId, item.url);
+            cacheTimestamps.set(item.trackId, item.timestamp);
+          }
+        });
+        resolve();
+      };
+      request.onerror = () => resolve();
+    });
+  } catch (error) {
+    console.error("IndexedDB load error:", error);
+  }
+};
+
 // Adaptive rate limiter
 class AdaptiveRateLimiter {
   constructor() {
@@ -105,24 +224,30 @@ class PriorityQueue {
     };
     this.processing = false;
     this.rateLimiter = new AdaptiveRateLimiter();
-    this.activeRequests = new Map(); // Track active requests for cancellation
+    this.activeRequests = new Map();
+    this.inFlightRequests = new Map(); // Track in-flight requests
   }
 
   async add(trackId, priority = PRIORITY_LEVELS.LOW) {
-    // Cancel existing lower priority request for same track
-    this.cancelTrack(trackId, priority);
-
     // Check if already cached
     if (previewCache.has(trackId) && isCacheValid(trackId)) {
       const cachedValue = previewCache.get(trackId);
-      if (cachedValue) updateLastUsed(trackId);
+      if (cachedValue !== null) updateLastUsed(trackId);
       return Promise.resolve(cachedValue);
     }
+
+    // Check if request already in flight
+    if (this.inFlightRequests.has(trackId)) {
+      return this.inFlightRequests.get(trackId);
+    }
+
+    // Cancel existing lower priority request for same track
+    this.cancelTrack(trackId, priority);
 
     // Create abort controller for cancellation
     const abortController = new AbortController();
 
-    return new Promise((resolve, reject) => {
+    const promise = new Promise((resolve, reject) => {
       const request = {
         trackId,
         priority,
@@ -139,6 +264,16 @@ class PriorityQueue {
       // Start processing if not already
       this.process();
     });
+
+    // Store in-flight promise
+    this.inFlightRequests.set(trackId, promise);
+
+    // Clean up in-flight tracking when done
+    promise.finally(() => {
+      this.inFlightRequests.delete(trackId);
+    });
+
+    return promise;
   }
 
   cancelTrack(trackId, newPriority = null) {
@@ -173,13 +308,18 @@ class PriorityQueue {
       const request = this.getNextRequest();
       if (!request) break;
 
+      // Skip if cancelled
+      if (request.abortController.signal.aborted) {
+        continue;
+      }
+
       // Apply rate limiting delay
       const delay = this.rateLimiter.getDelay(request.priority);
       if (delay > 0) {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      // Skip if cancelled
+      // Double-check if still valid
       if (request.abortController.signal.aborted) {
         continue;
       }
@@ -189,14 +329,25 @@ class PriorityQueue {
       try {
         const response = await fetch(
           `${API_URL}/api/preview/${request.trackId}`,
-          { signal: request.abortController.signal }
+          {
+            signal: request.abortController.signal,
+            headers: {
+              "X-Priority": request.priority.toString(),
+            },
+          }
         );
 
         if (!response.ok) {
           if (response.status === 429) {
             this.rateLimiter.recordError(true);
-            // Requeue if critical
+
+            // Get retry-after header
+            const retryAfter = response.headers.get("Retry-After");
+            const delay = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
+
+            // Wait before retrying critical requests
             if (request.priority === PRIORITY_LEVELS.CRITICAL) {
+              await new Promise((resolve) => setTimeout(resolve, delay));
               this.queues[request.priority].unshift(request);
               continue;
             }
@@ -211,7 +362,10 @@ class PriorityQueue {
         // Update cache
         previewCache.set(request.trackId, previewUrl);
         cacheTimestamps.set(request.trackId, Date.now());
-        if (previewUrl) saveToLocalStorage(request.trackId, previewUrl);
+        if (previewUrl) {
+          saveToLocalStorage(request.trackId, previewUrl);
+          saveToIndexedDB(request.trackId, previewUrl);
+        }
 
         this.rateLimiter.recordSuccess();
         this.activeRequests.delete(request.trackId);
@@ -221,11 +375,13 @@ class PriorityQueue {
           request.reject(new Error("Request cancelled"));
         } else {
           this.rateLimiter.recordError(false);
+
           // Cache failure for non-critical requests
           if (request.priority !== PRIORITY_LEVELS.CRITICAL) {
             previewCache.set(request.trackId, null);
             cacheTimestamps.set(request.trackId, Date.now());
           }
+
           this.activeRequests.delete(request.trackId);
           request.reject(error);
         }
@@ -281,53 +437,10 @@ const loadFromLocalStorage = () => {
   }
 };
 
-// Save to localStorage
-const saveToLocalStorage = (trackId, url) => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const cached = stored ? JSON.parse(stored) : {};
-
-    // Add new entry
-    cached[trackId] = {
-      url,
-      timestamp: Date.now(),
-      lastUsed: Date.now(),
-    };
-
-    // Limit storage size - remove oldest entries if needed
-    const entries = Object.entries(cached);
-    if (entries.length > MAX_STORAGE_ITEMS) {
-      // Sort by lastUsed and keep most recent
-      entries.sort((a, b) => b[1].lastUsed - a[1].lastUsed);
-      const keepEntries = entries.slice(0, MAX_STORAGE_ITEMS);
-      const newCached = Object.fromEntries(keepEntries);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newCached));
-    } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
-    }
-  } catch (error) {
-    console.error("Failed to save to localStorage:", error);
-  }
-};
-
-// Update last used timestamp when retrieving from cache
-const updateLastUsed = (trackId) => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const cached = JSON.parse(stored);
-      if (cached[trackId]) {
-        cached[trackId].lastUsed = Date.now();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
-      }
-    }
-  } catch (error) {
-    // Silently fail - not critical
-  }
-};
-
 // Initialize - load from localStorage on module load
 loadFromLocalStorage();
+// Initialize IndexedDB on module load
+loadFromIndexedDB();
 
 const isCacheValid = (trackId) => {
   const timestamp = cacheTimestamps.get(trackId);
@@ -335,11 +448,11 @@ const isCacheValid = (trackId) => {
 
   const cachedValue = previewCache.get(trackId);
 
-  // Cache "no preview" for 24 hours to avoid repeated checks
+  // Longer cache duration based on value
   const duration =
     cachedValue === null
-      ? 24 * 60 * 60 * 1000 // 24 hours for null
-      : 5 * 60 * 1000; // 5 minutes for success
+      ? 7 * 24 * 60 * 60 * 1000 // 7 days for null (no preview)
+      : 30 * 24 * 60 * 60 * 1000; // 30 days for successful URLs
 
   return Date.now() - timestamp < duration;
 };
@@ -415,25 +528,29 @@ export const usePreviewUrl = () => {
   }, []);
 
   const prefetchPreviewUrl = useCallback((song, options = {}) => {
-    const { priority = "low" } = options;
+    const { priority = "low", delay = 0 } = options;
 
     if (!song || song.preview_url) return Promise.resolve(false);
 
     const trackId = song.key || song.id || song.track_id;
     if (!trackId) return Promise.resolve(false);
 
+    // Debounce prefetch requests
+    if (prefetchTimeoutRef.current) {
+      clearTimeout(prefetchTimeoutRef.current);
+    }
+
     // Map string priority to numeric
     const numericPriority =
       priority === "high" ? PRIORITY_LEVELS.HIGH : PRIORITY_LEVELS.LOW;
 
-    // Return the promise so caller can know when it completes
-    return fetchPreviewUrl(trackId, numericPriority)
-      .then((url) => {
-        return url !== null; // Return true if we got a preview URL
-      })
-      .catch(() => {
-        return false; // Return false on error
-      });
+    return new Promise((resolve) => {
+      prefetchTimeoutRef.current = setTimeout(() => {
+        fetchPreviewUrl(trackId, numericPriority)
+          .then((url) => resolve(url !== null))
+          .catch(() => resolve(false));
+      }, delay);
+    });
   }, []);
 
   const prefetchMultiple = useCallback(
