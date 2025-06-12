@@ -91,6 +91,7 @@ export const useSongNavigation = () => {
     shuffleOrder,
     repeat,
     getPreviewUrl,
+    isPlaying,
   ]);
 
   const handlePrevSong = useCallback(async () => {

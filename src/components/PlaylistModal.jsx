@@ -7,9 +7,9 @@ import {
   setCurrentPlaylist,
   toggleShuffle,
   toggleRepeat,
-  addToQueueAndPlay,
   addToQueue,
   replaceQueue,
+  playTrack,
 } from "../redux/features/playerSlice";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -127,14 +127,13 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
     if (songWithPreview.preview_url) {
       dispatch(
-        addToQueueAndPlay({
-          song: songWithPreview,
+        playTrack({
+          track: songWithPreview,
           source: "playlist",
         })
       );
     }
   };
-
   const handlePauseClick = () => {
     dispatch(playPause(false));
   };

@@ -6,6 +6,7 @@ import {
   useGetArtistDetailsQuery,
   useGetArtistTopTracksQuery,
 } from "../redux/services/spotifyCore";
+import { addToQueue } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { setActiveSong, playPause } from "../redux/features/playerSlice";
 

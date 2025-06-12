@@ -4,7 +4,9 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   setActiveSong,
   playPause,
-  addToQueueAndPlay,
+  addToQueue,
+  replaceQueue,
+  toggleShuffle,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import {
@@ -166,6 +168,13 @@ const AlbumDetails = () => {
         images: {
           ...t.images,
           coverart: albumData?.images?.[0]?.url || t.images?.coverart,
+          background: albumData?.images?.[0]?.url || t.images?.background,
+        },
+        album: {
+          ...t.album,
+          id: albumId,
+          name: albumData?.name,
+          images: albumData?.images || [],
         },
       }));
 
@@ -194,7 +203,7 @@ const AlbumDetails = () => {
           startIndex: Math.floor(Math.random() * tracks.length),
         })
       );
-      dispatch(setShuffleWithStart({ startIndex: 0 }));
+      dispatch(toggleShuffle());
       dispatch(playPause(true));
     }
   };

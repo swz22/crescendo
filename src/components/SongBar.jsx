@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { addToQueueAndPlay } from "../redux/features/playerSlice";
+import { playTrack } from "../redux/features/playerSlice";
 import PlayPause from "./PlayPause";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown.jsx";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";

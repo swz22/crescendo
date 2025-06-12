@@ -102,10 +102,24 @@ export const useAudioPreload = () => {
         audio.src = blobUrl;
 
         // Clean up this temporary audio element
+        audio.addEventListener(
+          "canplaythrough",
+          () => {
+            setTimeout(() => {
+              audio.src = "";
+              audio.remove();
+            }, 100);
+          },
+          { once: true }
+        );
+
+        // Fallback cleanup
         setTimeout(() => {
-          audio.src = "";
-          audio.remove();
-        }, 1000);
+          if (audio.src) {
+            audio.src = "";
+            audio.remove();
+          }
+        }, 5000);
       }
 
       return true;

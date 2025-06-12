@@ -109,13 +109,6 @@ const MusicPlayer = () => {
   // Monitor isNavigating from useSongNavigation
   useEffect(() => {}, [isNavigating]);
 
-  // Start playing when song changes
-  useEffect(() => {
-    if (currentSongs.length && activeSong?.preview_url) {
-      dispatch(playPause(true));
-    }
-  }, [currentIndex, activeSong]);
-
   // Preload next songs when current song changes
   useEffect(() => {
     if (currentSongs.length > 0 && currentIndex !== undefined && activeSong) {

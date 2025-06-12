@@ -20,6 +20,7 @@ const saveQueueState = (state) => {
       currentIndex: state.currentIndex,
       queueSource: state.queueSource,
       queueName: state.queueName,
+      isPlaying: state.isPlaying,
       timestamp: Date.now(),
     };
     localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queueState));
@@ -51,6 +52,8 @@ const loadPersistedQueue = () => {
       isActive: currentIndex >= 0 && queue.length > 0,
       // Initialize empty shuffleOrder - will be regenerated if shuffle is on
       shuffleOrder: [],
+      // Never restore playing state - always start paused
+      wasPlaying: stored.isPlaying || false,
     };
   }
   return {
@@ -61,6 +64,7 @@ const loadPersistedQueue = () => {
     activeSong: {},
     isActive: false,
     shuffleOrder: [],
+    wasPlaying: false,
   };
 };
 
@@ -132,9 +136,9 @@ const initialState = {
   currentIndex: persistedQueue.currentIndex,
 
   // Playback state
-  isActive: false,
-  isPlaying: false,
-  activeSong: persistedQueue.queue[persistedQueue.currentIndex] || {},
+  isActive: persistedQueue.isActive,
+  isPlaying: false, // Never auto-play on refresh
+  activeSong: persistedQueue.activeSong || {},
 
   // Playback modes
   shuffle: false,
@@ -441,30 +445,6 @@ const playerSlice = createSlice({
       state.isModalOpen = action.payload;
     },
 
-    // Legacy actions (kept for compatibility)
-    addToQueueAndPlay: (state, action) => {
-      const { song, source } = action.payload;
-
-      // Just redirect to playTrack
-      playerSlice.caseReducers.playTrack(state, {
-        payload: { track: song, source },
-      });
-    },
-
-    changeTrackAndPlay: (state, action) => {
-      const { song, index } = action.payload;
-
-      if (index >= 0 && index < state.queue.length) {
-        state.currentIndex = index;
-        state.activeSong = song;
-        state.isActive = true;
-        state.isPlaying = true;
-
-        addToHistory(state, song);
-        saveQueueState(state);
-      }
-    },
-
     // Playlist management
     createPlaylist: (state, action) => {
       const newPlaylist = {
@@ -587,50 +567,12 @@ const playerSlice = createSlice({
     clearCurrentPlaylist: (state) => {
       state.currentPlaylist = null;
     },
-
-    // More legacy actions
-    playNext: (state, action) => {
-      playerSlice.caseReducers.addToQueue(state, {
-        payload: { song: action.payload.track, playNext: true },
-      });
-    },
-
-    nextSong: (state) => {
-      playerSlice.caseReducers.navigateSong(state, {
-        payload: { direction: "next" },
-      });
-    },
-
-    prevSong: (state) => {
-      playerSlice.caseReducers.navigateSong(state, {
-        payload: { direction: "prev" },
-      });
-    },
-
-    setShuffleWithStart: (state, action) => {
-      state.shuffle = true;
-      if (state.queue.length > 1) {
-        state.shuffleOrder = generateShuffleOrder(
-          state.queue.length,
-          state.currentIndex
-        );
-      }
-    },
-
-    setQueue: (state, action) => {
-      // Legacy support - redirect to replaceQueue
-      playerSlice.caseReducers.replaceQueue(state, action);
-    },
-
-    navigateTrack: (state, action) => {
-      // Legacy support - redirect to navigateSong
-      playerSlice.caseReducers.navigateSong(state, action);
-    },
   },
 });
 
 export const {
   // Core playback actions
+  playTrack,
   setActiveSong,
   navigateSong,
   playPause,
@@ -655,16 +597,6 @@ export const {
   removeFromPlaylist,
   switchPlaylist,
   reorderPlaylistTracks,
-  // Legacy actions
-  playTrack,
-  changeTrackAndPlay,
-  setQueue,
-  navigateTrack,
-  addToQueueAndPlay,
-  playNext,
-  nextSong,
-  prevSong,
-  setShuffleWithStart,
 } = playerSlice.actions;
 
 export default playerSlice.reducer;

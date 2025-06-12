@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { playNext, addToQueue } from "../redux/features/playerSlice";
+import { addToQueue } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useToast } from "../context/ToastContext";
 import { dispatchQueueEvent } from "../utils/queueEvents";
@@ -25,7 +25,7 @@ const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
   const handlePlayNext = async () => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
-      dispatch(addToQueue({ track: songWithPreview, playNext: true }));
+      dispatch(addToQueue({ song: songWithPreview, playNext: true }));
       showToast("Will play next");
     }
     onClose();
@@ -34,7 +34,7 @@ const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
   const handleAddToQueue = async () => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
-      dispatch(addToQueue({ track: songWithPreview }));
+      dispatch(addToQueue({ song: songWithPreview }));
       showToast("Added to queue");
     }
     onClose();
