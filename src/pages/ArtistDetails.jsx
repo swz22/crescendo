@@ -35,22 +35,31 @@ const ArtistDetails = () => {
   };
 
   const handlePlayClick = async (song, i) => {
-    // Always get preview URL (from cache or fetch)
-    const songWithPreview = await getPreviewUrl(song);
+    try {
+      // Always get preview URL (from cache or fetch)
+      const songWithPreview = await getPreviewUrl(song);
 
-    if (songWithPreview.preview_url) {
-      // Pass the full topTracks array as the queue
-      dispatch(
-        setActiveSong({
-          song: songWithPreview,
-          data: topTracks || [], // Use the full artist top tracks
-          i: i,
-        })
-      );
-      dispatch(playPause(true));
-    } else {
-      // Show error message if no preview available
-      console.error("No preview available for this track");
+      if (songWithPreview.preview_url) {
+        // Pass the full topTracks array as the queue
+        dispatch(
+          setActiveSong({
+            song: songWithPreview,
+            data: topTracks || [], // Use the full artist top tracks
+            i: i,
+          })
+        );
+        dispatch(playPause(true));
+      } else {
+        // Show user-friendly error
+        const toast = document.createElement("div");
+        toast.className =
+          "fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slideup";
+        toast.textContent = "Preview not available for this track";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
+    } catch (error) {
+      console.error("Error playing track:", error);
     }
   };
 

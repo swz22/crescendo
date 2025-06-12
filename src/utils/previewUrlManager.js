@@ -47,6 +47,11 @@ class PreviewUrlManager {
   }
 
   async fetchPreviewUrl(trackId) {
+    // Check if already being fetched
+    if (this.pendingRequests.has(trackId)) {
+      return this.pendingRequests.get(trackId);
+    }
+
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
     if (timeSinceLastRequest < this.minRequestInterval) {
@@ -63,9 +68,14 @@ class PreviewUrlManager {
     }
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
       const response = await fetch(`${API_URL}/api/preview/${trackId}`, {
-        signal: AbortSignal.timeout(10000),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (response.status === 429) {
         this.consecutiveFailures++;

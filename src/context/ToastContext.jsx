@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { createPortal } from "react-dom";
 
 const ToastContext = createContext({});
@@ -58,6 +65,17 @@ const Toast = ({ id, message, type = "success", onRemove }) => {
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const timeoutRefs = useRef(new Map());
+
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+
+    // Clear timeout if exists
+    if (timeoutRefs.current.has(id)) {
+      clearTimeout(timeoutRefs.current.get(id));
+      timeoutRefs.current.delete(id);
+    }
+  }, []);
 
   const showToast = useCallback(
     (message, type = "success", duration = 3000) => {
@@ -67,17 +85,25 @@ export const ToastProvider = ({ children }) => {
       setToasts((prev) => [...prev, newToast]);
 
       // Auto remove after duration
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         removeToast(id);
       }, duration);
 
+      // Store timeout ID for cleanup
+      timeoutRefs.current.set(id, timeoutId);
+
       return id;
     },
-    []
+    [removeToast]
   );
 
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeoutRefs.current.forEach((timeoutId) => clearTimeout(timeoutId));
+      timeoutRefs.current.clear();
+    };
   }, []);
 
   const value = {

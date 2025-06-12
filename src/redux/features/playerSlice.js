@@ -161,8 +161,8 @@ const initialState = {
   queueSource: persistedQueue.queueSource,
   queueName: persistedQueue.queueName,
 
-  // Legacy state (to be removed)
-  currentSongs: persistedQueue.queue,
+  // Legacy state (kept for compatibility)
+  currentSongs: persistedQueue.queue, // Mirrors queue for backward compatibility
   currentPlaylist: null,
   playlistContext: null,
 };
@@ -240,7 +240,6 @@ const playerSlice = createSlice({
         // Add single song to queue if not exists
         state.queue.push(song);
         state.currentIndex = state.queue.length - 1;
-        state.currentSongs = state.queue; // Legacy support
       } else {
         // Find and set current index
         state.currentIndex = state.queue.findIndex(
@@ -306,7 +305,6 @@ const playerSlice = createSlice({
 
       state.currentIndex = newIndex;
       state.activeSong = state.queue[newIndex];
-      state.currentSongs = state.queue; // Legacy support
       addToHistory(state, state.activeSong);
 
       // Persist state
@@ -337,8 +335,6 @@ const playerSlice = createSlice({
           // Add to end
           state.queue.push(song);
         }
-
-        state.currentSongs = state.queue; // Legacy support
         saveQueueState(state);
       }
     },
@@ -375,7 +371,6 @@ const playerSlice = createSlice({
           );
         }
 
-        state.currentSongs = state.queue; // Legacy support
         saveQueueState(state);
       }
     },

@@ -55,8 +55,13 @@ const SongDetails = () => {
       console.error("No preview available for this track");
     }
   };
+
   // Filter out the current song from related songs
-  const relatedSongs = relatedData?.filter((song) => song.key !== songid) || [];
+  const relatedSongs =
+    relatedData?.filter((song) => {
+      const songKey = song.key || song.id || song.track_id;
+      return songKey !== songid;
+    }) || [];
 
   // Format duration
   const formatDuration = (ms) => {

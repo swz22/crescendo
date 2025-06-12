@@ -7,13 +7,16 @@ import "./index.css";
 import App from "./App";
 import { store } from "./redux/store";
 import { ToastProvider } from "./context/ToastContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
       <ToastProvider>
         <Router>
-          <App />
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
         </Router>
       </ToastProvider>
     </Provider>
