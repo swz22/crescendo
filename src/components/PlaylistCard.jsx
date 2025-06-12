@@ -1,8 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
 
 const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
   const [mosaicImages, setMosaicImages] = useState([]);
+
+  // Add null safety
+  if (!playlist) {
+    return null;
+  }
+
+  // Memoize the safe playlist to prevent infinite re-renders
+  const safePlaylist = useMemo(
+    () => ({
+      id: playlist.id || `playlist-${Date.now()}`,
+      name: playlist.name || "Untitled Playlist",
+      images: playlist.images || [],
+      owner: playlist.owner || {},
+      tracks: playlist.tracks || {},
+      ...playlist,
+    }),
+    [playlist]
+  );
 
   // Create a simple placeholder as data URI to avoid network requests
   const placeholderImage =
@@ -10,8 +28,8 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
 
   // Fetch tracks to get album covers for mosaic
   const { data: tracks } = useGetPlaylistTracksQuery(
-    { playlistId: playlist.id },
-    { skip: false } // Always fetch to get album covers
+    { playlistId: safePlaylist.id },
+    { skip: !safePlaylist.id }
   );
 
   useEffect(() => {
@@ -77,8 +95,8 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
       }
 
       // Final fallback: use playlist cover
-      if (uniqueCovers.length < 4 && playlist.images?.[0]?.url) {
-        const playlistCover = playlist.images[0].url;
+      if (uniqueCovers.length < 4 && safePlaylist.images?.[0]?.url) {
+        const playlistCover = safePlaylist.images[0].url;
         while (uniqueCovers.length < 4) {
           uniqueCovers.push(playlistCover);
         }
@@ -90,9 +108,9 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
       }
 
       setMosaicImages(uniqueCovers);
-    } else if (playlist.images?.[0]?.url) {
+    } else if (safePlaylist.images?.[0]?.url) {
       // No tracks loaded yet, use playlist cover for all 4 quadrants
-      const playlistCover = playlist.images[0].url;
+      const playlistCover = safePlaylist.images[0].url;
       setMosaicImages([
         playlistCover,
         playlistCover,
@@ -100,13 +118,13 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
         playlistCover,
       ]);
     }
-  }, [tracks, playlist]);
+  }, [tracks, safePlaylist]);
 
-  const totalTracks = playlist.tracks?.total || 0;
+  const totalTracks = safePlaylist.tracks?.total || 0;
 
   const handleClick = () => {
     if (onClickWithMosaic) {
-      onClickWithMosaic(playlist, mosaicImages);
+      onClickWithMosaic(safePlaylist, mosaicImages);
     } else if (onClick) {
       onClick();
     }
@@ -127,7 +145,8 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
       )}
 
       <div className="relative w-full aspect-square mb-4">
-        {isFeatured && playlist.name.toLowerCase().includes("lonely heart") ? (
+        {isFeatured &&
+        safePlaylist.name.toLowerCase().includes("lonely heart") ? (
           // Custom artwork for featured playlist
           <div className="w-full h-full rounded-lg overflow-hidden relative group">
             <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6] via-[#0891b2] to-[#0e7490] animate-gradient">
@@ -210,7 +229,7 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
           // Fallback while loading
           <img
             alt="playlist_cover"
-            src={playlist.images?.[0]?.url || placeholderImage}
+            src={safePlaylist.images?.[0]?.url || placeholderImage}
             className="w-full h-full rounded-lg object-cover"
             onError={(e) => {
               e.target.onerror = null;
@@ -225,10 +244,10 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
 
       <div className="min-w-0">
         <h3 className="font-bold text-base sm:text-lg text-white truncate mb-1">
-          {playlist.name}
+          {safePlaylist.name}
         </h3>
         <p className="text-xs sm:text-sm text-gray-300 truncate">
-          by {playlist.owner?.display_name || "Spotify"}
+          by {safePlaylist.owner?.display_name || "Spotify"}
         </p>
       </div>
     </div>
