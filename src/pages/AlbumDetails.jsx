@@ -387,11 +387,11 @@ const AlbumDetails = () => {
                 </div>
 
                 {/* Popularity indicator */}
-                {track.track?.popularity && (
+                {track.popularity && (
                   <div className="flex items-center gap-1 mr-6">
                     <HiOutlineSparkles className="w-4 h-4 text-yellow-500" />
                     <span className="text-sm text-white/60">
-                      {track.track.popularity}
+                      {track.popularity}
                     </span>
                   </div>
                 )}

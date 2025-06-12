@@ -363,7 +363,7 @@ const playerSlice = createSlice({
               state.currentIndex,
               state.queue.length - 1
             );
-            state.activeSong = state.queue[state.currentIndex];
+            state.activeSong = state.queue[state.currentIndex] || {};
           }
         }
 

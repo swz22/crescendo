@@ -6,6 +6,7 @@ import {
   removeFromQueue,
   navigateSong,
   playPause,
+  setActiveSong,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 
@@ -70,9 +71,15 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
     if (currentIndex === index) {
       dispatch(playPause(!isPlaying));
     } else {
+      const song = queue[index];
       dispatch(
-        navigateSong({ direction: index > currentIndex ? "next" : "prev" })
+        setActiveSong({
+          song: song,
+          data: queue,
+          i: index,
+        })
       );
+      dispatch(playPause(true));
     }
   };
 

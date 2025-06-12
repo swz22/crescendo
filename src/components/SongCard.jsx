@@ -1,13 +1,8 @@
-import React, {
-  useEffect,
-  useRef,
-  useCallback,
-  useState,
-  Fragment,
-} from "react";
+import React, { useEffect, useRef, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import PlayPause from "./PlayPause";
+import Portal from "./Portal";
 import {
   playPause,
   playTrack,

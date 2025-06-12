@@ -66,19 +66,26 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
   // Conservative prefetch for playlists
   useEffect(() => {
+    const timeoutIds = [];
+
     if (tracks && tracks.length > 0) {
       // Only prefetch first 3 tracks with significant delays
-      const timeoutId = setTimeout(() => {
+      const mainTimeout = setTimeout(() => {
         tracks.slice(0, 3).forEach((track, index) => {
-          setTimeout(() => {
+          const trackTimeout = setTimeout(() => {
             if (!isPreviewCached(track)) {
               prefetchPreviewUrl(track, { priority: "low" });
             }
           }, index * 3000); // 3 seconds between each
+          timeoutIds.push(trackTimeout);
         });
       }, 1000);
 
-      return () => clearTimeout(timeoutId);
+      timeoutIds.push(mainTimeout);
+
+      return () => {
+        timeoutIds.forEach((id) => clearTimeout(id));
+      };
     }
   }, [tracks, prefetchPreviewUrl, isPreviewCached]);
 

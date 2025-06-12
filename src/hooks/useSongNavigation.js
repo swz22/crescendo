@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   navigateSong,
@@ -165,6 +165,13 @@ export const useSongNavigation = () => {
     repeat,
     getPreviewUrl,
   ]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setIsNavigating(false);
+    };
+  }, []);
 
   return { handleNextSong, handlePrevSong, isNavigating };
 };
