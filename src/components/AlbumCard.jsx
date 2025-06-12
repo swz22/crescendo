@@ -11,13 +11,21 @@ const AlbumCard = ({ album, showTrackCount = false }) => {
     ? new Date(album.release_date).getFullYear()
     : "";
 
-  const handleClick = () => {
-    navigate(`/albums/${album.id}`);
+  const handleAlbumClick = (e) => {
+    // Only navigate to album if not clicking on artist link
+    if (!e.target.closest(".artist-link")) {
+      navigate(`/albums/${album.id}`);
+    }
+  };
+
+  const handleArtistClick = (e, artistId) => {
+    e.stopPropagation();
+    navigate(`/artists/${artistId}`);
   };
 
   return (
     <div
-      onClick={handleClick}
+      onClick={handleAlbumClick}
       className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group"
     >
       <div className="relative w-full aspect-square group">
@@ -38,9 +46,28 @@ const AlbumCard = ({ album, showTrackCount = false }) => {
         <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
           {album.name}
         </p>
-        <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
-          {artistNames}
-        </p>
+        <div className="text-xs sm:text-sm truncate text-gray-300 mt-1">
+          {album.artists?.length === 1 ? (
+            <span
+              className="artist-link hover:text-[#14b8a6] transition-colors duration-200 cursor-pointer"
+              onClick={(e) => handleArtistClick(e, album.artists[0].id)}
+            >
+              {album.artists[0].name}
+            </span>
+          ) : (
+            album.artists?.map((artist, index) => (
+              <span key={artist.id}>
+                <span
+                  className="artist-link hover:text-[#14b8a6] transition-colors duration-200 cursor-pointer"
+                  onClick={(e) => handleArtistClick(e, artist.id)}
+                >
+                  {artist.name}
+                </span>
+                {index < album.artists.length - 1 && ", "}
+              </span>
+            ))
+          )}
+        </div>
         <p className="text-xs text-gray-400 mt-1">{releaseDate}</p>
       </div>
     </div>

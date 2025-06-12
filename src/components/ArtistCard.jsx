@@ -54,7 +54,7 @@ const ArtistCard = ({ track }) => {
         onError={handleImageError}
         className="w-full aspect-square rounded-lg object-cover"
       />
-      <p className="mt-4 font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
+      <p className="mt-4 font-semibold text-sm sm:text-base lg:text-lg text-white truncate group-hover:text-[#14b8a6] transition-colors duration-200">
         {artistName}
       </p>
     </div>
