@@ -47,6 +47,9 @@ const ArtistDetails = () => {
         })
       );
       dispatch(playPause(true));
+    } else {
+      // Show error message if no preview available
+      console.error("No preview available for this track");
     }
   };
 

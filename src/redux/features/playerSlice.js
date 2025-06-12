@@ -36,11 +36,21 @@ const loadPersistedQueue = () => {
     stored.timestamp &&
     Date.now() - stored.timestamp < 24 * 60 * 60 * 1000
   ) {
+    // Ensure we have valid data
+    const queue = stored.queue || [];
+    const currentIndex = stored.currentIndex ?? -1; // Use ?? to handle 0 properly
+
     return {
-      queue: stored.queue || [],
-      currentIndex: stored.currentIndex || -1,
+      queue: queue,
+      currentIndex: currentIndex,
       queueSource: stored.queueSource,
       queueName: stored.queueName || "Your Queue",
+      // Set activeSong even for index 0
+      activeSong:
+        currentIndex >= 0 && queue[currentIndex] ? queue[currentIndex] : {},
+      isActive: currentIndex >= 0 && queue.length > 0,
+      // Initialize empty shuffleOrder - will be regenerated if shuffle is on
+      shuffleOrder: [],
     };
   }
   return {
@@ -48,6 +58,9 @@ const loadPersistedQueue = () => {
     currentIndex: -1,
     queueSource: null,
     queueName: "Your Queue",
+    activeSong: {},
+    isActive: false,
+    shuffleOrder: [],
   };
 };
 
@@ -149,6 +162,13 @@ const initialState = {
   currentPlaylist: null,
   playlistContext: null,
 };
+
+if (initialState.shuffle && initialState.queue.length > 1) {
+  initialState.shuffleOrder = generateShuffleOrder(
+    initialState.queue.length,
+    initialState.currentIndex
+  );
+}
 
 const playerSlice = createSlice({
   name: "player",

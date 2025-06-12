@@ -87,17 +87,42 @@ const AlbumDetails = () => {
 
   if (albumError || tracksError) return <Error />;
 
-  const handlePlayClick = async (song, i) => {
-    // Always get preview URL (from cache or fetch)
-    const songWithPreview = await getPreviewUrl(song);
+  const handlePlayClick = async (track, index) => {
+    // Ensure track has album art
+    const trackWithAlbumArt = {
+      ...track,
+      images: {
+        ...track.images,
+        coverart: track.images?.coverart || albumData?.images?.[0]?.url,
+        background: track.images?.background || albumData?.images?.[0]?.url,
+      },
+      album: {
+        ...track.album,
+        images: albumData?.images || track.album?.images || [],
+      },
+    };
+
+    const songWithPreview = await getPreviewUrl(trackWithAlbumArt);
 
     if (songWithPreview.preview_url) {
+      // Update all tracks to have album art
+      const allTracksWithArt = tracks.map((t) => ({
+        ...t,
+        images: {
+          ...t.images,
+          coverart: t.images?.coverart || albumData?.images?.[0]?.url,
+          background: t.images?.background || albumData?.images?.[0]?.url,
+        },
+      }));
+
       dispatch(
-        addToQueueAndPlay({
+        setActiveSong({
           song: songWithPreview,
-          source: "artist",
+          data: allTracksWithArt,
+          i: index,
         })
       );
+      dispatch(playPause(true));
     }
   };
 
@@ -105,7 +130,7 @@ const AlbumDetails = () => {
     dispatch(playPause(false));
   };
 
-  const handlePlayAll = () => {
+  const handlePlayAll = async () => {
     if (tracks && tracks.length > 0) {
       const tracksWithAlbumArt = tracks.map((t) => ({
         ...t,
@@ -115,16 +140,22 @@ const AlbumDetails = () => {
         },
       }));
 
-      dispatch(
-        setQueue({
-          tracks: tracksWithAlbumArt,
-          source: "album",
-          sourceId: albumId,
-          name: albumData?.name || "Album",
-          startIndex: 0,
-        })
-      );
-      dispatch(playPause(true));
+      // Get preview URL for first track
+      const firstTrackWithPreview = await getPreviewUrl(tracksWithAlbumArt[0]);
+
+      if (firstTrackWithPreview.preview_url) {
+        // Update the first track in the array
+        tracksWithAlbumArt[0] = firstTrackWithPreview;
+
+        dispatch(
+          setActiveSong({
+            song: firstTrackWithPreview,
+            data: tracksWithAlbumArt,
+            i: 0,
+          })
+        );
+        dispatch(playPause(true));
+      }
     }
   };
 

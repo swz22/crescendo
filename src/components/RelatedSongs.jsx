@@ -10,7 +10,7 @@ const RelatedSongs = ({
 }) => {
   // Handle the case where data might be undefined or empty
   const songs = data || [];
-  
+
   return (
     <div className="flex flex-col">
       <h1 className="font-bold text-3xl text-white">
@@ -20,19 +20,19 @@ const RelatedSongs = ({
         {songs.length > 0 ? (
           songs.map((song, i) => (
             <SongBar
-              key={`${artistId || 'related'}-${song.key || song.id || i}`}
+              key={`${artistId || "related"}-${song.key || song.id || i}`}
               song={song}
               i={i}
               artistId={artistId}
               isPlaying={isPlaying}
               activeSong={activeSong}
               handlePauseClick={handlePauseClick}
-              handlePlayClick={handlePlayClick}
+              handlePlayClick={() => handlePlayClick(song, i)}
             />
           ))
         ) : (
           <p className="text-gray-400 text-base my-1">
-            No {artistId ? 'top songs' : 'related songs'} found.
+            No {artistId ? "top songs" : "related songs"} found.
           </p>
         )}
       </div>
