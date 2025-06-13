@@ -18,7 +18,7 @@ import {
   HiDotsVertical,
   HiOutlineDotsHorizontal,
 } from "react-icons/hi";
-import { BsFillPlayFill } from "react-icons/bs";
+import { BsFillPlayFill, BsFillPauseFill } from "react-icons/bs";
 import { useToast } from "../context/ToastContext";
 import { dispatchQueueEvent } from "../utils/queueEvents";
 
@@ -118,13 +118,8 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     setIsHovered(false);
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
     }
   }, []);
-
-  const handlePauseClick = useCallback(() => {
-    dispatch(playPause(false));
-  }, [dispatch]);
 
   const handlePlayClick = useCallback(async () => {
     setIsLoading(true);
@@ -133,68 +128,77 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       const songWithPreview = await getPreviewUrl(song);
 
       if (songWithPreview.preview_url) {
-        const path = window.location.pathname;
-        let source = "manual";
-        if (path === "/") source = "discover";
-        else if (path.includes("/search")) source = "search";
-        else if (path.includes("/top-artists")) source = "top-artists";
-        else if (path.includes("/artists/")) source = "artist";
-
         dispatch(
           playTrack({
-            track: songWithPreview,
-            source,
+            track: { ...songWithPreview, queue_position: i },
+            source: "song_card",
           })
         );
+
+        if (data && data.length > 0) {
+          dispatch(
+            replaceQueue({
+              songs: data,
+              startIndex: i,
+              source: "song_card",
+              name: "Current Playlist",
+            })
+          );
+        }
+
+        dispatch(playPause(true));
+        dispatchQueueEvent();
       } else {
-        showToast("Preview not available for this track", "error");
+        // Only show error if we actually failed to get a preview
+        showToast("No preview available for this track", "error");
       }
     } catch (error) {
-      console.error("Error playing song:", error);
-      showToast("Failed to load track", "error");
+      console.error("Error playing track:", error);
+      // Don't show error toast here - the error is likely already handled
     } finally {
       setIsLoading(false);
     }
-  }, [song, dispatch, getPreviewUrl, showToast]);
+  }, [song, i, data, dispatch, getPreviewUrl, showToast]);
 
-  const handleContextMenu = (e) => {
+  const handlePauseClick = useCallback(() => {
+    dispatch(playPause(false));
+  }, [dispatch]);
+
+  const handleContextMenu = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = Math.min(e.clientX, window.innerWidth - 200);
-    const y = e.clientY;
+    const rect = cardRef.current?.getBoundingClientRect();
+    const x = e.clientX || rect?.right - 10 || 0;
+    const y = e.clientY || rect?.bottom - 10 || 0;
 
     setContextMenuPosition({ x, y });
     setShowContextMenu(true);
-  };
+  }, []);
 
-  const getCoverArt = () => {
-    if (song.images?.coverart) return song.images.coverart;
-    if (song.share?.image) return song.share.image;
-    if (song.images?.background) return song.images.background;
-    if (song.attributes?.artwork?.url) {
-      return song.attributes.artwork.url
-        .replace("{w}", "400")
-        .replace("{h}", "400");
-    }
-    return null;
-  };
+  const handleAddToQueue = useCallback(
+    async (e) => {
+      e.stopPropagation();
+      const songWithPreview = await getPreviewUrl(song);
+      if (songWithPreview.preview_url) {
+        dispatch(addToQueue({ song: songWithPreview }));
+        showToast("Added to queue");
+      }
+    },
+    [song, dispatch, getPreviewUrl, showToast]
+  );
 
-  const getArtistId = () => {
-    if (song.artists?.[0]?.adamid) return song.artists[0].adamid;
-    if (song.artists?.[0]?.id) return song.artists[0].id;
-    if (song.relationships?.artists?.data?.[0]?.id) {
-      return song.relationships.artists.data[0].id;
-    }
-    return null;
-  };
+  const coverArt =
+    song?.images?.coverart ||
+    song?.share?.image ||
+    song?.images?.background ||
+    song?.hub?.image ||
+    "";
 
-  const artistId = getArtistId();
-  const coverArt = getCoverArt();
-  const songTitle = song.title || song.attributes?.name || "Unknown Title";
+  const songTitle = song?.title || "Unknown Title";
   const artistName =
-    song.subtitle || song.attributes?.artistName || "Unknown Artist";
+    song?.subtitle || song?.artists?.[0]?.name || "Unknown Artist";
+  const artistId = song?.artists?.[0]?.adamid || song?.artists?.[0]?.id;
 
   return (
     <>
@@ -203,11 +207,11 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onContextMenu={handleContextMenu}
-        className="group animate-slideup"
+        className="group"
       >
-        {/* Mobile List View - Always rendered, hidden on desktop */}
+        {/* Mobile List View - Only visible on mobile */}
         <div
-          className="sm:hidden flex items-center w-full p-3 bg-white/5 backdrop-blur-sm rounded-lg cursor-pointer relative transition-all duration-200 active:bg-white/10 active:scale-[0.98] hover:bg-white/10"
+          className="sm:hidden w-full flex items-center p-3 hover:bg-white/10 rounded-lg transition-all duration-200 cursor-pointer"
           onClick={() =>
             !isLoading &&
             (isCurrentSong && isPlaying
@@ -233,6 +237,12 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                 <span className="text-white/50 text-xl">♪</span>
               </div>
             )}
+            {/* Mobile loading overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                <MusicLoadingSpinner size="sm" />
+              </div>
+            )}
           </div>
 
           {/* Song info */}
@@ -246,7 +256,9 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           {/* Play indicator or button */}
           <div className="ml-3">
             {isLoading ? (
-              <MusicLoadingSpinner size="sm" />
+              <div className="w-6 h-6 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-[#14b8a6] border-t-transparent rounded-full animate-spin" />
+              </div>
             ) : isCurrentSong && isPlaying ? (
               <div className="flex items-center gap-0.5 pr-1">
                 <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse" />
@@ -264,6 +276,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           className={`hidden sm:flex flex-col w-full sm:max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10
           ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}`}
         >
+          {/* Cache indicator */}
           {showCacheIndicator && (
             <div className="absolute top-2 left-2 z-20 bg-black/60 backdrop-blur-sm rounded-full p-1.5">
               <HiLightningBolt
@@ -273,6 +286,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             </div>
           )}
 
+          {/* Now playing badge */}
           {isCurrentSong && (
             <div className="absolute top-3 left-3 z-10 bg-[#14b8a6]/20 backdrop-blur-sm rounded-full px-2 py-1">
               <span className="text-xs text-[#14b8a6] font-semibold">
@@ -282,16 +296,25 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           )}
 
           <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
-            {(isHovered || isCurrentSong) && (
+            {/* Persistent loading overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-30">
+                <MusicLoadingSpinner size="md" />
+                <span className="text-white text-xs font-medium mt-2 animate-pulse">
+                  Loading...
+                </span>
+              </div>
+            )}
+
+            {/* Hover play/pause overlay */}
+            {(isHovered || isCurrentSong) && !isLoading && (
               <div
                 className="absolute inset-0 flex items-center justify-center z-20 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!isLoading) {
-                    isCurrentSong && isPlaying
-                      ? handlePauseClick()
-                      : handlePlayClick();
-                  }
+                  isCurrentSong && isPlaying
+                    ? handlePauseClick()
+                    : handlePlayClick();
                 }}
               >
                 <div
@@ -301,22 +324,18 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                       "radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%)",
                   }}
                 />
-
-                {isLoading ? (
-                  <MusicLoadingSpinner size="md" />
-                ) : (
-                  <PlayPause
-                    isPlaying={isPlaying}
-                    activeSong={activeSong}
-                    song={song}
-                    handlePause={handlePauseClick}
-                    handlePlay={handlePlayClick}
-                    size={50}
-                  />
-                )}
+                <PlayPause
+                  isPlaying={isPlaying}
+                  activeSong={activeSong}
+                  song={song}
+                  handlePause={handlePauseClick}
+                  handlePlay={handlePlayClick}
+                  size={50}
+                />
               </div>
             )}
 
+            {/* Album art */}
             {coverArt ? (
               <img
                 alt="song_img"
@@ -330,6 +349,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             )}
           </div>
 
+          {/* Track info */}
           <div className="mt-4 flex flex-col pr-10">
             <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
               <Link
@@ -368,6 +388,15 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
               <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
             </div>
           </button>
+
+          {/* Subtle loading indicator in corner */}
+          {isLoading && (
+            <div className="absolute bottom-2 right-2 z-30">
+              <div className="bg-black/70 backdrop-blur-sm rounded-full p-1.5">
+                <div className="w-3 h-3 border-2 border-[#14b8a6] border-t-transparent rounded-full animate-spin" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

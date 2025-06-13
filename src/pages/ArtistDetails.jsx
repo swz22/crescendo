@@ -1,20 +1,20 @@
 import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { store } from "../redux/store";
 import { DetailsHeader, Error, Loader, RelatedSongs } from "../components";
 import {
   useGetArtistDetailsQuery,
   useGetArtistTopTracksQuery,
 } from "../redux/services/spotifyCore";
-import { addToQueue } from "../redux/features/playerSlice";
-import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { setActiveSong, playPause } from "../redux/features/playerSlice";
+import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { useToast } from "../context/ToastContext";
 
 const ArtistDetails = () => {
   const { id: artistId } = useParams();
   const dispatch = useDispatch();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const { getPreviewUrl, isPreviewCached } = usePreviewUrl();
+  const { getPreviewUrl } = usePreviewUrl();
+  const { showToast } = useToast();
 
   const {
     data: artistData,
@@ -36,30 +36,23 @@ const ArtistDetails = () => {
 
   const handlePlayClick = async (song, i) => {
     try {
-      // Always get preview URL (from cache or fetch)
       const songWithPreview = await getPreviewUrl(song);
 
       if (songWithPreview.preview_url) {
-        // Pass the full topTracks array as the queue
         dispatch(
           setActiveSong({
             song: songWithPreview,
-            data: topTracks || [], // Use the full artist top tracks
+            data: topTracks || [],
             i: i,
           })
         );
         dispatch(playPause(true));
       } else {
-        // Show user-friendly error
-        const toast = document.createElement("div");
-        toast.className =
-          "fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slideup";
-        toast.textContent = "Preview not available for this track";
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        showToast("Preview not available for this track", "error");
       }
     } catch (error) {
       console.error("Error playing track:", error);
+      // Don't show generic error toast - let the specific error handling in getPreviewUrl handle it
     }
   };
 

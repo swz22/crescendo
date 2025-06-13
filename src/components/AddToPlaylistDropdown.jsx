@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { HiPlus, HiCheck, HiOutlineSparkles } from "react-icons/hi";
 import { BsMusicNoteList } from "react-icons/bs";
-import Portal from "./Portal";
+import Portal from "./Portal.jsx";
 
 const AddToPlaylistDropdown = ({
   track,
