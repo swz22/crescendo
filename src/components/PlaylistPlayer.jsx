@@ -99,6 +99,8 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
 
   // Prefetch next tracks
   useEffect(() => {
+    const timeoutIds = [];
+
     if (personalQueue && currentIndex >= 0) {
       const nextTracks = personalQueue.slice(
         currentIndex + 1,
@@ -106,12 +108,17 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
       );
       nextTracks.forEach((track, idx) => {
         if (!isPreviewCached(track)) {
-          setTimeout(() => {
+          const timeoutId = setTimeout(() => {
             prefetchPreviewUrl(track, { priority: idx === 0 ? "high" : "low" });
           }, idx * 1000);
+          timeoutIds.push(timeoutId);
         }
       });
     }
+
+    return () => {
+      timeoutIds.forEach((id) => clearTimeout(id));
+    };
   }, [currentIndex, personalQueue, prefetchPreviewUrl, isPreviewCached]);
 
   const handlePlayClick = async (track, index) => {

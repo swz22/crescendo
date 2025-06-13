@@ -153,13 +153,17 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             source,
           })
         );
+      } else {
+        // Show user feedback for unavailable preview
+        showToast("Preview not available for this track", "error");
       }
     } catch (error) {
       console.error("Error playing song:", error);
+      showToast("Failed to load track", "error");
     } finally {
       setIsLoading(false);
     }
-  }, [song, dispatch, getPreviewUrl]);
+  }, [song, dispatch, getPreviewUrl, showToast]);
 
   const handleContextMenu = (e) => {
     e.preventDefault();

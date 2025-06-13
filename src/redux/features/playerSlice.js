@@ -25,7 +25,7 @@ const saveQueueState = (state) => {
     };
     localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queueState));
   } catch (error) {
-    console.error("Failed to save queue state:", error);
+    console.warn("Failed to save queue state:", error);
   }
 };
 
@@ -162,7 +162,7 @@ const initialState = {
   queueName: persistedQueue.queueName,
 
   // Legacy state (kept for compatibility)
-  currentSongs: persistedQueue.queue, // Mirrors queue for backward compatibility
+  currentSongs: persistedQueue.queue,
   currentPlaylist: null,
   playlistContext: null,
 };

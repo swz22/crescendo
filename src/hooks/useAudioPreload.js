@@ -101,25 +101,30 @@ export const useAudioPreload = () => {
         audio.preload = "auto";
         audio.src = blobUrl;
 
-        // Clean up this temporary audio element
+        // Set up cleanup with multiple fallbacks
+        const cleanupAudio = () => {
+          audio.src = "";
+          audio.remove();
+        };
+
         audio.addEventListener(
           "canplaythrough",
           () => {
-            setTimeout(() => {
-              audio.src = "";
-              audio.remove();
-            }, 100);
+            setTimeout(cleanupAudio, 100);
           },
           { once: true }
         );
 
-        // Fallback cleanup
-        setTimeout(() => {
-          if (audio.src) {
-            audio.src = "";
-            audio.remove();
-          }
-        }, 5000);
+        audio.addEventListener(
+          "error",
+          () => {
+            setTimeout(cleanupAudio, 100);
+          },
+          { once: true }
+        );
+
+        // Fallback cleanup after 5 seconds
+        setTimeout(cleanupAudio, 5000);
       }
 
       return true;

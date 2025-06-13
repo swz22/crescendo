@@ -15,10 +15,18 @@ const Player = ({
   songUrl,
 }) => {
   const ref = useRef(null);
+  const isMountedRef = useRef(true);
   const { setAudioElement, getPreloadedUrl } = useAudioPreload();
   const currentUrlRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [hasError, setHasError] = useState(false);
+
+  // Add cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Register audio element globally
   useEffect(() => {
@@ -130,9 +138,10 @@ const Player = ({
 
   const handleError = (e) => {
     console.error("Audio error:", e.target.error);
-    setHasError(true);
-    setIsReady(false);
-
+    if (isMountedRef.current) {
+      setHasError(true);
+      setIsReady(false);
+    }
     // Try fallback to original URL if using preloaded
     const songId = activeSong?.key || activeSong?.id || activeSong?.track_id;
     const preloadedUrl = songId ? getPreloadedUrl(songId) : null;

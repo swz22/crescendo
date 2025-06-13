@@ -16,7 +16,22 @@ class PreviewUrlManager {
     this.loadPersistedCache();
   }
 
+  // Check and potentially reset circuit breaker
+  checkCircuitBreaker() {
+    if (this.circuitBreakerTrippedAt) {
+      const elapsed = Date.now() - this.circuitBreakerTrippedAt;
+      if (elapsed > this.circuitBreakerResetTime) {
+        console.log("Circuit breaker reset after timeout");
+        this.circuitBreakerTrippedAt = null;
+        this.consecutiveFailures = 0;
+      }
+    }
+  }
+
   async getPreviewUrl(trackId) {
+    // Check and potentially reset circuit breaker
+    this.checkCircuitBreaker();
+
     if (this.isCircuitBreakerOpen()) {
       console.log("Circuit breaker is open, returning null");
       return null;
@@ -141,7 +156,7 @@ class PreviewUrlManager {
         JSON.stringify(cacheData)
       );
     } catch (error) {
-      console.error("Failed to persist cache:", error);
+      console.warn("Failed to persist cache:", error);
     }
   }
 
@@ -155,7 +170,7 @@ class PreviewUrlManager {
         });
       }
     } catch (error) {
-      console.error("Failed to load persisted cache:", error);
+      console.warn("Failed to load persisted cache:", error);
     }
   }
 
@@ -165,7 +180,11 @@ class PreviewUrlManager {
     this.failureCount.clear();
     this.consecutiveFailures = 0;
     this.circuitBreakerTrippedAt = null;
-    localStorage.removeItem("crescendo_preview_cache_v2");
+    try {
+      localStorage.removeItem("crescendo_preview_cache_v2");
+    } catch (error) {
+      console.warn("Failed to clear localStorage:", error);
+    }
   }
 
   getCacheStats() {
