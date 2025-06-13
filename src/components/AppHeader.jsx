@@ -95,14 +95,9 @@ const AppHeader = memo(
                   </div>
                 )}
 
-                {/* Right Section - Actions */}
+                {/* Right Section - Actions (NO QUEUE BUTTON ON DESKTOP) */}
                 <div className="flex items-center gap-4 flex-shrink-0">
                   {action}
-                  {!hideQueueButton && queue.length > 0 && (
-                    <div className="hidden lg:block">
-                      <QueueButton onClick={() => setMobileQueueOpen(true)} />
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
