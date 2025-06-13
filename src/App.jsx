@@ -57,7 +57,8 @@ const App = () => {
       <LeftSidebar />
 
       <div className="flex-1 flex flex-col bg-gradient-to-br from-[#1a1848] via-[#2d2467] to-[#1a1848]">
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 pb-24 sm:pb-40 lg:pb-32">
+        <div className="flex-1 overflow-y-auto custom-scrollbar sm:px-6 pb-24 sm:pb-40 lg:pb-32">
+          {/* Remove px-4 from mobile, keep sm:px-6 for desktop */}
           <Routes>
             <Route path="/" element={<Discover />} />
             <Route path="/top-artists" element={<TopArtists />} />

@@ -33,7 +33,7 @@ const Searchbar = () => {
       <form
         onSubmit={handleSubmit}
         autoComplete="off"
-        className="relative flex-1 min-w-0"
+        className="flex-1 min-w-0" // This makes the form take remaining space
       >
         <label htmlFor="search-field" className="sr-only">
           Search all files

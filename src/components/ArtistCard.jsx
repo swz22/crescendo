@@ -45,7 +45,7 @@ const ArtistCard = ({ track }) => {
 
   return (
     <div
-      className="flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group"
+      className="flex flex-col w-full p-3 sm:p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group"
       onClick={() => navigate(`/artists/${artistId}`)}
     >
       <img
@@ -54,7 +54,7 @@ const ArtistCard = ({ track }) => {
         onError={handleImageError}
         className="w-full aspect-square rounded-lg object-cover"
       />
-      <p className="mt-4 font-semibold text-sm sm:text-base lg:text-lg text-white truncate group-hover:text-[#14b8a6] transition-colors duration-200">
+      <p className="mt-3 sm:mt-4 font-semibold text-sm sm:text-base lg:text-lg text-white truncate group-hover:text-[#14b8a6] transition-colors duration-200">
         {artistName}
       </p>
     </div>

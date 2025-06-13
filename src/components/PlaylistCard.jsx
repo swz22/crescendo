@@ -243,10 +243,10 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
       </div>
 
       <div className="min-w-0">
-        <h3 className="font-bold text-base sm:text-lg text-white truncate mb-1">
+        <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate mb-0.5 sm:mb-1">
           {safePlaylist.name}
         </h3>
-        <p className="text-xs sm:text-sm text-gray-300 truncate">
+        <p className="text-xs text-gray-300 truncate">
           by {safePlaylist.owner?.display_name || "Spotify"}
         </p>
       </div>

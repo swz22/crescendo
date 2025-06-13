@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Error, Loader, PageHeader } from "../components";
+import { Error, Loader, PageHeader, ResponsiveGrid } from "../components";
 import PlaylistCard from "../components/PlaylistCard";
 import PlaylistModal from "../components/PlaylistModal";
 import {
@@ -74,7 +74,8 @@ const CommunityPlaylists = () => {
         title="Community Playlists"
         subtitle="Discover music curated by the community"
       />
-      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 px-4 sm:px-0">
+
+      <ResponsiveGrid type="playlists">
         {sortedPlaylists.map((playlist, i) => (
           <PlaylistCard
             key={playlist?.id || `playlist-${i}`}
@@ -83,7 +84,7 @@ const CommunityPlaylists = () => {
             isFeatured={playlist?.id === featuredPlaylist?.id}
           />
         ))}
-      </div>
+      </ResponsiveGrid>
 
       {selectedPlaylist && (
         <PlaylistModal

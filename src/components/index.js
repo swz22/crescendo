@@ -24,6 +24,8 @@ import OnboardingModal from "./OnboardingModal";
 import QueueIndicator from "./QueueIndicator";
 import FloatingQueueButton from "./FloatingQueueButton";
 import MobileQueueSheet from "./MobileQueueSheet";
+import MobileHeader from "./MobileHeader";
+import ResponsiveGrid from "./ResponsiveGrid";
 import QueueButton from "./QueueButton";
 import PageHeader from "./PageHeader";
 import Portal from "./Portal";
@@ -60,4 +62,6 @@ export {
   QueueIndicator,
   FloatingQueueButton,
   MobileQueueSheet,
+  MobileHeader,
+  ResponsiveGrid,
 };

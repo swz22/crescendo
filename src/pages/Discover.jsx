@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux"; // Add useDispatch here
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Error, Loader, SongCard, PageHeader } from "../components"; // Update this line
+import {
+  Error,
+  Loader,
+  SongCard,
+  PageHeader,
+  ResponsiveGrid,
+} from "../components";
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -60,9 +66,6 @@ const Discover = () => {
     location.pathname,
   ]);
 
-  if (isFetching) return <Loader title="Loading songs..." />;
-  if (error) return <Error />;
-
   const genreColors = {
     POP: "from-pink-500 to-rose-500",
     HIP_HOP_RAP: "from-[#6366f1] to-[#0ea5e9]",
@@ -90,6 +93,7 @@ const Discover = () => {
     LOFI: "from-[#0ea5e9]/50 to-pink-300",
   };
 
+  // Genre selector button for mobile
   const genreSelector = (
     <button
       onClick={() => setShowGenreModal(true)}
@@ -97,8 +101,8 @@ const Discover = () => {
         genreColors[selectedGenre] || "from-gray-600 to-gray-700"
       } text-white rounded-full text-sm font-medium shadow-lg flex items-center gap-1 active:scale-95 transition-all`}
     >
-      <span>{genreTitle}</span>
-      <IoChevronDown className="w-3 h-3" />
+      <span className="truncate max-w-[80px]">{genreTitle}</span>
+      <IoChevronDown className="w-3 h-3 flex-shrink-0" />
     </button>
   );
 
@@ -107,7 +111,7 @@ const Discover = () => {
 
   return (
     <div className="flex flex-col">
-      {/* Use PageHeader for both mobile and desktop */}
+      {/* PageHeader with genre selector */}
       <PageHeader title="Discover" selector={genreSelector}>
         {/* Desktop Genre Pills */}
         <div className="relative mb-6 hidden sm:block">
@@ -190,7 +194,7 @@ const Discover = () => {
       )}
 
       {/* Song Grid */}
-      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6 px-4 sm:px-0 pb-32 sm:pb-24">
+      <ResponsiveGrid type="songs">
         {shuffledSongs.map((song, i) => (
           <SongCard
             key={song.key || i}
@@ -201,7 +205,7 @@ const Discover = () => {
             i={i}
           />
         ))}
-      </div>
+      </ResponsiveGrid>
     </div>
   );
 };

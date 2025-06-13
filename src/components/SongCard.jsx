@@ -266,7 +266,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           </div>
         </div>
 
-        {/* Context menu */}
+        {/* Context menus remain the same */}
         {showContextMenu && (
           <SongContextMenu
             song={song}
@@ -280,7 +280,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           />
         )}
 
-        {/* Playlist dropdown */}
+        {/* Playlist dropdown remains the same */}
         {showPlaylistDropdown && (
           <Portal>
             <div
@@ -307,12 +307,12 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     );
   }
 
-  // Desktop card view (existing code)
+  // Desktop card view
   return (
     <>
       <div
         ref={cardRef}
-        className={`flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group
+        className={`flex flex-col w-full sm:max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group
     ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}

@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { ArtistCard, Error, Loader, PageHeader } from "../components";
+import {
+  ArtistCard,
+  Error,
+  Loader,
+  PageHeader,
+  ResponsiveGrid,
+} from "../components";
 import { useGetTopChartsQuery } from "../redux/services/spotifyCore";
 import { IoChevronDown, IoGlobe } from "react-icons/io5";
 
@@ -157,11 +163,11 @@ const TopArtists = () => {
     <div className="flex flex-col">
       <PageHeader title="Top Artists" selector={regionSelector} />
 
-      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4 sm:gap-6 lg:gap-8 px-4 sm:px-0">
+      <ResponsiveGrid type="artists">
         {artistsWithImages.map((artist) => (
           <ArtistCard key={artist.adamid} track={{ artists: [artist] }} />
         ))}
-      </div>
+      </ResponsiveGrid>
     </div>
   );
 };
