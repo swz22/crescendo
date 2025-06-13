@@ -188,6 +188,22 @@ a,
   transition: all 0.3s ease-in-out;
 }
 
+/* Mobile menu animation */
+@media (max-width: 640px) {
+  body.menu-open {
+    overflow: hidden;
+  }
+}
+
+/* Safe area padding for devices with notches */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* Noise overlay */
 .noise-overlay::before {
   content: "";

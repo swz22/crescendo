@@ -26,13 +26,13 @@ const NavLinks = ({ handleClick }) => (
         key={item.name}
         to={item.to}
         className={({ isActive }) =>
-          `flex flex-row justify-start items-center my-8 text-base font-medium 
+          `flex flex-row justify-start items-center my-4 sm:my-8 text-base font-medium 
           ${
             isActive
               ? "text-[#2dd4bf] bg-gradient-to-r from-[#2dd4bf]/20 to-transparent scale-105 shadow-xl shadow-[#2dd4bf]/20 border-l-4 border-[#2dd4bf]"
               : "text-gray-300 hover:text-white hover:bg-white/10 border-l-4 border-transparent"
           } 
-          px-2 sm:px-4 py-3 rounded-r-xl transition-all duration-300 group relative overflow-hidden`
+          px-4 py-3 rounded-r-xl transition-all duration-300 group relative overflow-hidden`
         }
         onClick={() => handleClick && handleClick()}
       >
@@ -89,35 +89,39 @@ const LeftSidebar = () => {
         </div>
       </div>
 
-      {/* Mobile sidebar */}
-      <div className="absolute sm:hidden block top-6 right-3 z-50">
-        {!mobileMenuOpen ? (
-          <HiOutlineMenu
-            className="w-6 h-6 mr-2 text-white"
-            onClick={() => setMobileMenuOpen(true)}
-          />
-        ) : (
-          <RiCloseLine
-            className="w-6 h-6 mr-2 text-white"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-        )}
+      {/* Mobile sidebar trigger */}
+      <div className="fixed sm:hidden top-4 left-4 z-50">
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 bg-black/50 backdrop-blur-sm rounded-lg border border-white/20"
+        >
+          {!mobileMenuOpen ? (
+            <HiOutlineMenu className="w-6 h-6 text-white" />
+          ) : (
+            <RiCloseLine className="w-6 h-6 text-white" />
+          )}
+        </button>
       </div>
 
+      {/* Mobile backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 sm:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar */}
       <div
-        className={`absolute top-0 h-screen w-2/3 bg-gradient-to-br from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-lg z-50 p-6 sm:hidden smooth-transition ${
-          mobileMenuOpen ? "left-0" : "-left-full"
+        className={`fixed top-0 h-full w-[280px] max-w-[85vw] bg-gradient-to-br from-[#1a1848]/98 to-[#0f0e2e]/98 backdrop-blur-lg z-50 p-6 sm:hidden transition-transform duration-300 ${
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <img
-          src={logo}
-          alt="logo"
-          className="w-full h-14 object-contain mt-8"
-        />
+        <img src={logo} alt="logo" className="w-full h-14 object-contain" />
         <NavLinks handleClick={() => setMobileMenuOpen(false)} />
 
         {/* Performance Monitor Button for mobile */}
-        <div className="absolute bottom-6 left-6 right-6">
+        <div className="mt-auto mb-6">
           <button
             onClick={() => {
               setShowPerformanceMonitor(true);
