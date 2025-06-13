@@ -35,7 +35,8 @@ import Error from "./Error";
 import Portal from "./Portal";
 import TrackLoadingState from "./TrackLoadingState";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
-import SongContextMenu from "./SongContextMenu";
+import SongMenu from "./SongMenu";
+import BottomSheet from "./BottomSheet";
 
 // Page Components
 import DetailsHeader from "./DetailsHeader";
@@ -81,7 +82,8 @@ export {
   Portal,
   TrackLoadingState,
   MusicLoadingSpinner,
-  SongContextMenu,
+  SongMenu,
+  BottomSheet,
 
   // Page Components
   DetailsHeader,

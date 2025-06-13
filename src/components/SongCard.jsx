@@ -3,16 +3,17 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import PlayPause from "./PlayPause";
 import Portal from "./Portal";
+import SongMenu from "./SongMenu";
 import {
   playPause,
   playTrack,
+  setActiveSong,
   addToQueue,
+  replaceQueue,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
-import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
-import SongContextMenu from "./SongContextMenu";
 import {
   HiLightningBolt,
   HiDotsVertical,
@@ -31,20 +32,9 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCacheIndicator, setShowCacheIndicator] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [showContextMenu, setShowContextMenu] = useState(false);
-  const [contextMenuPosition, setContextMenuPosition] = useState({
-    x: 0,
-    y: 0,
-  });
-  const [showPlaylistDropdown, setShowPlaylistDropdown] = useState(false);
-  const [playlistDropdownPosition, setPlaylistDropdownPosition] = useState({
-    x: 0,
-    y: 0,
-  });
   const [isPrefetched, setIsPrefetched] = useState(false);
   const hoverTimeoutRef = useRef(null);
   const { showToast } = useToast();
-
   const songId = song?.key || song?.id || song?.track_id;
   const isCurrentSong =
     activeSong?.key === song?.key ||
@@ -130,63 +120,25 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       if (songWithPreview.preview_url) {
         dispatch(
           playTrack({
-            track: { ...songWithPreview, queue_position: i },
+            track: songWithPreview,
             source: "song_card",
           })
         );
-
-        if (data && data.length > 0) {
-          dispatch(
-            replaceQueue({
-              songs: data,
-              startIndex: i,
-              source: "song_card",
-              name: "Current Playlist",
-            })
-          );
-        }
-
         dispatch(playPause(true));
-        dispatchQueueEvent();
+        dispatchQueueEvent("Added to queue");
       } else {
-        // Only show error if we actually failed to get a preview
         showToast("No preview available for this track", "error");
       }
     } catch (error) {
       console.error("Error playing track:", error);
-      // Don't show error toast here - the error is likely already handled
     } finally {
       setIsLoading(false);
     }
-  }, [song, i, data, dispatch, getPreviewUrl, showToast]);
+  }, [song, dispatch, getPreviewUrl, showToast]);
 
   const handlePauseClick = useCallback(() => {
     dispatch(playPause(false));
   }, [dispatch]);
-
-  const handleContextMenu = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const rect = cardRef.current?.getBoundingClientRect();
-    const x = e.clientX || rect?.right - 10 || 0;
-    const y = e.clientY || rect?.bottom - 10 || 0;
-
-    setContextMenuPosition({ x, y });
-    setShowContextMenu(true);
-  }, []);
-
-  const handleAddToQueue = useCallback(
-    async (e) => {
-      e.stopPropagation();
-      const songWithPreview = await getPreviewUrl(song);
-      if (songWithPreview.preview_url) {
-        dispatch(addToQueue({ song: songWithPreview }));
-        showToast("Added to queue");
-      }
-    },
-    [song, dispatch, getPreviewUrl, showToast]
-  );
 
   const coverArt =
     song?.images?.coverart ||
@@ -206,21 +158,20 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         ref={cardRef}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onContextMenu={handleContextMenu}
         className="group"
       >
         {/* Mobile List View - Only visible on mobile */}
-        <div
-          className="sm:hidden w-full flex items-center p-3 hover:bg-white/10 rounded-lg transition-all duration-200 cursor-pointer"
-          onClick={() =>
-            !isLoading &&
-            (isCurrentSong && isPlaying
-              ? handlePauseClick()
-              : handlePlayClick())
-          }
-        >
+        <div className="sm:hidden w-full flex items-center p-3 hover:bg-white/10 rounded-lg transition-all duration-200">
           {/* Album art */}
-          <div className="relative w-14 h-14 mr-3 flex-shrink-0">
+          <div
+            className="relative w-14 h-14 mr-3 flex-shrink-0"
+            onClick={() =>
+              !isLoading &&
+              (isCurrentSong && isPlaying
+                ? handlePauseClick()
+                : handlePlayClick())
+            }
+          >
             {showCacheIndicator && (
               <div className="absolute -top-1 -right-1 z-20 bg-black/60 backdrop-blur-sm rounded-full p-0.5">
                 <HiLightningBolt className="w-2.5 h-2.5 text-[#14b8a6]" />
@@ -246,15 +197,23 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           </div>
 
           {/* Song info */}
-          <div className="flex-1 min-w-0">
+          <div
+            className="flex-1 min-w-0"
+            onClick={() =>
+              !isLoading &&
+              (isCurrentSong && isPlaying
+                ? handlePauseClick()
+                : handlePlayClick())
+            }
+          >
             <p className="font-medium text-base text-white truncate">
               {songTitle}
             </p>
             <p className="text-sm text-gray-400 truncate">{artistName}</p>
           </div>
 
-          {/* Play indicator or button */}
-          <div className="ml-3">
+          {/* Play indicator */}
+          <div className="ml-3 mr-2">
             {isLoading ? (
               <div className="w-6 h-6 flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-[#14b8a6] border-t-transparent rounded-full animate-spin" />
@@ -269,6 +228,13 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
               <BsFillPlayFill className="w-6 h-6 text-white/60" />
             )}
           </div>
+
+          {/* Menu button for mobile */}
+          <SongMenu song={song}>
+            <button className="p-2 -mr-2">
+              <HiDotsVertical className="w-5 h-5 text-white/60" />
+            </button>
+          </SongMenu>
         </div>
 
         {/* Desktop Card View - Always rendered, hidden on mobile */}
@@ -374,20 +340,21 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           </div>
 
           {/* Context menu button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleContextMenu(e);
-            }}
-            className="absolute bottom-4 right-3 z-30 opacity-0 group-hover:opacity-90 transition-all duration-300 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm hover:scale-110 flex items-center justify-center ring-1 ring-[#14b8a6]/40 hover:ring-[#14b8a6]/60 shadow-[0_0_8px_rgba(20,184,166,0.4)] hover:shadow-[0_0_12px_rgba(20,184,166,0.6)]"
-            aria-label="More options"
+          <SongMenu
+            song={song}
+            className="absolute bottom-4 right-3 z-30 opacity-0 group-hover:opacity-90 transition-all duration-300"
           >
-            <div className="flex items-center gap-0.5">
-              <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
-              <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
-              <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
-            </div>
-          </button>
+            <button
+              className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm hover:scale-110 flex items-center justify-center ring-1 ring-[#14b8a6]/40 hover:ring-[#14b8a6]/60 shadow-[0_0_8px_rgba(20,184,166,0.4)] hover:shadow-[0_0_12px_rgba(20,184,166,0.6)]"
+              aria-label="More options"
+            >
+              <div className="flex items-center gap-0.5">
+                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+              </div>
+            </button>
+          </SongMenu>
 
           {/* Subtle loading indicator in corner */}
           {isLoading && (
@@ -399,44 +366,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           )}
         </div>
       </div>
-
-      {/* Context menu */}
-      {showContextMenu && (
-        <SongContextMenu
-          song={song}
-          position={contextMenuPosition}
-          onClose={() => setShowContextMenu(false)}
-          onAddToPlaylist={(pos) => {
-            setPlaylistDropdownPosition(pos);
-            setShowPlaylistDropdown(true);
-            setShowContextMenu(false);
-          }}
-        />
-      )}
-
-      {/* Playlist dropdown */}
-      {showPlaylistDropdown && (
-        <Portal>
-          <div
-            className="fixed z-50"
-            style={{
-              left: `${playlistDropdownPosition.x}px`,
-              top: `${playlistDropdownPosition.y}px`,
-            }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setShowPlaylistDropdown(false);
-              }
-            }}
-          >
-            <AddToPlaylistDropdown
-              track={song}
-              forceOpen={true}
-              onClose={() => setShowPlaylistDropdown(false)}
-            />
-          </div>
-        </Portal>
-      )}
     </>
   );
 };
