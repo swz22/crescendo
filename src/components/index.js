@@ -30,6 +30,7 @@ import QueueButton from "./QueueButton";
 import PageHeader from "./PageHeader";
 import Portal from "./Portal";
 import Toast from "./Toast";
+import AppHeader from "./AppHeader";
 
 export {
   LeftSidebar,
@@ -64,4 +65,5 @@ export {
   MobileQueueSheet,
   MobileHeader,
   ResponsiveGrid,
+  AppHeader,
 };

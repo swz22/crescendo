@@ -1,7 +1,6 @@
-import { Error, Loader } from "../components";
+import { Error, Loader, AppHeader, ResponsiveGrid } from "../components";
 import AlbumCard from "../components/AlbumCard";
 import { useGetNewReleasesQuery } from "../redux/services/spotifyCore";
-import { PageHeader, ResponsiveGrid } from "../components";
 
 const NewReleases = () => {
   const { data, isFetching, error } = useGetNewReleasesQuery();
@@ -13,7 +12,10 @@ const NewReleases = () => {
 
   return (
     <div className="flex flex-col">
-      <PageHeader title="New Album Releases" />
+      <AppHeader
+        title="New Releases"
+        subtitle="Fresh albums from your favorite artists"
+      />
 
       <ResponsiveGrid type="albums">
         {albums.map((album, i) => (

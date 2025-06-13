@@ -1,4 +1,3 @@
-// src/components/MobileHeader.jsx
 import { useState } from "react";
 import Searchbar from "./Searchbar";
 import QueueButton from "./QueueButton";

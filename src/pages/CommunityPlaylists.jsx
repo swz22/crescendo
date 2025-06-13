@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Error, Loader, PageHeader, ResponsiveGrid } from "../components";
+import { Error, Loader, AppHeader, ResponsiveGrid } from "../components";
 import PlaylistCard from "../components/PlaylistCard";
 import PlaylistModal from "../components/PlaylistModal";
 import {
@@ -45,7 +45,7 @@ const CommunityPlaylists = () => {
   if (playlists.length === 0) {
     return (
       <div className="flex flex-col">
-        <PageHeader
+        <AppHeader
           title="Community Playlists"
           subtitle="Discover music curated by the community"
         />
@@ -70,7 +70,7 @@ const CommunityPlaylists = () => {
 
   return (
     <div className="flex flex-col">
-      <PageHeader
+      <AppHeader
         title="Community Playlists"
         subtitle="Discover music curated by the community"
       />

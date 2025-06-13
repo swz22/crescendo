@@ -5,7 +5,7 @@ import {
   Error,
   Loader,
   SongCard,
-  PageHeader,
+  AppHeader,
   ResponsiveGrid,
 } from "../components";
 import { selectGenreListId } from "../redux/features/playerSlice";
@@ -68,9 +68,9 @@ const Discover = () => {
 
   const genreColors = {
     POP: "from-pink-500 to-rose-500",
-    HIP_HOP_RAP: "from-[#6366f1] to-[#0ea5e9]",
+    HIP_HOP_RAP: "from-purple-600 to-blue-600",
     DANCE: "from-blue-500 to-cyan-500",
-    ELECTRONIC: "from-indigo-500 to-blue-600",
+    ELECTRONIC: "from-indigo-500 to-purple-600",
     SOUL_RNB: "from-orange-500 to-red-500",
     ALTERNATIVE: "from-gray-700 to-gray-900",
     ROCK: "from-red-700 to-red-900",
@@ -79,31 +79,94 @@ const Discover = () => {
     COUNTRY: "from-yellow-600 to-amber-700",
     WORLDWIDE: "from-green-500 to-emerald-600",
     REGGAE: "from-green-600 to-yellow-600",
-    HOUSE: "from-[#0ea5e9] to-[#6366f1]",
-    K_POP: "from-pink-400 to-[#6366f1]",
+    HOUSE: "from-purple-500 to-pink-500",
+    K_POP: "from-pink-400 to-purple-600",
     INDIE: "from-amber-500 to-orange-600",
     METAL: "from-gray-900 to-red-900",
     JAZZ: "from-blue-800 to-indigo-900",
-    CLASSICAL: "from-[#1a1f3a] to-[#6366f1]",
+    CLASSICAL: "from-indigo-900 to-purple-900",
     BLUES: "from-blue-900 to-blue-700",
     PUNK: "from-pink-600 to-black",
-    FUNK: "from-[#6366f1] to-orange-600",
+    FUNK: "from-purple-600 to-orange-600",
     GOSPEL: "from-yellow-600 to-yellow-800",
-    DISCO: "from-pink-500 to-[#6366f1]",
-    LOFI: "from-[#0ea5e9]/50 to-pink-300",
+    DISCO: "from-pink-500 to-purple-600",
+    LOFI: "from-blue-300 to-pink-300",
   };
 
-  // Genre selector button for mobile
+  // Genre selector component
   const genreSelector = (
-    <button
-      onClick={() => setShowGenreModal(true)}
-      className={`px-3 py-1.5 bg-gradient-to-r ${
-        genreColors[selectedGenre] || "from-gray-600 to-gray-700"
-      } text-white rounded-full text-sm font-medium shadow-lg flex items-center gap-1 active:scale-95 transition-all`}
-    >
-      <span className="truncate max-w-[80px]">{genreTitle}</span>
-      <IoChevronDown className="w-3 h-3 flex-shrink-0" />
-    </button>
+    <>
+      {/* Mobile/Tablet Genre Button */}
+      <button
+        onClick={() => setShowGenreModal(true)}
+        className={`sm:hidden px-3 py-1.5 bg-gradient-to-r ${
+          genreColors[selectedGenre] || "from-gray-600 to-gray-700"
+        } text-white rounded-full text-sm font-medium shadow-lg flex items-center gap-1 active:scale-95 transition-all`}
+      >
+        <span className="truncate max-w-[80px]">{genreTitle}</span>
+        <IoChevronDown className="w-3 h-3 flex-shrink-0" />
+      </button>
+
+      {/* Desktop Genre Dropdown */}
+      <div className="hidden sm:block relative">
+        <button
+          onClick={() => setShowGenreModal(!showGenreModal)}
+          className={`px-4 py-2 bg-gradient-to-r ${
+            genreColors[selectedGenre] || "from-gray-600 to-gray-700"
+          } text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2`}
+        >
+          <span>{genreTitle}</span>
+          <IoChevronDown
+            className={`w-4 h-4 transition-transform ${
+              showGenreModal ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {/* Desktop Dropdown */}
+        {showGenreModal && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShowGenreModal(false)}
+            />
+            <div className="absolute right-0 mt-2 w-64 max-h-[70vh] bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden z-50 animate-slidedown">
+              <div className="py-2 overflow-y-auto custom-scrollbar">
+                {genres
+                  .sort((a, b) => a.title.localeCompare(b.title))
+                  .map((genre) => (
+                    <button
+                      key={genre.value}
+                      onClick={() => {
+                        dispatch(selectGenreListId(genre.value));
+                        setShowGenreModal(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-all flex items-center justify-between group ${
+                        selectedGenre === genre.value
+                          ? "bg-white/10 border-l-4 border-[#14b8a6]"
+                          : ""
+                      }`}
+                    >
+                      <span
+                        className={`${
+                          selectedGenre === genre.value
+                            ? "text-[#14b8a6] font-semibold"
+                            : "text-white"
+                        }`}
+                      >
+                        {genre.title}
+                      </span>
+                      {selectedGenre === genre.value && (
+                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                      )}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 
   if (isFetching) return <Loader title="Loading songs..." />;
@@ -111,32 +174,11 @@ const Discover = () => {
 
   return (
     <div className="flex flex-col">
-      {/* PageHeader with genre selector */}
-      <PageHeader title="Discover" selector={genreSelector}>
-        {/* Desktop Genre Pills */}
-        <div className="relative mb-6 hidden sm:block">
-          <div className="flex gap-2 flex-wrap">
-            {[...genres]
-              .sort((a, b) => a.title.localeCompare(b.title))
-              .map((genre) => (
-                <button
-                  key={genre.value}
-                  onClick={() => dispatch(selectGenreListId(genre.value))}
-                  className={`px-4 py-2 rounded-full font-medium transition-all duration-300 ${
-                    selectedGenre === genre.value
-                      ? `bg-gradient-to-r ${
-                          genreColors[genre.value] ||
-                          "from-gray-600 to-gray-700"
-                        } text-white shadow-lg scale-105`
-                      : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white backdrop-blur-sm border border-white/10"
-                  }`}
-                >
-                  {genre.title}
-                </button>
-              ))}
-          </div>
-        </div>
-      </PageHeader>
+      <AppHeader
+        title="Discover"
+        subtitle="Find your next favorite track"
+        action={genreSelector}
+      />
 
       {/* Mobile Genre Modal */}
       {showGenreModal && (

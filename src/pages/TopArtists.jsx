@@ -3,13 +3,13 @@ import {
   ArtistCard,
   Error,
   Loader,
-  PageHeader,
+  AppHeader,
   ResponsiveGrid,
 } from "../components";
 import { useGetTopChartsQuery } from "../redux/services/spotifyCore";
 import { IoChevronDown, IoGlobe } from "react-icons/io5";
 
-// Region configuration with Spotify market codes (no flag emojis)
+// Region configuration
 const regions = [
   { name: "United States", code: "US" },
   { name: "United Kingdom", code: "GB" },
@@ -93,7 +93,7 @@ const TopArtists = () => {
     setIsDropdownOpen(false);
   };
 
-  // Create the region selector component
+  // Region selector component
   const regionSelector = (
     <div className="relative">
       <button
@@ -161,7 +161,11 @@ const TopArtists = () => {
 
   return (
     <div className="flex flex-col">
-      <PageHeader title="Top Artists" selector={regionSelector} />
+      <AppHeader
+        title="Top Artists"
+        subtitle={`Most popular artists in ${selectedRegion.name}`}
+        action={regionSelector}
+      />
 
       <ResponsiveGrid type="artists">
         {artistsWithImages.map((artist) => (

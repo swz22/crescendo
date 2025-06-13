@@ -8,20 +8,23 @@ import App from "./App";
 import { store } from "./redux/store";
 import { ToastProvider } from "./context/ToastContext";
 import { LayoutProvider } from "./context/LayoutContext";
+import { AppProvider } from "./context/AppContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
-      <LayoutProvider>
-        <ToastProvider>
-          <Router>
-            <ErrorBoundary>
-              <App />
-            </ErrorBoundary>
-          </Router>
-        </ToastProvider>
-      </LayoutProvider>
+      <AppProvider>
+        <LayoutProvider>
+          <ToastProvider>
+            <Router>
+              <ErrorBoundary>
+                <App />
+              </ErrorBoundary>
+            </Router>
+          </ToastProvider>
+        </LayoutProvider>
+      </AppProvider>
     </Provider>
   </React.StrictMode>
 );
