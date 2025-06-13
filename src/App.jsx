@@ -53,7 +53,7 @@ const App = () => {
       <LeftSidebar />
 
       <div className="flex-1 flex flex-col bg-gradient-to-br from-[#1a1848] via-[#2d2467] to-[#1a1848]">
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-32">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 pb-40 lg:pb-32">
           <Routes>
             <Route path="/" element={<Discover />} />
             <Route path="/top-artists" element={<TopArtists />} />
@@ -84,7 +84,7 @@ const App = () => {
       {/* Music Player - Responsive positioning */}
       {activeSong?.title && (
         <div
-          className={`fixed h-28 bottom-0 left-0 lg:left-[240px] right-0 lg:right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-10 rounded-t-2xl border-t border-x border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] ${
+          className={`fixed h-28 bottom-0 left-0 right-0 lg:left-[240px] lg:right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-10 lg:rounded-t-2xl border-t lg:border-x border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] ${
             hideMainPlayer ? "invisible" : "visible"
           }`}
         >

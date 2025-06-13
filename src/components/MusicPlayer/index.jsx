@@ -254,7 +254,7 @@ const MusicPlayer = () => {
   return (
     <>
       <TrackLoadingState isLoading={isChangingTrack} />
-      <div className="relative sm:px-12 px-8 w-full h-full flex items-center justify-between">
+      <div className="relative px-4 sm:px-8 lg:px-12 w-full h-full flex items-center justify-between">
         <Track
           isPlaying={isPlaying}
           isActive={isActive}
