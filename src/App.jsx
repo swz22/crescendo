@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSelector } from "react-redux";
 import { Route, Routes, useLocation } from "react-router-dom";
 import {
@@ -8,6 +8,7 @@ import {
   QueueIndicator,
   FloatingQueueButton,
   MobileQueueSheet,
+  Loader,
 } from "./components";
 import OnboardingModal from "./components/OnboardingModal";
 import {
@@ -20,6 +21,13 @@ import {
   NewReleases,
   CommunityPlaylists,
 } from "./pages";
+
+// Loading component for lazy loaded routes
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <Loader title="Loading..." />
+  </div>
+);
 
 const App = () => {
   const {
@@ -58,17 +66,18 @@ const App = () => {
 
       <div className="flex-1 flex flex-col bg-gradient-to-br from-[#1a1848] via-[#2d2467] to-[#1a1848]">
         <div className="flex-1 overflow-y-auto custom-scrollbar sm:px-6 pb-24 sm:pb-40 lg:pb-32">
-          {/* Remove px-4 from mobile, keep sm:px-6 for desktop */}
-          <Routes>
-            <Route path="/" element={<Discover />} />
-            <Route path="/top-artists" element={<TopArtists />} />
-            <Route path="/new-releases" element={<NewReleases />} />
-            <Route path="/playlists" element={<CommunityPlaylists />} />
-            <Route path="/albums/:id" element={<AlbumDetails />} />
-            <Route path="/artists/:id" element={<ArtistDetails />} />
-            <Route path="/songs/:songid" element={<SongDetails />} />
-            <Route path="/search/:searchTerm" element={<Search />} />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Discover />} />
+              <Route path="/top-artists" element={<TopArtists />} />
+              <Route path="/new-releases" element={<NewReleases />} />
+              <Route path="/playlists" element={<CommunityPlaylists />} />
+              <Route path="/albums/:id" element={<AlbumDetails />} />
+              <Route path="/artists/:id" element={<ArtistDetails />} />
+              <Route path="/songs/:songid" element={<SongDetails />} />
+              <Route path="/search/:searchTerm" element={<Search />} />
+            </Routes>
+          </Suspense>
         </div>
       </div>
 

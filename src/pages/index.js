@@ -1,11 +1,14 @@
-import Discover from "./Discover";
-import TopArtists from "./TopArtists";
-import AlbumDetails from "./AlbumDetails";
-import ArtistDetails from "./ArtistDetails";
-import SongDetails from "./SongDetails";
-import Search from "./Search";
-import NewReleases from "./NewReleases";
-import CommunityPlaylists from "./CommunityPlaylists";
+import { lazy } from "react";
+
+// Lazy load all page components for better performance
+const Discover = lazy(() => import("./Discover"));
+const TopArtists = lazy(() => import("./TopArtists"));
+const AlbumDetails = lazy(() => import("./AlbumDetails"));
+const ArtistDetails = lazy(() => import("./ArtistDetails"));
+const SongDetails = lazy(() => import("./SongDetails"));
+const Search = lazy(() => import("./Search"));
+const NewReleases = lazy(() => import("./NewReleases"));
+const CommunityPlaylists = lazy(() => import("./CommunityPlaylists"));
 
 export {
   Discover,
