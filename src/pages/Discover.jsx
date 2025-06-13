@@ -99,30 +99,31 @@ const Discover = () => {
           </div>
         </div>
 
-       <div className="relative">
-  <div className="flex gap-2 mb-4 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
-    {[...genres]
-      .sort((a, b) => a.title.localeCompare(b.title))
-      .map((genre) => (
-        <button
-          key={genre.value}
-          onClick={() => dispatch(selectGenreListId(genre.value))}
-          className={`px-4 py-2 rounded-full font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 sm:flex-shrink ${
-            selectedGenre === genre.value
-              ? `bg-gradient-to-r ${
-                  genreColors[genre.value] || "from-gray-600 to-gray-700"
-                } text-white shadow-lg scale-105 ring-2 ring-white/30`
-              : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white hover:scale-105 backdrop-blur-sm border border-white/10"
-          }`}
-        >
-          {genre.title}
-        </button>
-      ))}
-  </div>
-</div>
+        <div className="relative">
+          <div className="flex gap-2 mb-4 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
+            {[...genres]
+              .sort((a, b) => a.title.localeCompare(b.title))
+              .map((genre) => (
+                <button
+                  key={genre.value}
+                  onClick={() => dispatch(selectGenreListId(genre.value))}
+                  className={`px-4 py-2 rounded-full font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 sm:flex-shrink ${
+                    selectedGenre === genre.value
+                      ? `bg-gradient-to-r ${
+                          genreColors[genre.value] ||
+                          "from-gray-600 to-gray-700"
+                        } text-white shadow-lg scale-105 ring-2 ring-white/30`
+                      : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white hover:scale-105 backdrop-blur-sm border border-white/10"
+                  }`}
+                >
+                  {genre.title}
+                </button>
+              ))}
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
         {shuffledSongs.map((song, i) => (
           <SongCard
             key={song.key || i}

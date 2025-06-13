@@ -18,6 +18,7 @@ import {
   HiDotsVertical,
   HiOutlineDotsHorizontal,
 } from "react-icons/hi";
+import { BsFillPlayFill } from "react-icons/bs";
 import { useToast } from "../context/ToastContext";
 import { dispatchQueueEvent } from "../utils/queueEvents";
 
@@ -204,13 +205,115 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const artistName =
     song.subtitle || song.attributes?.artistName || "Unknown Artist";
 
+  // Mobile list view for small screens
+  const isMobile = window.innerWidth < 640;
+
+  if (isMobile) {
+    return (
+      <>
+        <div
+          ref={cardRef}
+          className="flex items-center w-full p-3 bg-white/5 backdrop-blur-sm rounded-lg cursor-pointer relative transition-all duration-200 active:bg-white/10 active:scale-[0.98]"
+          onClick={() =>
+            !isLoading &&
+            (isCurrentSong && isPlaying
+              ? handlePauseClick()
+              : handlePlayClick())
+          }
+          onContextMenu={handleContextMenu}
+        >
+          {/* Album art */}
+          <div className="relative w-12 h-12 mr-3 flex-shrink-0">
+            {showCacheIndicator && (
+              <div className="absolute -top-1 -left-1 z-20 bg-black/60 backdrop-blur-sm rounded-full p-1">
+                <HiLightningBolt className="w-3 h-3 text-[#14b8a6]" />
+              </div>
+            )}
+            {coverArt ? (
+              <img
+                alt="song_img"
+                src={coverArt}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[#14b8a6] to-[#0891b2] rounded-lg flex items-center justify-center">
+                <span className="text-white/50 text-lg">♪</span>
+              </div>
+            )}
+          </div>
+
+          {/* Song info */}
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm text-white truncate">
+              {songTitle}
+            </p>
+            <p className="text-xs text-gray-400 truncate">{artistName}</p>
+          </div>
+
+          {/* Play indicator or button */}
+          <div className="ml-2">
+            {isLoading ? (
+              <MusicLoadingSpinner size="sm" />
+            ) : isCurrentSong && isPlaying ? (
+              <div className="flex items-center gap-0.5">
+                <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse" />
+                <div className="w-1 h-5 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
+                <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
+              </div>
+            ) : (
+              <BsFillPlayFill className="w-6 h-6 text-white/60" />
+            )}
+          </div>
+        </div>
+
+        {/* Context menu */}
+        {showContextMenu && (
+          <SongContextMenu
+            song={song}
+            position={contextMenuPosition}
+            onClose={() => setShowContextMenu(false)}
+            onAddToPlaylist={(pos) => {
+              setPlaylistDropdownPosition(pos);
+              setShowPlaylistDropdown(true);
+              setShowContextMenu(false);
+            }}
+          />
+        )}
+
+        {/* Playlist dropdown */}
+        {showPlaylistDropdown && (
+          <Portal>
+            <div
+              className="fixed z-50"
+              style={{
+                left: `${playlistDropdownPosition.x}px`,
+                top: `${playlistDropdownPosition.y}px`,
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setShowPlaylistDropdown(false);
+                }
+              }}
+            >
+              <AddToPlaylistDropdown
+                track={song}
+                forceOpen={true}
+                onClose={() => setShowPlaylistDropdown(false)}
+              />
+            </div>
+          </Portal>
+        )}
+      </>
+    );
+  }
+
+  // Desktop card view (existing code)
   return (
     <>
       <div
         ref={cardRef}
         className={`flex flex-col w-full max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group
-    ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}
-    `}
+    ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onContextMenu={handleContextMenu}
@@ -310,10 +413,9 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             e.stopPropagation();
             handleContextMenu(e);
           }}
-          className="absolute bottom-4 right-3 z-30 opacity-0 group-hover:opacity-90 lg:opacity-0 lg:group-hover:opacity-90 transition-all duration-300 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm hover:scale-110 flex items-center justify-center ring-1 ring-[#14b8a6]/40 hover:ring-[#14b8a6]/60 shadow-[0_0_8px_rgba(20,184,166,0.4)] hover:shadow-[0_0_12px_rgba(20,184,166,0.6)]"
+          className="absolute bottom-4 right-3 z-30 opacity-0 group-hover:opacity-90 transition-all duration-300 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm hover:scale-110 flex items-center justify-center ring-1 ring-[#14b8a6]/40 hover:ring-[#14b8a6]/60 shadow-[0_0_8px_rgba(20,184,166,0.4)] hover:shadow-[0_0_12px_rgba(20,184,166,0.6)]"
           aria-label="More options"
         >
-          {/* Three horizontal dots */}
           <div className="flex items-center gap-0.5">
             <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
             <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>

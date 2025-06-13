@@ -8,6 +8,7 @@ import {
   QueueIndicator,
   FloatingQueueButton,
   MobileQueueSheet,
+  BottomNavigation,
 } from "./components";
 import OnboardingModal from "./components/OnboardingModal";
 import {
@@ -53,7 +54,7 @@ const App = () => {
       <LeftSidebar />
 
       <div className="flex-1 flex flex-col bg-gradient-to-br from-[#1a1848] via-[#2d2467] to-[#1a1848]">
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-40 lg:pb-32">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 pb-[calc(10rem+env(safe-area-inset-bottom))] sm:pb-40 lg:pb-32">
           <Routes>
             <Route path="/" element={<Discover />} />
             <Route path="/top-artists" element={<TopArtists />} />
@@ -94,6 +95,8 @@ const App = () => {
 
       <OnboardingModal />
       <QueueIndicator />
+      {/* Mobile bottom navigation */}
+      <BottomNavigation />
     </div>
   );
 };
