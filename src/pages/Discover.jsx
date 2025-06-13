@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux"; // Add useDispatch here
 import { useLocation } from "react-router-dom";
-import { Error, Loader, SongCard, Searchbar } from "../components";
+import { Error, Loader, SongCard, PageHeader } from "../components"; // Update this line
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -90,40 +90,27 @@ const Discover = () => {
     LOFI: "from-[#0ea5e9]/50 to-pink-300",
   };
 
+  const genreSelector = (
+    <button
+      onClick={() => setShowGenreModal(true)}
+      className={`px-3 py-1.5 bg-gradient-to-r ${
+        genreColors[selectedGenre] || "from-gray-600 to-gray-700"
+      } text-white rounded-full text-sm font-medium shadow-lg flex items-center gap-1 active:scale-95 transition-all`}
+    >
+      <span>{genreTitle}</span>
+      <IoChevronDown className="w-3 h-3" />
+    </button>
+  );
+
+  if (isFetching) return <Loader title="Loading songs..." />;
+  if (error) return <Error />;
+
   return (
     <div className="flex flex-col">
-      {/* Mobile Header */}
-      <div className="sm:hidden mb-6 mt-8">
-        <div className="flex items-center justify-between mb-4 px-4">
-          <h2 className="font-bold text-2xl text-white pl-12">Discover</h2>
-          <button
-            onClick={() => setShowGenreModal(true)}
-            className={`px-3 py-1.5 bg-gradient-to-r ${
-              genreColors[selectedGenre] || "from-gray-600 to-gray-700"
-            } text-white rounded-full text-sm font-medium shadow-lg flex items-center gap-1 active:scale-95`}
-          >
-            <span>{genreTitle}</span>
-            <IoChevronDown className="w-3 h-3" />
-          </button>
-        </div>
-        <div className="px-4">
-          <Searchbar />
-        </div>
-      </div>
-
-      {/* Desktop Header */}
-      <div className="hidden sm:block w-full mb-6 mt-8">
-        <div className="flex items-center justify-between gap-8 mb-4">
-          <h2 className="font-bold text-3xl text-white">
-            Discover {genreTitle}
-          </h2>
-          <div className="flex-1 max-w-2xl">
-            <Searchbar />
-          </div>
-        </div>
-
+      {/* Use PageHeader for both mobile and desktop */}
+      <PageHeader title="Discover" selector={genreSelector}>
         {/* Desktop Genre Pills */}
-        <div className="relative mb-6">
+        <div className="relative mb-6 hidden sm:block">
           <div className="flex gap-2 flex-wrap">
             {[...genres]
               .sort((a, b) => a.title.localeCompare(b.title))
@@ -145,7 +132,7 @@ const Discover = () => {
               ))}
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Mobile Genre Modal */}
       {showGenreModal && (
@@ -203,7 +190,7 @@ const Discover = () => {
       )}
 
       {/* Song Grid */}
-      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6 pb-32 sm:pb-24">
+      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6 px-4 sm:px-0 pb-32 sm:pb-24">
         {shuffledSongs.map((song, i) => (
           <SongCard
             key={song.key || i}

@@ -87,79 +87,77 @@ const TopArtists = () => {
     setIsDropdownOpen(false);
   };
 
+  // Create the region selector component
+  const regionSelector = (
+    <div className="relative">
+      <button
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2.5 bg-white/10 hover:bg-white/15 rounded-full sm:rounded-lg transition-all duration-200 border border-white/20 hover:border-white/30 group backdrop-blur-sm"
+      >
+        <IoGlobe className="text-[#14b8a6] text-base sm:text-lg" />
+        <span className="text-white font-medium text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
+          {selectedRegion.name}
+        </span>
+        <IoChevronDown
+          className={`text-gray-300 transition-transform duration-200 text-sm sm:text-base ${
+            isDropdownOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {/* Dropdown Menu */}
+      {isDropdownOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setIsDropdownOpen(false)}
+          />
+
+          <div className="absolute right-0 mt-2 w-64 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden z-20 animate-slidedown">
+            <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
+              {regions.map((region) => (
+                <button
+                  key={region.code}
+                  onClick={() => handleRegionSelect(region)}
+                  className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all duration-200 ${
+                    selectedRegion.code === region.code
+                      ? "bg-[#14b8a6]/20 border-l-4 border-[#14b8a6]"
+                      : ""
+                  }`}
+                >
+                  <span className="text-gray-400 text-sm font-medium min-w-[35px]">
+                    {region.code}
+                  </span>
+                  <span
+                    className={`flex-1 text-left ${
+                      selectedRegion.code === region.code
+                        ? "text-white font-semibold"
+                        : "text-gray-200"
+                    }`}
+                  >
+                    {region.name}
+                  </span>
+                  {selectedRegion.code === region.code && (
+                    <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
   if (isFetching || loadingImages)
     return <Loader title={`Loading ${selectedRegion.name} artists...`} />;
   if (error) return <Error />;
 
   return (
     <div className="flex flex-col">
-      <PageHeader
-        title="Top Artists"
-        subtitle={`Trending in ${selectedRegion.name}`}
-      />
-      <div className="flex items-center justify-between mb-6">
-        {/* Region Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-3 px-4 py-2.5 bg-white/10 hover:bg-white/15 rounded-lg transition-all duration-200 border border-white/20 hover:border-white/30 group backdrop-blur-sm"
-          >
-            <IoGlobe className="text-[#14b8a6] text-lg" />
-            <span className="text-white font-medium">
-              {selectedRegion.name}
-            </span>
-            <IoChevronDown
-              className={`text-gray-300 transition-transform duration-200 ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
+      <PageHeader title="Top Artists" selector={regionSelector} />
 
-          {/* Dropdown Menu */}
-          {isDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setIsDropdownOpen(false)}
-              />
-
-              <div className="absolute right-0 mt-2 w-64 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden z-20 animate-slidedown">
-                <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
-                  {regions.map((region) => (
-                    <button
-                      key={region.code}
-                      onClick={() => handleRegionSelect(region)}
-                      className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all duration-200 ${
-                        selectedRegion.code === region.code
-                          ? "bg-[#14b8a6]/20 border-l-4 border-[#14b8a6]"
-                          : ""
-                      }`}
-                    >
-                      <span className="text-gray-400 text-sm font-medium min-w-[35px]">
-                        {region.code}
-                      </span>
-                      <span
-                        className={`flex-1 text-left ${
-                          selectedRegion.code === region.code
-                            ? "text-white font-semibold"
-                            : "text-gray-200"
-                        }`}
-                      >
-                        {region.name}
-                      </span>
-                      {selectedRegion.code === region.code && (
-                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4 sm:gap-6 lg:gap-8">
+      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4 sm:gap-6 lg:gap-8 px-4 sm:px-0">
         {artistsWithImages.map((artist) => (
           <ArtistCard key={artist.adamid} track={{ artists: [artist] }} />
         ))}

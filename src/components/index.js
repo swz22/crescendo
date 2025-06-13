@@ -24,6 +24,7 @@ import OnboardingModal from "./OnboardingModal";
 import QueueIndicator from "./QueueIndicator";
 import FloatingQueueButton from "./FloatingQueueButton";
 import MobileQueueSheet from "./MobileQueueSheet";
+import QueueButton from "./QueueButton";
 import PageHeader from "./PageHeader";
 import Portal from "./Portal";
 import Toast from "./Toast";
@@ -55,6 +56,7 @@ export {
   PageHeader,
   OnboardingModal,
   Toast,
+  QueueButton,
   QueueIndicator,
   FloatingQueueButton,
   MobileQueueSheet,

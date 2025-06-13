@@ -213,7 +213,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       <>
         <div
           ref={cardRef}
-          className="flex items-center w-full p-3 bg-white/5 backdrop-blur-sm rounded-lg cursor-pointer relative transition-all duration-200 active:bg-white/10 active:scale-[0.98]"
+          className="flex items-center w-full p-3 bg-white/5 backdrop-blur-sm rounded-lg cursor-pointer relative transition-all duration-200 active:bg-white/10 active:scale-[0.98] hover:bg-white/10"
           onClick={() =>
             !isLoading &&
             (isCurrentSong && isPlaying

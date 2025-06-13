@@ -74,7 +74,7 @@ const CommunityPlaylists = () => {
         title="Community Playlists"
         subtitle="Discover music curated by the community"
       />
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 px-4 sm:px-0">
         {sortedPlaylists.map((playlist, i) => (
           <PlaylistCard
             key={playlist?.id || `playlist-${i}`}
