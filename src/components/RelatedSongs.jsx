@@ -1,4 +1,4 @@
-import SongBar from "./SongBar";
+import TrackRow from "./TrackRow";
 
 const RelatedSongs = ({
   data,
@@ -19,7 +19,7 @@ const RelatedSongs = ({
       <div className="mt-6 w-full flex flex-col">
         {songs.length > 0 ? (
           songs.map((song, i) => (
-            <SongBar
+            <TrackRow
               key={`${artistId || "related"}-${song.key || song.id || i}`}
               song={song}
               i={i}

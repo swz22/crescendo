@@ -3,7 +3,7 @@ import Searchbar from "./Searchbar";
 import SongCard from "./SongCard";
 import ArtistCard from "./ArtistCard";
 import DetailsHeader from "./DetailsHeader";
-import SongBar from "./SongBar";
+import TrackRow from "./TrackRow";
 import RelatedSongs from "./RelatedSongs";
 import MusicPlayer from "./MusicPlayer";
 import Loader from "./Loader";
@@ -31,6 +31,7 @@ import PageHeader from "./PageHeader";
 import Portal from "./Portal";
 import Toast from "./Toast";
 import AppHeader from "./AppHeader";
+import ErrorBoundary from "./ErrorBoundary";
 
 export {
   LeftSidebar,
@@ -38,7 +39,7 @@ export {
   SongCard,
   ArtistCard,
   DetailsHeader,
-  SongBar,
+  TrackRow,
   RelatedSongs,
   MusicPlayer,
   Loader,
@@ -66,4 +67,5 @@ export {
   MobileHeader,
   ResponsiveGrid,
   AppHeader,
+  ErrorBoundary,
 };
