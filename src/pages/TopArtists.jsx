@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { ArtistCard, Error, Loader } from "../components";
+import { ArtistCard, Error, Loader, PageHeader } from "../components";
 import { useGetTopChartsQuery } from "../redux/services/spotifyCore";
 import { IoChevronDown, IoGlobe } from "react-icons/io5";
-import { PageHeader } from "../components";
 
 // Region configuration with Spotify market codes (no flag emojis)
 const regions = [
@@ -94,9 +93,11 @@ const TopArtists = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between mt-4 mb-10">
-        <h2 className="font-bold text-3xl text-white text-left">Top Artists</h2>
-
+      <PageHeader
+        title="Top Artists"
+        subtitle={`Trending in ${selectedRegion.name}`}
+      />
+      <div className="flex items-center justify-between mb-6">
         {/* Region Dropdown */}
         <div className="relative">
           <button

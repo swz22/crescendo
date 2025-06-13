@@ -232,26 +232,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           </div>
         )}
 
-        {/* Context menu button - vertically centered with text */}
-        <div className="absolute bottom-0 right-3 z-30 opacity-0 group-hover:opacity-90 transition-all duration-300">
-          <div className="relative -translate-y-[12px]">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleContextMenu(e);
-              }}
-              className="w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm hover:scale-110 flex items-center justify-center ring-1 ring-[#14b8a6]/40 hover:ring-[#14b8a6]/60 shadow-[0_0_8px_rgba(20,184,166,0.4)] hover:shadow-[0_0_12px_rgba(20,184,166,0.6)] transition-all duration-200"
-            >
-              {/* Three horizontal dots */}
-              <div className="flex items-center gap-0.5">
-                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
-                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
-                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
-              </div>
-            </button>
-          </div>
-        </div>
-
         <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
           {(isHovered || isCurrentSong) && (
             <div
@@ -323,6 +303,23 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             )}
           </p>
         </div>
+
+        {/* Context menu button - moved outside card */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleContextMenu(e);
+          }}
+          className="absolute bottom-4 right-3 z-30 opacity-0 group-hover:opacity-90 lg:opacity-0 lg:group-hover:opacity-90 transition-all duration-300 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm hover:scale-110 flex items-center justify-center ring-1 ring-[#14b8a6]/40 hover:ring-[#14b8a6]/60 shadow-[0_0_8px_rgba(20,184,166,0.4)] hover:shadow-[0_0_12px_rgba(20,184,166,0.6)]"
+          aria-label="More options"
+        >
+          {/* Three horizontal dots */}
+          <div className="flex items-center gap-0.5">
+            <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+            <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+            <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+          </div>
+        </button>
       </div>
 
       {/* Context menu */}

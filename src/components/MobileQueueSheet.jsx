@@ -235,15 +235,18 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
                       </div>
 
                       {/* Remove Button */}
-                      <button
+                      <div
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           dispatch(removeFromQueue({ index }));
                         }}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Remove from queue"
                       >
                         <HiX className="w-4 h-4 text-white/40" />
-                      </button>
+                      </div>
                     </button>
                   );
                 })}

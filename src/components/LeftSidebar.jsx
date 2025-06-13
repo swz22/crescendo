@@ -37,15 +37,13 @@ const NavLinks = ({ handleClick }) => (
         onClick={() => handleClick && handleClick()}
       >
         <item.icon
-          className={`w-6 h-6 sm:mr-3 transition-all duration-300 ${
+          className={`w-6 h-6 mr-3 transition-all duration-300 ${
             window.location.pathname === item.to
               ? "text-[#2dd4bf] drop-shadow-[0_0_8px_rgba(45,212,191,0.6)]"
               : "group-hover:scale-110 group-hover:text-white"
           }`}
         />
-        <span className="font-semibold relative z-10 hidden sm:inline">
-          {item.name}
-        </span>
+        <span className="font-semibold relative z-10">{item.name}</span>
         {/* Hover effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
       </NavLink>
