@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux"; // Add this import!
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import {
   HiOutlineQueueList,
@@ -20,6 +21,8 @@ const PlaylistDropdown = ({ onManageClick }) => {
     activePlaylistType,
     activePlaylistId,
   } = usePlaylistManager();
+
+  const { queue } = useSelector((state) => state.player);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -90,32 +93,40 @@ const PlaylistDropdown = ({ onManageClick }) => {
               </p>
               {allPlaylists
                 .filter((p) => p.type !== "playlist")
-                .map((playlist) => (
-                  <button
-                    key={playlist.id}
-                    onClick={() => handlePlaylistSelect(playlist)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                      activePlaylistId === playlist.id &&
-                      activePlaylistType === playlist.type
-                        ? "bg-[#14b8a6]/20 text-[#14b8a6]"
-                        : "hover:bg-white/10 text-white"
-                    }`}
-                  >
-                    <div className="flex-shrink-0">
-                      {getIcon(playlist.type)}
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-medium">{playlist.name}</p>
-                      <p className="text-xs opacity-60">
-                        {playlist.tracks?.length || 0} tracks
-                      </p>
-                    </div>
-                    {activePlaylistId === playlist.id &&
-                      activePlaylistType === playlist.type && (
-                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                      )}
-                  </button>
-                ))}
+                .map((playlist) => {
+                  // Calculate correct track count
+                  const trackCount =
+                    playlist.type === "recent"
+                      ? queue.length
+                      : playlist.tracks?.length || 0;
+
+                  return (
+                    <button
+                      key={playlist.id}
+                      onClick={() => handlePlaylistSelect(playlist)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                        activePlaylistId === playlist.id &&
+                        activePlaylistType === playlist.type
+                          ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                          : "hover:bg-white/10 text-white"
+                      }`}
+                    >
+                      <div className="flex-shrink-0">
+                        {getIcon(playlist.type)}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-medium">{playlist.name}</p>
+                        <p className="text-xs opacity-60">
+                          {trackCount} tracks
+                        </p>
+                      </div>
+                      {activePlaylistId === playlist.id &&
+                        activePlaylistType === playlist.type && (
+                          <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                        )}
+                    </button>
+                  );
+                })}
             </div>
 
             {/* User Playlists */}

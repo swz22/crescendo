@@ -18,7 +18,7 @@ export const usePlaylistManager = () => {
     activePlaylistType,
     currentSongs,
     recentlyPlayed,
-    // @ts-ignore - hide TS error
+    queue, // Add this line - it was missing!
   } = useSelector((state) => state.player);
 
   // Create new playlist
@@ -87,14 +87,14 @@ export const usePlaylistManager = () => {
       return {
         id: "queue",
         name: "Your Queue",
-        tracks: currentSongs,
+        tracks: queue, // Use queue directly
         type: "queue",
       };
     } else if (activePlaylistType === "recent") {
       return {
         id: "recent",
         name: "Recently Played",
-        tracks: recentlyPlayed,
+        tracks: [...queue].reverse(), // Queue in reverse
         type: "recent",
       };
     } else if (activePlaylistType === "playlist") {
@@ -104,23 +104,17 @@ export const usePlaylistManager = () => {
         : {
             id: "queue",
             name: "Your Queue",
-            tracks: currentSongs,
+            tracks: queue,
             type: "queue",
           };
     }
     return {
       id: "queue",
       name: "Your Queue",
-      tracks: currentSongs,
+      tracks: queue,
       type: "queue",
     };
-  }, [
-    activePlaylistType,
-    activePlaylistId,
-    currentSongs,
-    recentlyPlayed,
-    playlists,
-  ]);
+  }, [activePlaylistType, activePlaylistId, queue, playlists]);
 
   // Check if track is in playlist
   const isTrackInPlaylist = useCallback(
@@ -147,20 +141,20 @@ export const usePlaylistManager = () => {
       {
         id: "queue",
         name: "Your Queue",
-        tracks: currentSongs,
+        tracks: queue,
         type: "queue",
         icon: "queue",
       },
       {
         id: "recent",
         name: "Recently Played",
-        tracks: recentlyPlayed,
+        tracks: queue, // Same as queue, will be reversed in display
         type: "recent",
         icon: "history",
       },
       ...playlists.map((p) => ({ ...p, type: "playlist", icon: "playlist" })),
     ];
-  }, [playlists, currentSongs, recentlyPlayed]);
+  }, [playlists, queue]);
 
   return {
     playlists,

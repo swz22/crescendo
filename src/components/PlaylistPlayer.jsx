@@ -7,10 +7,11 @@ import {
   toggleRepeat,
   removeFromQueue,
   clearQueue,
-  replaceQueue,
+  playTrack,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
+import { useSongNavigation } from "../hooks/useSongNavigation";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
 import {
@@ -29,110 +30,144 @@ import {
   BsCollection,
 } from "react-icons/bs";
 import { HiOutlineQueueList, HiOutlineSparkles } from "react-icons/hi2";
-import { useSongNavigation } from "../hooks/useSongNavigation";
-// import { useToast } from "../context/ToastContext";
 
-const PlaylistPlayer = ({ playlist, tracks }) => {
+const PlaylistPlayer = () => {
   const dispatch = useDispatch();
-  const { activeSong, isPlaying, currentIndex, shuffle, repeat, currentSongs } =
-    useSelector((state) => state.player);
+  const {
+    activeSong,
+    isPlaying,
+    currentIndex,
+    shuffle,
+    repeat,
+    queue,
+    activePlaylistId,
+    activePlaylistType,
+  } = useSelector((state) => state.player);
+
   const { handleNextSong, handlePrevSong } = useSongNavigation();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached } =
     usePreviewUrl();
-  const { currentPlaylist } = usePlaylistManager();
+  const { currentPlaylist, getPlaylistById } = usePlaylistManager();
+
   const [volume, setVolume] = useState(0.7);
   const [isVolumeHovered, setIsVolumeHovered] = useState(false);
-  const [personalQueue, setPersonalQueue] = useState([]);
   const [showManagePanel, setShowManagePanel] = useState(false);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
 
-  // Check if we're on a playlist page
-  const isPlaylistPage = window.location.pathname === "/playlists";
-
-  // Use current playlist from Redux
-  useEffect(() => {
-    if (currentPlaylist && currentPlaylist.tracks) {
-      setPersonalQueue(currentPlaylist.tracks);
+  // Determine what tracks to display based on active view
+  const getDisplayTracks = () => {
+    if (activePlaylistType === "queue") {
+      return queue;
+    } else if (activePlaylistType === "recent") {
+      // Recently Played is queue in reverse
+      return [...queue].reverse();
+    } else if (activePlaylistType === "playlist") {
+      const playlist = getPlaylistById(activePlaylistId);
+      return playlist?.tracks || [];
     }
-  }, [currentPlaylist]);
+    return queue;
+  };
 
-  // Handle different queue sources
-  useEffect(() => {
-    if (isPlaylistPage && tracks && tracks.length > 0) {
-      // On playlist page, use playlist tracks
-      setPersonalQueue(tracks);
-    } else if (currentSongs && currentSongs.length > 0 && !isPlaylistPage) {
-      // On other pages, build personal queue from played songs
-      setPersonalQueue(currentSongs);
+  const displayTracks = getDisplayTracks();
+
+  // Calculate the display index for the current track
+  const getDisplayIndex = () => {
+    if (!activeSong || queue.length === 0) return -1;
+
+    if (activePlaylistType === "recent") {
+      // For reversed view, calculate from the end
+      return queue.length - 1 - currentIndex;
+    } else if (activePlaylistType === "queue") {
+      return currentIndex;
+    } else {
+      // For playlists, find the track in the playlist
+      return displayTracks.findIndex(
+        (track) => (track.key || track.id) === (activeSong.key || activeSong.id)
+      );
     }
-  }, [tracks, currentSongs, isPlaylistPage]);
+  };
+
+  const displayIndex = getDisplayIndex();
 
   // Auto-scroll to active track
   useEffect(() => {
-    if (activeTrackRef.current && scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const activeElement = activeTrackRef.current;
+    if (
+      activeTrackRef.current &&
+      scrollContainerRef.current &&
+      displayIndex >= 0
+    ) {
+      requestAnimationFrame(() => {
+        const container = scrollContainerRef.current;
+        const activeElement = activeTrackRef.current;
 
-      // Get positions
-      const containerRect = container.getBoundingClientRect();
-      const activeRect = activeElement.getBoundingClientRect();
+        if (container && activeElement) {
+          const containerRect = container.getBoundingClientRect();
+          const activeRect = activeElement.getBoundingClientRect();
 
-      // Calculate if element is out of view
-      const isAbove = activeRect.top < containerRect.top;
-      const isBelow = activeRect.bottom > containerRect.bottom;
+          // Check if element is out of view
+          const isAbove = activeRect.top < containerRect.top;
+          const isBelow = activeRect.bottom > containerRect.bottom;
 
-      if (isAbove || isBelow) {
-        // Calculate scroll position to center the active element
-        const scrollTop =
-          activeElement.offsetTop -
-          container.offsetTop -
-          container.clientHeight / 2 +
-          activeElement.clientHeight / 2;
-        container.scrollTo({
-          top: scrollTop,
-          behavior: "smooth",
-        });
-      }
-    }
-  }, [currentIndex]);
+          if (isAbove || isBelow) {
+            // Calculate scroll position to center the active element
+            const scrollTop =
+              activeElement.offsetTop -
+              container.offsetTop -
+              container.clientHeight / 2 +
+              activeElement.clientHeight / 2;
 
-  // Prefetch next tracks
-  useEffect(() => {
-    const timeoutIds = [];
-
-    if (personalQueue && currentIndex >= 0) {
-      const nextTracks = personalQueue.slice(
-        currentIndex + 1,
-        currentIndex + 4
-      );
-      nextTracks.forEach((track, idx) => {
-        if (!isPreviewCached(track)) {
-          const timeoutId = setTimeout(() => {
-            prefetchPreviewUrl(track, { priority: idx === 0 ? "high" : "low" });
-          }, idx * 1000);
-          timeoutIds.push(timeoutId);
+            container.scrollTo({
+              top: scrollTop,
+              behavior: "smooth",
+            });
+          }
         }
       });
     }
+  }, [displayIndex, activePlaylistType]);
 
-    return () => {
-      timeoutIds.forEach((id) => clearTimeout(id));
-    };
-  }, [currentIndex, personalQueue, prefetchPreviewUrl, isPreviewCached]);
+  // Prefetch next tracks in queue (not display tracks)
+  useEffect(() => {
+    if (queue.length > 0 && currentIndex >= 0) {
+      const nextTracks = queue.slice(currentIndex + 1, currentIndex + 4);
+      nextTracks.forEach((track, idx) => {
+        if (!isPreviewCached(track)) {
+          setTimeout(() => {
+            prefetchPreviewUrl(track, { priority: idx === 0 ? "high" : "low" });
+          }, idx * 1000);
+        }
+      });
+    }
+  }, [currentIndex, queue, prefetchPreviewUrl, isPreviewCached]);
 
   const handlePlayClick = async (track, index) => {
-    if (activeSong?.key === track.key && isPlaying) {
-      dispatch(playPause(false));
-    } else {
-      const songWithPreview = await getPreviewUrl(track);
+    // Check if this track is already in the queue
+    const queueIndex = queue.findIndex(
+      (t) => (t.key || t.id) === (track.key || track.id)
+    );
+
+    if (queueIndex !== -1) {
+      // Track is in queue, jump to it
+      const songWithPreview = await getPreviewUrl(queue[queueIndex]);
       if (songWithPreview.preview_url) {
         dispatch(
           setActiveSong({
             song: songWithPreview,
-            data: personalQueue,
-            i: index,
-            playlistId: currentPlaylist?.id,
+            data: queue,
+            i: queueIndex,
+          })
+        );
+        dispatch(playPause(true));
+      }
+    } else {
+      // Track not in queue, add and play
+      const songWithPreview = await getPreviewUrl(track);
+      if (songWithPreview.preview_url) {
+        dispatch(
+          playTrack({
+            track: songWithPreview,
+            source: activePlaylistType,
           })
         );
         dispatch(playPause(true));
@@ -144,13 +179,6 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const formatDuration = (ms) => {
-    if (!ms) return "--:--";
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
   const placeholderImage =
@@ -226,7 +254,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
               <button
                 onClick={handlePrevSong}
                 className="p-2 text-white hover:bg-white/10 rounded-full transition-all hover:scale-110"
-                disabled={personalQueue.length === 0}
+                disabled={queue.length === 0}
               >
                 <BsFillSkipStartFill size={20} />
               </button>
@@ -245,7 +273,7 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
               <button
                 onClick={handleNextSong}
                 className="p-2 text-white hover:bg-white/10 rounded-full transition-all hover:scale-110"
-                disabled={personalQueue.length === 0}
+                disabled={queue.length === 0}
               >
                 <BsFillSkipEndFill size={20} />
               </button>
@@ -318,17 +346,19 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
         )}
       </div>
 
-      {/* Queue */}
+      {/* Track List */}
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <div className="px-6 py-3 flex items-center justify-between border-b border-white/5">
           <h4 className="text-white font-semibold flex items-center gap-2">
             <HiOutlineQueueList size={20} />
-            Track List
+            {activePlaylistType === "queue"
+              ? "Your Queue"
+              : activePlaylistType === "recent"
+              ? "Recently Played"
+              : currentPlaylist?.name || "Track List"}
           </h4>
           <span className="text-white/60 text-sm">
-            {personalQueue.length > 0
-              ? `${currentIndex + 1} / ${personalQueue.length}`
-              : "0 / 0"}
+            {displayTracks.length} tracks
           </span>
         </div>
 
@@ -336,17 +366,22 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2"
         >
-          {personalQueue && personalQueue.length > 0 ? (
+          {displayTracks && displayTracks.length > 0 ? (
             <>
-              {/* Track List with enhanced controls */}
               <div className="space-y-1">
-                {personalQueue.map((track, index) => {
-                  const isActive = currentIndex === index;
-                  const isCurrentSong = activeSong?.key === track.key;
+                {displayTracks.map((track, index) => {
+                  const trackInQueueIndex = queue.findIndex(
+                    (t) => (t.key || t.id) === (track.key || track.id)
+                  );
+                  const isInQueue = trackInQueueIndex !== -1;
+                  const isActive = displayIndex === index;
+                  const isCurrentSong =
+                    activeSong?.key === track.key ||
+                    activeSong?.id === track.id;
 
                   return (
                     <div
-                      key={track.key || index}
+                      key={track.key || track.id || index}
                       ref={isActive ? activeTrackRef : null}
                       className={`group flex items-center gap-3 p-4 rounded-xl transition-all duration-200 cursor-pointer relative overflow-hidden ${
                         isActive
@@ -425,6 +460,13 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                         </p>
                       </div>
 
+                      {/* Queue indicator for playlist view */}
+                      {activePlaylistType === "playlist" && isInQueue && (
+                        <div className="px-2 py-1 bg-[#14b8a6]/20 rounded text-xs text-[#14b8a6] font-medium">
+                          In Queue
+                        </div>
+                      )}
+
                       {/* Duration */}
                       <span className="text-gray-400 text-sm font-medium bg-black/20 px-2.5 py-1 rounded-lg group-hover:bg-black/30 transition-all">
                         {track.duration_ms
@@ -432,29 +474,33 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                           : "--:--"}
                       </span>
 
-                      {/* Remove button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          dispatch(removeFromQueue({ index }));
-                        }}
-                        className="opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-white/10 rounded-lg"
-                        title="Remove from queue"
-                      >
-                        <svg
-                          className="w-4 h-4 text-gray-400 hover:text-red-400 transition-colors"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                      {/* Remove button - only show for queue view */}
+                      {activePlaylistType === "queue" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(
+                              removeFromQueue({ index: trackInQueueIndex })
+                            );
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-white/10 rounded-lg"
+                          title="Remove from queue"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
+                          <svg
+                            className="w-4 h-4 text-gray-400 hover:text-red-400 transition-colors"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      )}
 
                       {/* Position indicator for current song */}
                       {isCurrentSong && (
@@ -465,41 +511,45 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                 })}
               </div>
 
-              {/* Add a queue summary at the bottom */}
-              {personalQueue.length > 0 && (
-                <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#14b8a6]/20 to-[#0d9488]/10 rounded-lg flex items-center justify-center">
-                        <HiOutlineQueueList className="w-5 h-5 text-[#14b8a6]" />
+              {/* Queue summary - only for queue/recent views */}
+              {(activePlaylistType === "queue" ||
+                activePlaylistType === "recent") &&
+                queue.length > 0 && (
+                  <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#14b8a6]/20 to-[#0d9488]/10 rounded-lg flex items-center justify-center">
+                          <HiOutlineQueueList className="w-5 h-5 text-[#14b8a6]" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">
+                            Queue Summary
+                          </p>
+                          <p className="text-gray-400 text-sm">
+                            {queue.length} tracks •{" "}
+                            {Math.floor(
+                              queue.reduce(
+                                (acc, t) => acc + (t.duration_ms || 0),
+                                0
+                              ) / 60000
+                            )}{" "}
+                            minutes
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-white font-medium">Queue Summary</p>
-                        <p className="text-gray-400 text-sm">
-                          {personalQueue.length} tracks •{" "}
-                          {Math.floor(
-                            personalQueue.reduce(
-                              (acc, t) => acc + (t.duration_ms || 0),
-                              0
-                            ) / 60000
-                          )}{" "}
-                          minutes
-                        </p>
-                      </div>
+                      <button
+                        onClick={() => {
+                          if (confirm("Clear entire queue?")) {
+                            dispatch(clearQueue());
+                          }
+                        }}
+                        className="text-gray-400 hover:text-red-400 text-sm font-medium transition-colors"
+                      >
+                        Clear All
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        if (confirm("Clear entire queue?")) {
-                          dispatch(clearQueue());
-                        }
-                      }}
-                      className="text-gray-400 hover:text-red-400 text-sm font-medium transition-colors"
-                    >
-                      Clear All
-                    </button>
                   </div>
-                </div>
-              )}
+                )}
             </>
           ) : (
             // Empty queue state
@@ -512,11 +562,13 @@ const PlaylistPlayer = ({ playlist, tracks }) => {
                 </div>
               </div>
               <p className="text-white font-semibold text-lg mb-2">
-                {isPlaylistPage ? "No playlist loaded" : "Your queue is empty"}
+                {activePlaylistType === "playlist"
+                  ? "No tracks in playlist"
+                  : "Your queue is empty"}
               </p>
               <p className="text-white/60 text-sm mb-4">
-                {isPlaylistPage
-                  ? "Click on a playlist card to load tracks"
+                {activePlaylistType === "playlist"
+                  ? "This playlist doesn't have any tracks yet"
                   : "Start playing songs to build your queue"}
               </p>
               <div className="flex items-center gap-2 text-white/40">

@@ -313,30 +313,56 @@ const playerSlice = createSlice({
 
     addToQueue: (state, action) => {
       const { song, playNext = false } = action.payload;
+      const songId = song.key || song.id || song.track_id;
 
-      // Check if song already in queue
-      const exists = state.queue.some(
-        (s) => (s.key || s.id) === (song.key || song.id)
+      // Find if song already exists in queue
+      const existingIndex = state.queue.findIndex(
+        (s) => (s.key || s.id || s.track_id) === songId
       );
 
-      if (!exists) {
-        if (playNext && state.currentIndex >= 0) {
-          // Insert after current song
-          state.queue.splice(state.currentIndex + 1, 0, song);
+      // Remove from current position if exists
+      if (existingIndex !== -1) {
+        state.queue.splice(existingIndex, 1);
 
-          // Update shuffle order if active
-          if (state.shuffle) {
-            state.shuffleOrder = generateShuffleOrder(
-              state.queue.length,
-              state.currentIndex
-            );
-          }
-        } else {
-          // Add to end
-          state.queue.push(song);
+        // Adjust currentIndex if needed
+        if (existingIndex < state.currentIndex) {
+          state.currentIndex--;
+        } else if (existingIndex === state.currentIndex) {
+          // Handle edge case where we're removing the current song
+          state.currentIndex = Math.min(
+            state.currentIndex,
+            state.queue.length - 1
+          );
         }
-        saveQueueState(state);
       }
+
+      // Add to new position
+      if (playNext && state.currentIndex >= 0) {
+        // Insert after current song
+        const insertIndex = state.currentIndex + 1;
+        state.queue.splice(insertIndex, 0, song);
+
+        // If we removed a song before the insert position, adjust
+        if (existingIndex !== -1 && existingIndex <= state.currentIndex) {
+          // No adjustment needed, already handled above
+        }
+      } else {
+        // Add to end
+        state.queue.push(song);
+      }
+
+      // Update shuffle order if active
+      if (state.shuffle && state.queue.length > 1) {
+        state.shuffleOrder = generateShuffleOrder(
+          state.queue.length,
+          state.currentIndex
+        );
+      }
+
+      // Update legacy state
+      state.currentSongs = state.queue;
+
+      saveQueueState(state);
     },
 
     removeFromQueue: (state, action) => {
@@ -511,21 +537,15 @@ const playerSlice = createSlice({
       if (playlistType === "playlist") {
         const playlist = state.playlists.find((p) => p.id === playlistId);
         if (playlist) {
-          state.queue = playlist.tracks;
-          state.currentSongs = playlist.tracks;
           state.currentPlaylist = playlist;
-          state.currentIndex = 0;
           state.queueName = playlist.name;
         }
       } else if (playlistType === "recent") {
-        state.queue = state.recentlyPlayed;
-        state.currentSongs = state.recentlyPlayed;
         state.currentPlaylist = {
           id: "recent",
           name: "Recently Played",
-          tracks: state.recentlyPlayed,
+          tracks: [...state.queue].reverse(), // Use queue, not recentlyPlayed
         };
-        state.currentIndex = 0;
         state.queueName = "Recently Played";
       } else if (playlistType === "queue") {
         state.currentPlaylist = {

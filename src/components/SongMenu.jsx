@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { store } from "../redux/store";
-import { addToQueue } from "../redux/features/playerSlice";
+import { addToQueue, removeFromQueue } from "../redux/features/playerSlice";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useToast } from "../context/ToastContext";
@@ -65,18 +65,6 @@ const SongMenu = ({ song, children, className = "" }) => {
   const handlePlayNext = async () => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
-      // First, find and remove the song if it's already in the queue
-      const state = store.getState();
-      const queue = state.player.queue;
-      const existingIndex = queue.findIndex(
-        (s) => (s.key || s.id) === (songWithPreview.key || songWithPreview.id)
-      );
-
-      if (existingIndex !== -1) {
-        dispatch(removeFromQueue({ index: existingIndex }));
-      }
-
-      // Then add it as play next
       dispatch(addToQueue({ song: songWithPreview, playNext: true }));
       showToast("Will play next");
     }
@@ -86,23 +74,12 @@ const SongMenu = ({ song, children, className = "" }) => {
   const handleAddToQueue = async () => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
-      // First, find and remove the song if it's already in the queue
-      const state = store.getState();
-      const queue = state.player.queue;
-      const existingIndex = queue.findIndex(
-        (s) => (s.key || s.id) === (songWithPreview.key || songWithPreview.id)
-      );
-
-      if (existingIndex !== -1) {
-        dispatch(removeFromQueue({ index: existingIndex }));
-      }
-
-      // Then add it to the end
-      dispatch(addToQueue({ song: songWithPreview }));
+      dispatch(addToQueue({ song: songWithPreview, playNext: false }));
       showToast("Added to queue");
     }
     setIsOpen(false);
   };
+
   const handleAddToPlaylistClick = (playlistId) => {
     handleAddToPlaylist(playlistId, song);
     showToast("Added to playlist");
