@@ -705,3 +705,32 @@ a,
 .player-mobile {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Prevent layout shift during responsive transitions */
+@layer utilities {
+  .safe-aspect-square {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* Ensure smooth transitions on resize */
+@media (prefers-reduced-motion: no-preference) {
+  .responsive-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 640px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Optimize grid layout reflow */
+.grid-responsive {
+  contain: layout style;
+}
