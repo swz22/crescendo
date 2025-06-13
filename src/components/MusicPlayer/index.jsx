@@ -33,12 +33,14 @@ const MusicPlayer = () => {
     shuffle,
     repeat,
   } = useSelector((state) => state.player);
+
   const [duration, setDuration] = useState(0);
   const [seekTime, setSeekTime] = useState(0);
   const [appTime, setAppTime] = useState(0);
   const [volume, setVolume] = useState(0.3);
   const [isChangingTrack, setIsChangingTrack] = useState(false);
   const [isAudioReady, setIsAudioReady] = useState(false);
+
   const dispatch = useDispatch();
   const {
     handleNextSong: originalHandleNextSong,
@@ -49,35 +51,28 @@ const MusicPlayer = () => {
   const { getPreviewUrl, isPreviewCached } = usePreviewUrl();
   const lastSongUrlRef = useRef(null);
 
-  // Track when audio is actually ready to play
   const handleAudioReady = () => {
     setIsAudioReady(true);
     setIsChangingTrack(false);
   };
 
-  // Track when audio starts loading
   const handleAudioLoading = () => {
     setIsAudioReady(false);
   };
 
-  // Show loading when song URL changes
   useEffect(() => {
     const songUrl = activeSong?.preview_url || activeSong?.url;
 
     if (songUrl && songUrl !== lastSongUrlRef.current) {
       setIsChangingTrack(true);
       setIsAudioReady(false);
-      setSeekTime(0); // Reset seek position for new track
+      setSeekTime(0);
       lastSongUrlRef.current = songUrl;
     }
   }, [activeSong]);
 
-  // Wrap navigation functions to show loading state
   const handleNextSong = async () => {
-    // Don't show loading if only one song
-    if (!currentSongs || currentSongs.length <= 1) {
-      return;
-    }
+    if (!currentSongs || currentSongs.length <= 1) return;
 
     setIsChangingTrack(true);
     setIsAudioReady(false);
@@ -91,10 +86,7 @@ const MusicPlayer = () => {
   };
 
   const handlePrevSong = async () => {
-    // Don't show loading if only one song
-    if (!currentSongs || currentSongs.length <= 1) {
-      return;
-    }
+    if (!currentSongs || currentSongs.length <= 1) return;
 
     setIsChangingTrack(true);
     setIsAudioReady(false);
@@ -107,10 +99,8 @@ const MusicPlayer = () => {
     }
   };
 
-  // Clear loading state when playback stops at end of queue or when staying on same track
   useEffect(() => {
     if (!isPlaying && isChangingTrack) {
-      // Clear if at last track without repeat, or at first track
       if (
         (currentIndex === currentSongs.length - 1 && !repeat) ||
         currentIndex === 0
@@ -120,33 +110,25 @@ const MusicPlayer = () => {
     }
   }, [isPlaying, isChangingTrack, currentIndex, currentSongs.length, repeat]);
 
-  // Hide loading only when audio is ready AND we were changing tracks
   useEffect(() => {
     if (isAudioReady && isChangingTrack) {
       setIsChangingTrack(false);
     }
   }, [isAudioReady, isChangingTrack]);
 
-  // Monitor isNavigating from useSongNavigation
   useEffect(() => {}, [isNavigating]);
 
-  // Preload next songs when current song changes
   useEffect(() => {
     if (currentSongs.length > 0 && currentIndex !== undefined && activeSong) {
       const preloadSongs = async () => {
         const nextSongs = [];
 
-        // Get next 3 songs
         for (let i = 1; i <= 3; i++) {
           const nextIndex = (currentIndex + i) % currentSongs.length;
           let nextSong = currentSongs[nextIndex];
 
-          // Handle nested structure
-          if (nextSong?.track) {
-            nextSong = nextSong.track;
-          }
+          if (nextSong?.track) nextSong = nextSong.track;
 
-          // If song doesn't have preview URL but is cached, get it
           if (
             !nextSong.preview_url &&
             !nextSong.url &&
@@ -183,20 +165,13 @@ const MusicPlayer = () => {
 
   const handlePlayPause = () => {
     if (!isActive) return;
-
-    if (isPlaying) {
-      dispatch(playPause(false));
-    } else {
-      dispatch(playPause(true));
-    }
+    dispatch(playPause(!isPlaying));
   };
 
-  // Get the song image with multiple fallbacks
   const getSongImage = () => {
     if (!activeSong)
       return "https://via.placeholder.com/240x240.png?text=No+Song";
 
-    // Try different possible image paths
     if (activeSong.images?.coverart) return activeSong.images.coverart;
     if (activeSong.share?.image) return activeSong.share.image;
     if (activeSong.images?.background) return activeSong.images.background;
@@ -211,28 +186,13 @@ const MusicPlayer = () => {
   };
 
   const getSongUrl = () => {
-    if (!activeSong) {
-      return "";
-    }
-
-    // Check all possible locations for preview URL
-    if (activeSong.preview_url) {
-      return activeSong.preview_url;
-    }
-
-    // Also check url field
-    if (activeSong.url) {
-      return activeSong.url;
-    }
-
-    // Legacy ShazamCore structure
+    if (!activeSong) return "";
+    if (activeSong.preview_url) return activeSong.preview_url;
+    if (activeSong.url) return activeSong.url;
     if (activeSong.hub?.actions?.[1]?.uri) return activeSong.hub.actions[1].uri;
     if (activeSong.hub?.actions?.[0]?.uri) return activeSong.hub.actions[0].uri;
-
-    // Direct uri field
     if (activeSong.uri) return activeSong.uri;
 
-    // Look for any action with a URI
     if (activeSong.hub?.actions) {
       const action = activeSong.hub.actions.find((action) => action.uri);
       if (action?.uri) return action.uri;
@@ -243,14 +203,12 @@ const MusicPlayer = () => {
 
   const songUrl = getSongUrl();
 
-  // Debug logging for playback state
   useEffect(() => {
     console.log("MusicPlayer - isPlaying changed to:", isPlaying);
     console.log("MusicPlayer - activeSong:", activeSong);
     console.log("MusicPlayer - songUrl:", songUrl);
   }, [isPlaying, activeSong, songUrl]);
 
-  // Handle case where song has no URL
   useEffect(() => {
     if (activeSong && !songUrl && isPlaying) {
       dispatch(playPause(false));
@@ -261,6 +219,7 @@ const MusicPlayer = () => {
   return (
     <>
       <TrackLoadingState isLoading={isChangingTrack} />
+
       {/* Desktop Layout */}
       <div className="hidden sm:flex relative px-4 sm:px-8 lg:px-12 w-full h-full items-center justify-between">
         <Track
@@ -304,12 +263,8 @@ const MusicPlayer = () => {
               setDuration(event.target.duration);
               handleAudioReady();
             }}
-            onCanPlay={() => {
-              handleAudioReady();
-            }}
-            onLoadStart={() => {
-              handleAudioLoading();
-            }}
+            onCanPlay={handleAudioReady}
+            onLoadStart={handleAudioLoading}
           />
         </div>
         <VolumeBar
@@ -321,9 +276,8 @@ const MusicPlayer = () => {
         />
       </div>
 
-      {/* Mobile Layout - Compact Floating Design */}
+      {/* Mobile Layout */}
       <div className="sm:hidden flex items-center justify-between w-full h-full px-3 py-2">
-        {/* Left: Track Info */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <img
             src={getSongImage()}
@@ -340,7 +294,6 @@ const MusicPlayer = () => {
           </div>
         </div>
 
-        {/* Right: Minimal Controls */}
         <div className="flex items-center gap-1">
           <button
             onClick={handlePrevSong}
@@ -348,7 +301,6 @@ const MusicPlayer = () => {
           >
             <MdSkipPrevious size={24} />
           </button>
-
           <button
             onClick={handlePlayPause}
             className="p-2.5 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95"
@@ -359,7 +311,6 @@ const MusicPlayer = () => {
               <BsFillPlayFill size={18} className="translate-x-0.5" />
             )}
           </button>
-
           <button
             onClick={handleNextSong}
             className="p-2 text-white/80 active:scale-95"
@@ -368,7 +319,15 @@ const MusicPlayer = () => {
           </button>
         </div>
 
-        {/* Hidden Player */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+          <div
+            className="h-full bg-[#14b8a6] transition-all duration-300"
+            style={{
+              width: `${duration > 0 ? (appTime / duration) * 100 : 0}%`,
+            }}
+          />
+        </div>
+
         <div className="hidden">
           <Player
             activeSong={activeSong}
@@ -384,12 +343,8 @@ const MusicPlayer = () => {
               setDuration(event.target.duration);
               handleAudioReady();
             }}
-            onCanPlay={() => {
-              handleAudioReady();
-            }}
-            onLoadStart={() => {
-              handleAudioLoading();
-            }}
+            onCanPlay={handleAudioReady}
+            onLoadStart={handleAudioLoading}
           />
         </div>
       </div>

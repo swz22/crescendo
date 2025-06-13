@@ -22,6 +22,40 @@ const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
+  // Calculate safe position
+  const calculatePosition = () => {
+    const menuWidth = 200;
+    const menuHeight = 150;
+    const padding = 10;
+    
+    let left = position.x;
+    let top = position.y;
+    
+    // Check right edge
+    if (left + menuWidth > window.innerWidth - padding) {
+      left = window.innerWidth - menuWidth - padding;
+    }
+    
+    // Check bottom edge
+    if (top + menuHeight > window.innerHeight - padding) {
+      top = position.y - menuHeight;
+    }
+    
+    // Check left edge
+    if (left < padding) {
+      left = padding;
+    }
+    
+    // Check top edge
+    if (top < padding) {
+      top = padding;
+    }
+    
+    return { left, top };
+  };
+
+  const safePosition = calculatePosition();
+
   const handlePlayNext = async () => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
@@ -51,14 +85,13 @@ const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
       ref={menuRef}
       className="fixed z-50 bg-[#1e1b4b]/95 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 py-2 min-w-[180px]"
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        maxWidth: "200px",
+        left: `${safePosition.left}px`,
+        top: `${safePosition.top}px`,
       }}
     >
       <button
         onClick={handlePlayNext}
-        className="w-full px-4 py-2.5 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 text-sm"
+        className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 text-sm active:bg-white/20"
       >
         <svg
           className="w-4 h-4 flex-shrink-0"
@@ -78,7 +111,7 @@ const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
 
       <button
         onClick={handleAddToQueue}
-        className="w-full px-4 py-2.5 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 text-sm"
+        className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 text-sm active:bg-white/20"
       >
         <svg
           className="w-4 h-4 flex-shrink-0"
@@ -100,7 +133,7 @@ const SongContextMenu = ({ song, position, onClose, onAddToPlaylist }) => {
 
       <button
         onClick={handleAddToPlaylist}
-        className="w-full px-4 py-2.5 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 text-sm"
+        className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 text-sm active:bg-white/20"
       >
         <svg
           className="w-4 h-4 flex-shrink-0"
