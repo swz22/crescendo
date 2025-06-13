@@ -133,14 +133,21 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     const songWithPreview = await getPreviewUrl(song);
 
     if (songWithPreview.preview_url) {
+      // Update the song in the tracks array
+      const updatedTracks = [...tracks];
+      updatedTracks[i] = songWithPreview;
+
       dispatch(
-        playTrack({
-          track: songWithPreview,
-          source: "playlist",
+        setActiveSong({
+          song: songWithPreview,
+          data: updatedTracks,
+          i: i,
         })
       );
+      dispatch(playPause(true));
     }
   };
+
   const handlePauseClick = () => {
     dispatch(playPause(false));
   };
@@ -382,17 +389,38 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 {/* Play All / Add to Queue / Shuffle Buttons */}
                 <div className="flex gap-3 mb-6">
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (tracks && tracks.length > 0) {
-                        dispatch(
-                          replaceQueue({
-                            songs: tracks,
-                            source: "playlist",
-                            startIndex: 0,
-                          })
+                        // Get preview URL for first track
+                        const firstTrackWithPreview = await getPreviewUrl(
+                          tracks[0]
                         );
-                        dispatch(playPause(true));
-                        showToast("Playing playlist");
+
+                        if (firstTrackWithPreview.preview_url) {
+                          // Update the first track in the tracks array with the preview URL
+                          const tracksWithFirstPreview = [...tracks];
+                          tracksWithFirstPreview[0] = firstTrackWithPreview;
+
+                          dispatch(
+                            replaceQueue({
+                              songs: tracksWithFirstPreview,
+                              source: "playlist",
+                              startIndex: 0,
+                            })
+                          );
+
+                          // Small delay to ensure state is updated
+                          setTimeout(() => {
+                            dispatch(playPause(true));
+                          }, 100);
+
+                          showToast("Playing playlist");
+                        } else {
+                          showToast(
+                            "No preview available for this track",
+                            "error"
+                          );
+                        }
                       }
                     }}
                     className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"

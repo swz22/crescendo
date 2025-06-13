@@ -60,6 +60,7 @@ const MusicPlayer = () => {
     if (songUrl && songUrl !== lastSongUrlRef.current) {
       setIsChangingTrack(true);
       setIsAudioReady(false);
+      setSeekTime(0); // Reset seek position for new track
       lastSongUrlRef.current = songUrl;
     }
   }, [activeSong]);
@@ -98,6 +99,19 @@ const MusicPlayer = () => {
       setIsChangingTrack(false);
     }
   };
+
+  // Clear loading state when playback stops at end of queue or when staying on same track
+  useEffect(() => {
+    if (!isPlaying && isChangingTrack) {
+      // Clear if at last track without repeat, or at first track
+      if (
+        (currentIndex === currentSongs.length - 1 && !repeat) ||
+        currentIndex === 0
+      ) {
+        setIsChangingTrack(false);
+      }
+    }
+  }, [isPlaying, isChangingTrack, currentIndex, currentSongs.length, repeat]);
 
   // Hide loading only when audio is ready AND we were changing tracks
   useEffect(() => {
@@ -221,6 +235,13 @@ const MusicPlayer = () => {
   };
 
   const songUrl = getSongUrl();
+
+  // Debug logging for playback state
+  useEffect(() => {
+    console.log("MusicPlayer - isPlaying changed to:", isPlaying);
+    console.log("MusicPlayer - activeSong:", activeSong);
+    console.log("MusicPlayer - songUrl:", songUrl);
+  }, [isPlaying, activeSong, songUrl]);
 
   // Handle case where song has no URL
   useEffect(() => {

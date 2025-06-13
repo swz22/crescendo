@@ -44,11 +44,6 @@ export const useSongNavigation = () => {
         nextIndex = shuffleOrder[nextShuffleIndex];
       } else {
         nextIndex = (currentIndex + 1) % queue.length;
-        if (nextIndex === 0 && !repeat) {
-          dispatch(playPause(false));
-          setIsNavigating(false);
-          return;
-        }
       }
 
       // Get the next song and ensure it has preview URL
@@ -120,7 +115,7 @@ export const useSongNavigation = () => {
       } else {
         prevIndex = currentIndex - 1;
         if (prevIndex < 0) {
-          prevIndex = repeat ? queue.length - 1 : 0;
+          prevIndex = queue.length - 1; // Always loop to last song
         }
       }
 
