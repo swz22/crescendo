@@ -1,156 +1,158 @@
 import { useState, useEffect } from "react";
+import { useGetTopArtistsQuery } from "../redux/services/spotifyCore";
 import {
-  ArtistCard,
   Error,
   Loader,
+  ArtistCard,
   AppHeader,
   ResponsiveGrid,
+  Portal,
 } from "../components";
-import { useGetTopChartsQuery } from "../redux/services/spotifyCore";
 import { IoChevronDown, IoGlobe } from "react-icons/io5";
 
-// Region configuration
-const regions = [
-  { name: "United States", code: "US" },
-  { name: "United Kingdom", code: "GB" },
-  { name: "Canada", code: "CA" },
-  { name: "Germany", code: "DE" },
-  { name: "France", code: "FR" },
-  { name: "Spain", code: "ES" },
-  { name: "Italy", code: "IT" },
-  { name: "Brazil", code: "BR" },
-  { name: "Mexico", code: "MX" },
-  { name: "Japan", code: "JP" },
-  { name: "South Korea", code: "KR" },
-  { name: "Australia", code: "AU" },
-  { name: "India", code: "IN" },
-  { name: "Netherlands", code: "NL" },
-  { name: "Sweden", code: "SE" },
-];
-
 const TopArtists = () => {
-  const [selectedRegion, setSelectedRegion] = useState(regions[0]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState({
+    code: "US",
+    name: "United States",
+  });
+  const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+  const { data, isFetching, error } = useGetTopArtistsQuery(
+    selectedRegion.code
+  );
   const [artistsWithImages, setArtistsWithImages] = useState([]);
-  const [loadingImages, setLoadingImages] = useState(true);
+  const [loadingImages, setLoadingImages] = useState(false);
 
-  const { data, isFetching, error } = useGetTopChartsQuery(selectedRegion.code);
+  const regions = [
+    { code: "US", name: "United States" },
+    { code: "GB", name: "United Kingdom" },
+    { code: "CA", name: "Canada" },
+    { code: "AU", name: "Australia" },
+    { code: "DE", name: "Germany" },
+    { code: "FR", name: "France" },
+    { code: "ES", name: "Spain" },
+    { code: "IT", name: "Italy" },
+    { code: "BR", name: "Brazil" },
+    { code: "MX", name: "Mexico" },
+    { code: "JP", name: "Japan" },
+    { code: "KR", name: "South Korea" },
+    { code: "IN", name: "India" },
+    { code: "SE", name: "Sweden" },
+    { code: "NL", name: "Netherlands" },
+    { code: "PL", name: "Poland" },
+    { code: "AR", name: "Argentina" },
+    { code: "CO", name: "Colombia" },
+    { code: "CL", name: "Chile" },
+    { code: "ZA", name: "South Africa" },
+  ];
 
   useEffect(() => {
-    if (!data || data.length === 0) {
-      setLoadingImages(false);
-      return;
-    }
+    const loadArtistImages = async () => {
+      if (!data || data.length === 0) return;
 
-    const fetchArtistImages = async () => {
       setLoadingImages(true);
-
-      const artistsMap = new Map();
-      data.forEach((track) => {
-        if (track?.artists?.[0]) {
-          const artist = track.artists[0];
-          const artistId = artist.id;
-          if (artistId && !artistsMap.has(artistId)) {
-            artistsMap.set(artistId, {
-              ...artist,
-              adamid: artist.id,
+      const artistsWithLoadedImages = await Promise.all(
+        data.map(async (artist) => {
+          if (artist.coverart) {
+            const img = new Image();
+            img.src = artist.coverart;
+            await new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = resolve;
             });
           }
-        }
-      });
-
-      const uniqueArtists = Array.from(artistsMap.values());
-
-      const artistPromises = uniqueArtists.slice(0, 20).map(async (artist) => {
-        try {
-          const response = await fetch(
-            `${import.meta.env.VITE_API_URL}/api/spotify/artists/${
-              artist.adamid
-            }`
-          );
-          const fullArtist = await response.json();
-          return {
-            ...artist,
-            coverart: fullArtist.images?.[0]?.url || "",
-            images: fullArtist.images,
-          };
-        } catch (err) {
-          console.error(`Failed to fetch artist ${artist.name}:`, err);
           return artist;
-        }
-      });
-
-      const artistsWithFullData = await Promise.all(artistPromises);
-      setArtistsWithImages(artistsWithFullData);
+        })
+      );
+      setArtistsWithImages(artistsWithLoadedImages);
       setLoadingImages(false);
     };
 
-    fetchArtistImages();
-  }, [data, selectedRegion]);
+    loadArtistImages();
+  }, [data]);
 
-  const handleRegionSelect = (region) => {
-    setSelectedRegion(region);
-    setIsDropdownOpen(false);
-  };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".region-dropdown-container")) {
+        setShowRegionDropdown(false);
+      }
+    };
 
-  // Region selector component
+    if (showRegionDropdown) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [showRegionDropdown]);
+
   const regionSelector = (
-    <div className="relative">
+    <div className="relative region-dropdown-container">
       <button
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2.5 bg-white/10 hover:bg-white/15 rounded-full sm:rounded-lg transition-all duration-200 border border-white/20 hover:border-white/30 group backdrop-blur-sm"
+        onClick={() => setShowRegionDropdown(!showRegionDropdown)}
+        className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-300 border border-white/20"
       >
-        <IoGlobe className="text-[#14b8a6] text-base sm:text-lg" />
-        <span className="text-white font-medium text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
-          {selectedRegion.name}
-        </span>
+        <IoGlobe className="w-4 h-4" />
+        <span className="font-medium">{selectedRegion.name}</span>
         <IoChevronDown
-          className={`text-gray-300 transition-transform duration-200 text-sm sm:text-base ${
-            isDropdownOpen ? "rotate-180" : ""
+          className={`w-4 h-4 transition-transform duration-300 ${
+            showRegionDropdown ? "rotate-180" : ""
           }`}
         />
       </button>
 
-      {/* Dropdown Menu */}
-      {isDropdownOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsDropdownOpen(false)}
-          />
-
-          <div className="absolute right-0 mt-2 w-64 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden z-20 animate-slidedown">
-            <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
-              {regions.map((region) => (
-                <button
-                  key={region.code}
-                  onClick={() => handleRegionSelect(region)}
-                  className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all duration-200 ${
-                    selectedRegion.code === region.code
-                      ? "bg-[#14b8a6]/20 border-l-4 border-[#14b8a6]"
-                      : ""
-                  }`}
-                >
-                  <span className="text-gray-400 text-sm font-medium min-w-[35px]">
-                    {region.code}
-                  </span>
-                  <span
-                    className={`flex-1 text-left ${
-                      selectedRegion.code === region.code
-                        ? "text-white font-semibold"
-                        : "text-gray-200"
-                    }`}
-                  >
-                    {region.name}
-                  </span>
-                  {selectedRegion.code === region.code && (
-                    <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                  )}
-                </button>
-              ))}
+      {showRegionDropdown && (
+        <Portal>
+          <div className="fixed inset-0 z-40" style={{ pointerEvents: "none" }}>
+            <div
+              className="absolute"
+              style={{
+                top:
+                  document
+                    .querySelector(".region-dropdown-container")
+                    ?.getBoundingClientRect().bottom +
+                  8 +
+                  "px",
+                right:
+                  window.innerWidth -
+                  document
+                    .querySelector(".region-dropdown-container")
+                    ?.getBoundingClientRect().right +
+                  "px",
+                pointerEvents: "auto",
+              }}
+            >
+              <div className="bg-[#1a1848]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden min-w-[240px]">
+                <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
+                  {regions.map((region) => (
+                    <button
+                      key={region.code}
+                      onClick={() => {
+                        setSelectedRegion(region);
+                        setShowRegionDropdown(false);
+                      }}
+                      className={`
+                        w-full text-left px-4 py-3 rounded-lg
+                        transition-all duration-200 flex items-center gap-3
+                        ${
+                          selectedRegion.code === region.code
+                            ? "bg-[#14b8a6]/20 text-white font-semibold border-l-4 border-[#14b8a6]"
+                            : "hover:bg-white/10 text-gray-300 hover:text-white border-l-4 border-transparent"
+                        }
+                      `}
+                    >
+                      <span className="text-gray-400 text-sm font-medium min-w-[35px]">
+                        {region.code}
+                      </span>
+                      <span className="flex-1">{region.name}</span>
+                      {selectedRegion.code === region.code && (
+                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </>
+        </Portal>
       )}
     </div>
   );
