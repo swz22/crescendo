@@ -33,7 +33,7 @@ const Searchbar = () => {
       <form
         onSubmit={handleSubmit}
         autoComplete="off"
-        className="relative flex-1"
+        className="relative flex-1 min-w-0"
       >
         <label htmlFor="search-field" className="sr-only">
           Search all files

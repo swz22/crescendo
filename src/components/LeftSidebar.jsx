@@ -88,10 +88,10 @@ const LeftSidebar = () => {
       </div>
 
       {/* Mobile sidebar trigger */}
-      <div className="fixed sm:hidden top-4 left-4 z-50">
+      <div className="fixed sm:hidden top-6 left-4 z-50">
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 bg-black/50 backdrop-blur-sm rounded-lg border border-white/20"
+          className="p-2.5 bg-black/70 backdrop-blur-md rounded-xl border border-white/20 shadow-lg"
         >
           {!mobileMenuOpen ? (
             <HiOutlineMenu className="w-6 h-6 text-white" />

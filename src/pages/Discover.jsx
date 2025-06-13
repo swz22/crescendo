@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { Error, Loader, SongCard, Searchbar } from "../components";
@@ -6,6 +6,8 @@ import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { genres } from "../assets/constants";
+import { IoChevronDown, IoClose } from "react-icons/io5";
+import { HiOutlineSparkles } from "react-icons/hi";
 
 const Discover = () => {
   const dispatch = useDispatch();
@@ -13,6 +15,7 @@ const Discover = () => {
   const { genreListId } = useSelector((state) => state.player);
   const { activeSong, isPlaying } = useSelector((state) => state.player);
   const { prefetchPreviewUrl, getPagePrefetchStrategy } = usePreviewUrl();
+  const [showGenreModal, setShowGenreModal] = useState(false);
 
   const selectedGenre = genreListId || "POP";
   const genreTitle =
@@ -89,7 +92,27 @@ const Discover = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="w-full mb-6 mt-8">
+      {/* Mobile Header */}
+      <div className="sm:hidden mb-6 mt-8">
+        <div className="flex items-center justify-between mb-4 px-4">
+          <h2 className="font-bold text-2xl text-white pl-12">Discover</h2>
+          <button
+            onClick={() => setShowGenreModal(true)}
+            className={`px-3 py-1.5 bg-gradient-to-r ${
+              genreColors[selectedGenre] || "from-gray-600 to-gray-700"
+            } text-white rounded-full text-sm font-medium shadow-lg flex items-center gap-1 active:scale-95`}
+          >
+            <span>{genreTitle}</span>
+            <IoChevronDown className="w-3 h-3" />
+          </button>
+        </div>
+        <div className="px-4">
+          <Searchbar />
+        </div>
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden sm:block w-full mb-6 mt-8">
         <div className="flex items-center justify-between gap-8 mb-4">
           <h2 className="font-bold text-3xl text-white">
             Discover {genreTitle}
@@ -99,21 +122,22 @@ const Discover = () => {
           </div>
         </div>
 
+        {/* Desktop Genre Pills */}
         <div className="relative mb-6">
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible snap-x snap-mandatory">
+          <div className="flex gap-2 flex-wrap">
             {[...genres]
               .sort((a, b) => a.title.localeCompare(b.title))
               .map((genre) => (
                 <button
                   key={genre.value}
                   onClick={() => dispatch(selectGenreListId(genre.value))}
-                  className={`px-4 py-2 rounded-full font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 snap-center ${
+                  className={`px-4 py-2 rounded-full font-medium transition-all duration-300 ${
                     selectedGenre === genre.value
                       ? `bg-gradient-to-r ${
                           genreColors[genre.value] ||
                           "from-gray-600 to-gray-700"
-                        } text-white shadow-lg scale-105 ring-2 ring-white/30`
-                      : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white hover:scale-105 backdrop-blur-sm border border-white/10"
+                        } text-white shadow-lg scale-105`
+                      : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white backdrop-blur-sm border border-white/10"
                   }`}
                 >
                   {genre.title}
@@ -123,7 +147,63 @@ const Discover = () => {
         </div>
       </div>
 
-      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
+      {/* Mobile Genre Modal */}
+      {showGenreModal && (
+        <div
+          className="sm:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-fadeIn"
+          onClick={() => setShowGenreModal(false)}
+        >
+          <div
+            className="absolute inset-x-4 top-1/2 -translate-y-1/2 max-h-[80vh] bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] rounded-2xl p-6 animate-scaleIn border border-white/20 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <HiOutlineSparkles className="text-[#14b8a6]" />
+                Select Genre
+              </h3>
+              <button
+                onClick={() => setShowGenreModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <IoClose className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Genre Grid */}
+            <div className="grid grid-cols-2 gap-3 overflow-y-auto max-h-[50vh] custom-scrollbar pr-2">
+              {genres
+                .sort((a, b) => a.title.localeCompare(b.title))
+                .map((genre) => (
+                  <button
+                    key={genre.value}
+                    onClick={() => {
+                      dispatch(selectGenreListId(genre.value));
+                      setShowGenreModal(false);
+                    }}
+                    className={`relative p-4 rounded-xl font-medium transition-all active:scale-95 overflow-hidden group ${
+                      selectedGenre === genre.value
+                        ? `bg-gradient-to-r ${
+                            genreColors[genre.value] ||
+                            "from-gray-600 to-gray-700"
+                          } text-white shadow-lg`
+                        : "bg-white/10 text-white hover:bg-white/15"
+                    }`}
+                  >
+                    {selectedGenre === genre.value && (
+                      <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                    )}
+                    <span className="relative z-10">{genre.title}</span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Song Grid */}
+      <div className="flex flex-col sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6 pb-32 sm:pb-24">
         {shuffledSongs.map((song, i) => (
           <SongCard
             key={song.key || i}

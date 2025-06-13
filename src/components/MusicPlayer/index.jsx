@@ -275,8 +275,9 @@ const MusicPlayer = () => {
           setVolume={setVolume}
         />
       </div>
+
       {/* Mobile Layout */}
-      <div className="sm:hidden flex items-center justify-between w-full h-full px-3 py-1">
+      <div className="sm:hidden flex items-center justify-between w-full h-full px-3 py-1 safe-area-bottom">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <img
             src={getSongImage()}
@@ -317,46 +318,6 @@ const MusicPlayer = () => {
             <MdSkipNext size={20} />
           </button>
         </div>
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <img
-            src={getSongImage()}
-            alt="cover"
-            className="w-12 h-12 rounded-lg shadow-md"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">
-              {activeSong?.title || "No active Song"}
-            </p>
-            <p className="text-gray-400 text-xs truncate">
-              {activeSong?.subtitle || "Unknown Artist"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handlePrevSong}
-            className="p-2 text-white/80 active:scale-95"
-          >
-            <MdSkipPrevious size={24} />
-          </button>
-          <button
-            onClick={handlePlayPause}
-            className="p-2.5 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95"
-          >
-            {isPlaying ? (
-              <BsFillPauseFill size={18} />
-            ) : (
-              <BsFillPlayFill size={18} className="translate-x-0.5" />
-            )}
-          </button>
-          <button
-            onClick={handleNextSong}
-            className="p-2 text-white/80 active:scale-95"
-          >
-            <MdSkipNext size={24} />
-          </button>
-        </div>
 
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
           <div
@@ -366,26 +327,27 @@ const MusicPlayer = () => {
             }}
           />
         </div>
+      </div>
 
-        <div className="hidden">
-          <Player
-            activeSong={activeSong}
-            songUrl={songUrl}
-            volume={volume}
-            isPlaying={isPlaying}
-            seekTime={seekTime}
-            repeat={repeat}
-            currentIndex={currentIndex}
-            onEnded={handleNextSong}
-            onTimeUpdate={(event) => setAppTime(event.target.currentTime)}
-            onLoadedData={(event) => {
-              setDuration(event.target.duration);
-              handleAudioReady();
-            }}
-            onCanPlay={handleAudioReady}
-            onLoadStart={handleAudioLoading}
-          />
-        </div>
+      {/* Hidden Player for Audio */}
+      <div className="hidden">
+        <Player
+          activeSong={activeSong}
+          songUrl={songUrl}
+          volume={volume}
+          isPlaying={isPlaying}
+          seekTime={seekTime}
+          repeat={repeat}
+          currentIndex={currentIndex}
+          onEnded={handleNextSong}
+          onTimeUpdate={(event) => setAppTime(event.target.currentTime)}
+          onLoadedData={(event) => {
+            setDuration(event.target.duration);
+            handleAudioReady();
+          }}
+          onCanPlay={handleAudioReady}
+          onLoadStart={handleAudioLoading}
+        />
       </div>
     </>
   );
