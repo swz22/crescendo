@@ -132,7 +132,7 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
 
   return (
     <div
-      className={`w-full p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg card-hover cursor-pointer relative ${
+      className={`w-full p-3 sm:p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-200 active:scale-[0.98] sm:hover:scale-105 ${
         isFeatured ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""
       }`}
       onClick={handleClick}
@@ -144,7 +144,7 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
         </div>
       )}
 
-      <div className="relative w-full aspect-square mb-4">
+      <div className="relative w-full aspect-square mb-2 sm:mb-4">
         {isFeatured &&
         safePlaylist.name.toLowerCase().includes("lonely heart") ? (
           // Custom artwork for featured playlist

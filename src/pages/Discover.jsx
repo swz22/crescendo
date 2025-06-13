@@ -99,15 +99,15 @@ const Discover = () => {
           </div>
         </div>
 
-        <div className="relative">
-          <div className="flex gap-2 mb-4 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
+        <div className="relative mb-6">
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible snap-x snap-mandatory">
             {[...genres]
               .sort((a, b) => a.title.localeCompare(b.title))
               .map((genre) => (
                 <button
                   key={genre.value}
                   onClick={() => dispatch(selectGenreListId(genre.value))}
-                  className={`px-4 py-2 rounded-full font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 sm:flex-shrink ${
+                  className={`px-4 py-2 rounded-full font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 snap-center ${
                     selectedGenre === genre.value
                       ? `bg-gradient-to-r ${
                           genreColors[genre.value] ||

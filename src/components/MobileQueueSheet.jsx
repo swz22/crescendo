@@ -253,54 +253,6 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
               </div>
             )}
           </div>
-
-          {/* Mini Player at Bottom */}
-          <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-xl border-t border-white/20">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3 flex-1">
-                <img
-                  src={activeSong?.images?.coverart || placeholderImage}
-                  alt="current"
-                  className="w-10 h-10 rounded-lg"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">
-                    {activeSong?.title}
-                  </p>
-                  <p className="text-white/60 text-xs truncate">
-                    {activeSong?.subtitle}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevSong}
-                  className="p-2 text-white active:scale-95"
-                >
-                  <MdSkipPrevious size={24} />
-                </button>
-
-                <button
-                  onClick={() => dispatch(playPause(!isPlaying))}
-                  className="p-2.5 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95"
-                >
-                  {isPlaying ? (
-                    <BsFillPauseFill size={20} />
-                  ) : (
-                    <BsFillPlayFill size={20} className="translate-x-0.5" />
-                  )}
-                </button>
-
-                <button
-                  onClick={handleNextSong}
-                  className="p-2 text-white active:scale-95"
-                >
-                  <MdSkipNext size={24} />
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </>

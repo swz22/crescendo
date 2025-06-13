@@ -223,10 +223,10 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           onContextMenu={handleContextMenu}
         >
           {/* Album art */}
-          <div className="relative w-12 h-12 mr-3 flex-shrink-0">
+          <div className="relative w-14 h-14 mr-3 flex-shrink-0">
             {showCacheIndicator && (
-              <div className="absolute -top-1 -left-1 z-20 bg-black/60 backdrop-blur-sm rounded-full p-1">
-                <HiLightningBolt className="w-3 h-3 text-[#14b8a6]" />
+              <div className="absolute -top-1 -right-1 z-20 bg-black/60 backdrop-blur-sm rounded-full p-0.5">
+                <HiLightningBolt className="w-2.5 h-2.5 text-[#14b8a6]" />
               </div>
             )}
             {coverArt ? (
@@ -237,25 +237,25 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-[#14b8a6] to-[#0891b2] rounded-lg flex items-center justify-center">
-                <span className="text-white/50 text-lg">♪</span>
+                <span className="text-white/50 text-xl">♪</span>
               </div>
             )}
           </div>
 
           {/* Song info */}
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm text-white truncate">
+            <p className="font-medium text-base text-white truncate">
               {songTitle}
             </p>
-            <p className="text-xs text-gray-400 truncate">{artistName}</p>
+            <p className="text-sm text-gray-400 truncate">{artistName}</p>
           </div>
 
           {/* Play indicator or button */}
-          <div className="ml-2">
+          <div className="ml-3">
             {isLoading ? (
               <MusicLoadingSpinner size="sm" />
             ) : isCurrentSong && isPlaying ? (
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-0.5 pr-1">
                 <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse" />
                 <div className="w-1 h-5 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
                 <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse delay-150" />

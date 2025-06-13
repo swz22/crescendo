@@ -661,3 +661,43 @@ a,
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Mobile-specific optimizations */
+@media (max-width: 640px) {
+  /* Smaller tap targets for dense layouts */
+  .song-list-item {
+    min-height: 56px;
+  }
+
+  /* Disable hover effects on mobile */
+  @media (hover: none) {
+    .card-hover:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .group:hover .group-hover\:opacity-90 {
+      opacity: 0;
+    }
+  }
+
+  /* Smooth scrolling for genre pills */
+  .snap-x {
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+
+  .snap-center {
+    scroll-snap-align: center;
+  }
+
+  /* Active states for touch */
+  .active\:scale-\[0\.98\]:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Safe area adjustments for mobile player */
+.player-mobile {
+  padding-bottom: env(safe-area-inset-bottom);
+}

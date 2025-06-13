@@ -275,9 +275,48 @@ const MusicPlayer = () => {
           setVolume={setVolume}
         />
       </div>
-
       {/* Mobile Layout */}
-      <div className="sm:hidden flex items-center justify-between w-full h-full px-3 py-2">
+      <div className="sm:hidden flex items-center justify-between w-full h-full px-3 py-1">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <img
+            src={getSongImage()}
+            alt="cover"
+            className="w-10 h-10 rounded-lg shadow-md"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-xs font-medium truncate">
+              {activeSong?.title || "No active Song"}
+            </p>
+            <p className="text-gray-400 text-[10px] truncate">
+              {activeSong?.subtitle || "Unknown Artist"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handlePrevSong}
+            className="p-1.5 text-white/80 active:scale-95"
+          >
+            <MdSkipPrevious size={20} />
+          </button>
+          <button
+            onClick={handlePlayPause}
+            className="p-2 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95"
+          >
+            {isPlaying ? (
+              <BsFillPauseFill size={14} />
+            ) : (
+              <BsFillPlayFill size={14} className="translate-x-0.5" />
+            )}
+          </button>
+          <button
+            onClick={handleNextSong}
+            className="p-1.5 text-white/80 active:scale-95"
+          >
+            <MdSkipNext size={20} />
+          </button>
+        </div>
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <img
             src={getSongImage()}

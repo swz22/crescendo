@@ -8,7 +8,6 @@ import {
   QueueIndicator,
   FloatingQueueButton,
   MobileQueueSheet,
-  BottomNavigation,
 } from "./components";
 import OnboardingModal from "./components/OnboardingModal";
 import {
@@ -34,6 +33,12 @@ const App = () => {
   const location = useLocation();
   const [playlistSession, setPlaylistSession] = useState(false);
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
+  const hideMainPlayer = isModalOpen;
+
+  useEffect(() => {
+    console.log("App.jsx - activeSong:", activeSong?.title);
+    console.log("App.jsx - hideMainPlayer:", hideMainPlayer);
+  }, [activeSong, hideMainPlayer]);
 
   useEffect(() => {
     if (playlistContext && location.pathname === "/playlists") {
@@ -47,14 +52,12 @@ const App = () => {
     }
   }, [location.pathname]);
 
-  const hideMainPlayer = isModalOpen;
-
   return (
     <div className="relative flex h-screen overflow-hidden">
       <LeftSidebar />
 
       <div className="flex-1 flex flex-col bg-gradient-to-br from-[#1a1848] via-[#2d2467] to-[#1a1848]">
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 pb-[calc(10rem+env(safe-area-inset-bottom))] sm:pb-40 lg:pb-32">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 pb-24 sm:pb-40 lg:pb-32">
           <Routes>
             <Route path="/" element={<Discover />} />
             <Route path="/top-artists" element={<TopArtists />} />
@@ -73,8 +76,12 @@ const App = () => {
         <PlaylistPlayer playlist={currentPlaylist} tracks={currentSongs} />
       </div>
 
-      {/* Mobile Queue Button */}
-      <FloatingQueueButton onClick={() => setMobileQueueOpen(true)} />
+      {/* Mobile Queue Button - only show on mobile when music is playing */}
+      <div className="sm:hidden">
+        {activeSong?.title && (
+          <FloatingQueueButton onClick={() => setMobileQueueOpen(true)} />
+        )}
+      </div>
 
       {/* Mobile Queue Sheet */}
       <MobileQueueSheet
@@ -82,21 +89,15 @@ const App = () => {
         onClose={() => setMobileQueueOpen(false)}
       />
 
-      {/* Music Player - Responsive positioning */}
-      {activeSong?.title && (
-        <div
-          className={`fixed h-20 sm:h-28 bottom-0 left-0 right-0 lg:left-[240px] lg:right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 lg:z-10 lg:rounded-t-2xl border-t lg:border-x border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] ${
-            hideMainPlayer ? "invisible" : "visible"
-          }`}
-        >
+      {/* Music Player - Single instance for all screen sizes */}
+      {activeSong?.title && !hideMainPlayer && (
+        <div className="fixed h-20 sm:h-28 bottom-0 left-0 right-0 lg:left-[240px] lg:right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
           <MusicPlayer />
         </div>
       )}
 
       <OnboardingModal />
       <QueueIndicator />
-      {/* Mobile bottom navigation */}
-      <BottomNavigation />
     </div>
   );
 };
