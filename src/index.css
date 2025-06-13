@@ -654,3 +654,10 @@ a,
 .animate-slideUp {
   animation: slideUp 0.3s ease-out;
 }
+
+/* Safe area support */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

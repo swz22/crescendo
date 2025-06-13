@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
+import {
+  BsArrowRepeat,
+  BsFillPauseFill,
+  BsFillPlayFill,
+  BsShuffle,
+} from "react-icons/bs";
 
 import {
   playPause,
@@ -254,7 +261,8 @@ const MusicPlayer = () => {
   return (
     <>
       <TrackLoadingState isLoading={isChangingTrack} />
-      <div className="relative px-4 sm:px-8 lg:px-12 w-full h-full flex items-center justify-between">
+      {/* Desktop Layout */}
+      <div className="hidden sm:flex relative px-4 sm:px-8 lg:px-12 w-full h-full items-center justify-between">
         <Track
           isPlaying={isPlaying}
           isActive={isActive}
@@ -311,6 +319,79 @@ const MusicPlayer = () => {
           onChange={(event) => setVolume(event.target.value)}
           setVolume={setVolume}
         />
+      </div>
+
+      {/* Mobile Layout - Compact Floating Design */}
+      <div className="sm:hidden flex items-center justify-between w-full h-full px-3 py-2">
+        {/* Left: Track Info */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <img
+            src={getSongImage()}
+            alt="cover"
+            className="w-12 h-12 rounded-lg shadow-md"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium truncate">
+              {activeSong?.title || "No active Song"}
+            </p>
+            <p className="text-gray-400 text-xs truncate">
+              {activeSong?.subtitle || "Unknown Artist"}
+            </p>
+          </div>
+        </div>
+
+        {/* Right: Minimal Controls */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handlePrevSong}
+            className="p-2 text-white/80 active:scale-95"
+          >
+            <MdSkipPrevious size={24} />
+          </button>
+
+          <button
+            onClick={handlePlayPause}
+            className="p-2.5 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95"
+          >
+            {isPlaying ? (
+              <BsFillPauseFill size={18} />
+            ) : (
+              <BsFillPlayFill size={18} className="translate-x-0.5" />
+            )}
+          </button>
+
+          <button
+            onClick={handleNextSong}
+            className="p-2 text-white/80 active:scale-95"
+          >
+            <MdSkipNext size={24} />
+          </button>
+        </div>
+
+        {/* Hidden Player */}
+        <div className="hidden">
+          <Player
+            activeSong={activeSong}
+            songUrl={songUrl}
+            volume={volume}
+            isPlaying={isPlaying}
+            seekTime={seekTime}
+            repeat={repeat}
+            currentIndex={currentIndex}
+            onEnded={handleNextSong}
+            onTimeUpdate={(event) => setAppTime(event.target.currentTime)}
+            onLoadedData={(event) => {
+              setDuration(event.target.duration);
+              handleAudioReady();
+            }}
+            onCanPlay={() => {
+              handleAudioReady();
+            }}
+            onLoadStart={() => {
+              handleAudioLoading();
+            }}
+          />
+        </div>
       </div>
     </>
   );
