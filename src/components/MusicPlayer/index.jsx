@@ -348,27 +348,6 @@ const MusicPlayer = () => {
           />
         </div>
       </div>
-
-      {/* Hidden Player for Audio */}
-      <div className="hidden">
-        <Player
-          activeSong={currentTrack}
-          songUrl={songUrl}
-          volume={volume}
-          isPlaying={isPlaying}
-          seekTime={seekTime}
-          repeat={repeat}
-          currentIndex={0}
-          onEnded={handleNextSong}
-          onTimeUpdate={(event) => setAppTime(event.target.currentTime)}
-          onLoadedData={(event) => {
-            setDuration(event.target.duration);
-            handleAudioReady();
-          }}
-          onCanPlay={handleAudioReady}
-          onLoadStart={handleAudioLoading}
-        />
-      </div>
     </>
   );
 };
