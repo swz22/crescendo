@@ -157,11 +157,10 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
           );
           showToast("Playing playlist");
         } else {
-          showToast("No preview available for this track", "error");
+          showToast("No preview available", "error");
         }
       } catch (error) {
         console.error("Error getting preview URL:", error);
-        showToast("Error loading track preview", "error");
       }
     }
   };
@@ -470,14 +469,10 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             dispatch(toggleShuffle());
                             showToast("Shuffling playlist");
                           } else {
-                            showToast(
-                              "No preview available for this track",
-                              "error"
-                            );
+                            showToast("No preview available", "error");
                           }
                         } catch (error) {
                           console.error("Error getting preview URL:", error);
-                          showToast("Error loading track preview", "error");
                         }
                       }
                     }}

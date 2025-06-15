@@ -119,9 +119,16 @@ const Toast = ({ id, message, type = "success", onRemove, duration }) => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
   const timeoutRefs = useRef(new Map());
+  const activeMessages = useRef(new Set());
 
   const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    setToasts((prev) => {
+      const toast = prev.find((t) => t.id === id);
+      if (toast) {
+        activeMessages.current.delete(toast.message);
+      }
+      return prev.filter((toast) => toast.id !== id);
+    });
 
     // Clear timeout if exists
     if (timeoutRefs.current.has(id)) {
@@ -132,16 +139,36 @@ export const ToastProvider = ({ children }) => {
 
   const showToast = useCallback(
     (message, type = "success", duration = null) => {
+      // Prevent duplicate messages
+      if (activeMessages.current.has(message)) {
+        return null;
+      }
+
       const id = Date.now();
 
-      // Default durations based on type
+      // Default durations based on type - reduced for errors
       if (duration === null) {
-        duration = type === "error" ? 5000 : type === "warning" ? 4000 : 3000;
+        duration = type === "error" ? 3000 : type === "warning" ? 3000 : 2000;
       }
 
       const newToast = { id, message, type, duration };
+      activeMessages.current.add(message);
 
-      setToasts((prev) => [...prev, newToast]);
+      setToasts((prev) => {
+        // Limit to 3 toasts max
+        const newToasts = [...prev, newToast];
+        if (newToasts.length > 3) {
+          const removed = newToasts.shift();
+          if (removed) {
+            activeMessages.current.delete(removed.message);
+            if (timeoutRefs.current.has(removed.id)) {
+              clearTimeout(timeoutRefs.current.get(removed.id));
+              timeoutRefs.current.delete(removed.id);
+            }
+          }
+        }
+        return newToasts;
+      });
 
       // Auto remove after duration (0 means no auto-remove)
       if (duration > 0) {

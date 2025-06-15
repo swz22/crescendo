@@ -122,25 +122,31 @@ const AlbumDetails = () => {
         },
       }));
 
-      const firstTrackWithPreview = await getPreviewUrl(tracksWithAlbumArt[0]);
-
-      if (firstTrackWithPreview.preview_url) {
-        tracksWithAlbumArt[0] = firstTrackWithPreview;
-
-        dispatch(
-          replaceContext({
-            contextType: "queue",
-            tracks: tracksWithAlbumArt,
-            startIndex: 0,
-          })
+      try {
+        const firstTrackWithPreview = await getPreviewUrl(
+          tracksWithAlbumArt[0]
         );
-        setTimeout(() => {
-          dispatch(playPause(true));
-        }, 100);
 
-        showToast("Playing album");
-      } else {
-        showToast("No preview available for this track", "error");
+        if (firstTrackWithPreview.preview_url) {
+          tracksWithAlbumArt[0] = firstTrackWithPreview;
+
+          dispatch(
+            replaceContext({
+              contextType: "queue",
+              tracks: tracksWithAlbumArt,
+              startIndex: 0,
+            })
+          );
+          setTimeout(() => {
+            dispatch(playPause(true));
+          }, 100);
+
+          showToast("Playing album");
+        } else {
+          showToast("No preview available", "error");
+        }
+      } catch (error) {
+        console.error("Error getting preview URL:", error);
       }
     }
   };

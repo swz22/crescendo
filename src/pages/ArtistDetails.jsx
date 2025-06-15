@@ -45,7 +45,7 @@ const ArtistDetails = () => {
           })
         );
       } else {
-        showToast("Preview not available for this track", "error");
+        showToast("No preview available", "error");
       }
     } catch (error) {
       console.error("Error playing track:", error);
