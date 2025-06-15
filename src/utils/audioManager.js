@@ -5,6 +5,8 @@ class AudioManager {
     this.gainNode = null;
     this.analyser = null;
     this.isInitialized = false;
+    this.audioElement = null;
+    this.volume = 0.3; // Default volume
   }
 
   async initialize() {
@@ -17,6 +19,7 @@ class AudioManager {
 
       // Create gain node for volume control
       this.gainNode = this.audioContext.createGain();
+      this.gainNode.gain.value = this.volume;
       this.gainNode.connect(this.audioContext.destination);
 
       // Create analyser for visualizations (future feature)
@@ -30,7 +33,23 @@ class AudioManager {
     }
   }
 
-  async connectAudioElement(audioElement) {
+  async setAudioElement(audioElement) {
+    if (!audioElement) return;
+
+    // Clean up previous audio element
+    if (this.audioElement && this.audioElement !== audioElement) {
+      this.audioElement.pause();
+      this.audioElement.src = "";
+      this.audioElement.load();
+    }
+
+    this.audioElement = audioElement;
+
+    // Set initial volume
+    if (this.audioElement) {
+      this.audioElement.volume = this.volume;
+    }
+
     if (!this.isInitialized) await this.initialize();
     if (!this.audioContext || !audioElement) return;
 
@@ -44,14 +63,30 @@ class AudioManager {
       // Store reference
       audioElement.audioSource = source;
     } catch (error) {
-      console.error("Failed to connect audio element:", error);
+      // This error is expected if audio element is already connected
+      if (!error.message.includes("already been used")) {
+        console.error("Failed to connect audio element:", error);
+      }
     }
   }
 
   setVolume(value) {
-    if (this.gainNode) {
-      this.gainNode.gain.setValueAtTime(value, this.audioContext.currentTime);
+    this.volume = Math.max(0, Math.min(1, value));
+
+    if (this.audioElement) {
+      this.audioElement.volume = this.volume;
     }
+
+    if (this.gainNode) {
+      this.gainNode.gain.setValueAtTime(
+        this.volume,
+        this.audioContext.currentTime
+      );
+    }
+  }
+
+  getVolume() {
+    return this.volume;
   }
 
   // Get frequency data for visualizations
@@ -74,14 +109,22 @@ class AudioManager {
 
   // Clean up resources
   destroy() {
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement.src = "";
+      this.audioElement = null;
+    }
+
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
     }
+
     this.gainNode = null;
     this.analyser = null;
     this.isInitialized = false;
   }
 }
 
+// Export singleton instance
 export const audioManager = new AudioManager();

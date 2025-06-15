@@ -18,13 +18,32 @@ export const useToast = () => {
   return context;
 };
 
-const Toast = ({ id, message, type = "success", onRemove }) => {
+const Toast = ({ id, message, type = "success", onRemove, duration }) => {
+  const [isExiting, setIsExiting] = useState(false);
+  const progressRef = useRef(null);
+
+  useEffect(() => {
+    // Start progress animation
+    if (progressRef.current && duration > 0) {
+      progressRef.current.style.transition = `width ${duration}ms linear`;
+      progressRef.current.style.width = "0%";
+    }
+  }, [duration]);
+
+  const handleRemove = () => {
+    setIsExiting(true);
+    setTimeout(() => onRemove(id), 300);
+  };
+
   const bgColor =
     type === "success"
       ? "bg-[#14b8a6]"
       : type === "error"
       ? "bg-red-500"
+      : type === "warning"
+      ? "bg-yellow-500"
       : "bg-blue-500";
+
   const icon =
     type === "success" ? (
       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -42,6 +61,14 @@ const Toast = ({ id, message, type = "success", onRemove }) => {
           clipRule="evenodd"
         />
       </svg>
+    ) : type === "warning" ? (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <path
+          fillRule="evenodd"
+          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+          clipRule="evenodd"
+        />
+      </svg>
     ) : (
       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
         <path
@@ -54,11 +81,37 @@ const Toast = ({ id, message, type = "success", onRemove }) => {
 
   return (
     <div
-      className={`${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 animate-slideInRight transition-all hover:scale-105 cursor-pointer`}
-      onClick={() => onRemove(id)}
+      className={`${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transition-all hover:scale-105 cursor-pointer relative overflow-hidden ${
+        isExiting ? "animate-slideOutRight" : "animate-slideInRight"
+      }`}
+      onClick={handleRemove}
     >
       {icon}
-      <span className="font-medium">{message}</span>
+      <span className="font-medium flex-1">{message}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleRemove();
+        }}
+        className="ml-2 hover:bg-white/20 rounded p-1 transition-colors"
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fillRule="evenodd"
+            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+      {duration > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/30">
+          <div
+            ref={progressRef}
+            className="h-full bg-white/50"
+            style={{ width: "100%" }}
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -78,19 +131,27 @@ export const ToastProvider = ({ children }) => {
   }, []);
 
   const showToast = useCallback(
-    (message, type = "success", duration = 3000) => {
+    (message, type = "success", duration = null) => {
       const id = Date.now();
-      const newToast = { id, message, type };
+
+      // Default durations based on type
+      if (duration === null) {
+        duration = type === "error" ? 5000 : type === "warning" ? 4000 : 3000;
+      }
+
+      const newToast = { id, message, type, duration };
 
       setToasts((prev) => [...prev, newToast]);
 
-      // Auto remove after duration
-      const timeoutId = setTimeout(() => {
-        removeToast(id);
-      }, duration);
+      // Auto remove after duration (0 means no auto-remove)
+      if (duration > 0) {
+        const timeoutId = setTimeout(() => {
+          removeToast(id);
+        }, duration);
 
-      // Store timeout ID for cleanup
-      timeoutRefs.current.set(id, timeoutId);
+        // Store timeout ID for cleanup
+        timeoutRefs.current.set(id, timeoutId);
+      }
 
       return id;
     },
@@ -122,6 +183,7 @@ export const ToastProvider = ({ children }) => {
               id={toast.id}
               message={toast.message}
               type={toast.type}
+              duration={toast.duration}
               onRemove={removeToast}
             />
           ))}

@@ -465,6 +465,21 @@ a,
   }
 }
 
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.animate-slideOutRight {
+  animation: slideOutRight 0.3s ease-out;
+}
+
 @keyframes slideInDown {
   from {
     opacity: 0;

@@ -1,10 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-
-// Storage keys
-const STORAGE_KEYS = {
-  queue: "crescendo_queue_v2",
-  playlists: "crescendo_playlists_v2",
-};
+import { StorageKeys } from "../../utils/storageManager";
 
 // Load from localStorage
 const loadFromStorage = (key) => {
@@ -42,10 +37,10 @@ const initialState = {
   currentIndex: -1,
 
   // Track lists (all separate, no nesting)
-  queue: loadFromStorage(STORAGE_KEYS.queue) || [],
-  recentlyPlayed: [], // Session-only, no persistence
-  communityPlaylist: null, // { id, name, tracks }
-  playlists: loadFromStorage(STORAGE_KEYS.playlists) || [],
+  queue: loadFromStorage(StorageKeys.QUEUE) || [],
+  recentlyPlayed: [],
+  communityPlaylist: null,
+  playlists: loadFromStorage(StorageKeys.PLAYLISTS) || [],
 
   // UI state
   genreListId: "POP",
@@ -156,7 +151,7 @@ const playerSlice = createSlice({
       }
 
       // Save queue
-      saveToStorage(STORAGE_KEYS.queue, state.queue);
+      saveToStorage(StorageKeys.QUEUE, state.queue);
     },
 
     // Play from specific context
@@ -204,7 +199,7 @@ const playerSlice = createSlice({
 
       if (contextType === "queue") {
         state.queue = tracks;
-        saveToStorage(STORAGE_KEYS.queue, tracks);
+        saveToStorage(StorageKeys.QUEUE, tracks);
       } else if (contextType === "community_playlist") {
         state.communityPlaylist = {
           id: playlistData?.id || "community",
@@ -243,7 +238,7 @@ const playerSlice = createSlice({
         } else {
           state.queue.push(song);
         }
-        saveToStorage(STORAGE_KEYS.queue, state.queue);
+        saveToStorage(StorageKeys.QUEUE, state.queue);
       }
     },
 
@@ -283,9 +278,9 @@ const playerSlice = createSlice({
 
         // Save changes
         if (state.activeContext === "queue") {
-          saveToStorage(STORAGE_KEYS.queue, state.queue);
+          saveToStorage(StorageKeys.QUEUE, state.queue);
         } else if (state.activeContext.startsWith("playlist_")) {
-          saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+          saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
         }
       }
     },
@@ -293,7 +288,7 @@ const playerSlice = createSlice({
     // Clear queue
     clearQueue: (state) => {
       state.queue = [];
-      saveToStorage(STORAGE_KEYS.queue, []);
+      saveToStorage(StorageKeys.QUEUE, []);
 
       if (state.activeContext === "queue") {
         state.currentIndex = -1;
@@ -315,14 +310,14 @@ const playerSlice = createSlice({
       };
 
       state.playlists.push(newPlaylist);
-      saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+      saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
     },
 
     deletePlaylist: (state, action) => {
       const { playlistId } = action.payload;
 
       state.playlists = state.playlists.filter((p) => p.id !== playlistId);
-      saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+      saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
 
       // Switch context if deleted playlist was active
       if (state.activeContext === playlistId) {
@@ -337,7 +332,7 @@ const playerSlice = createSlice({
       const playlist = state.playlists.find((p) => p.id === playlistId);
       if (playlist) {
         playlist.name = name;
-        saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+        saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
       }
     },
 
@@ -351,7 +346,7 @@ const playerSlice = createSlice({
 
         if (!exists) {
           playlist.tracks.push(track);
-          saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+          saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
         }
       }
     },
@@ -387,7 +382,7 @@ const playerSlice = createSlice({
             }
           }
 
-          saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+          saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
         }
       }
     },
@@ -446,9 +441,9 @@ const playerSlice = createSlice({
 
           // Save if needed
           if (state.activeContext === "queue") {
-            saveToStorage(STORAGE_KEYS.queue, state.queue);
+            saveToStorage(StorageKeys.QUEUE, state.queue);
           } else if (state.activeContext.startsWith("playlist_")) {
-            saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+            saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
           }
         }
       }

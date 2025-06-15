@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
+import { clearAllAppData } from "../utils/storageManager";
 
 const PerformanceMonitor = ({ onClose }) => {
   const { getCacheStats, clearCache } = usePreviewUrl();
@@ -68,6 +69,15 @@ const PerformanceMonitor = ({ onClose }) => {
       clearAudioCache();
       setStats(getCacheStats());
       setAudioStats(getAudioStats());
+    }
+  };
+  const handleClearAllData = () => {
+    if (
+      window.confirm(
+        "This will clear ALL app data including:\n• Your Queue\n• Custom Playlists\n• All Caches\n• Preferences\n\nThe app will reload. Continue?"
+      )
+    ) {
+      clearAllAppData();
     }
   };
 
@@ -270,12 +280,21 @@ const PerformanceMonitor = ({ onClose }) => {
           </div>
 
           <div className="relative p-5 pt-3 border-t border-white/10 bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] mt-auto">
-            <button
-              onClick={handleClearCache}
-              className="w-full bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white py-3 px-6 rounded-xl transition-all duration-300 font-semibold shadow-lg shadow-pink-500/20 hover:shadow-pink-500/30 transform hover:scale-[1.02] active:scale-[0.98] [text-shadow:_0_1px_2px_rgba(0,0,0,0.3)]"
-            >
-              Clear Cache
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleClearCache}
+                className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white py-3 px-6 rounded-xl transition-all duration-300 font-semibold shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/30 transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Clear Cache
+              </button>
+
+              <button
+                onClick={handleClearAllData}
+                className="flex-1 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white py-3 px-6 rounded-xl transition-all duration-300 font-semibold shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Reset App
+              </button>
+            </div>
 
             <p className="text-xs text-gray-500 mt-3 text-center">
               Intelligent caching for seamless music playback

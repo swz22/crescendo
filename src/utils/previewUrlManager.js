@@ -1,3 +1,4 @@
+import { StorageKeys } from "./storageManager";
 // Centralized preview URL management with request deduplication
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -152,7 +153,7 @@ class PreviewUrlManager {
 
       const cacheData = Object.fromEntries(entries);
       localStorage.setItem(
-        "crescendo_preview_cache_v2",
+        StorageKeys.PREVIEW_CACHE,
         JSON.stringify(cacheData)
       );
     } catch (error) {
@@ -162,7 +163,7 @@ class PreviewUrlManager {
 
   loadPersistedCache() {
     try {
-      const stored = localStorage.getItem("crescendo_preview_cache_v2");
+      const stored = localStorage.getItem(StorageKeys.PREVIEW_CACHE);
       if (stored) {
         const data = JSON.parse(stored);
         Object.entries(data).forEach(([trackId, cacheData]) => {
@@ -181,7 +182,7 @@ class PreviewUrlManager {
     this.consecutiveFailures = 0;
     this.circuitBreakerTrippedAt = null;
     try {
-      localStorage.removeItem("crescendo_preview_cache_v2");
+      localStorage.removeItem(StorageKeys.PREVIEW_CACHE);
     } catch (error) {
       console.warn("Failed to clear localStorage:", error);
     }

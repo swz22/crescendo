@@ -16,10 +16,9 @@ import {
   HiOutlineCheckCircle,
   HiOutlineLightningBolt,
 } from "react-icons/hi";
+import { StorageKeys } from "../utils/storageManager";
 import { BsMusicNoteBeamed, BsShuffle, BsSpeedometer2 } from "react-icons/bs";
 import { IoMdTime } from "react-icons/io";
-
-const STORAGE_KEY = "crescendo_onboarding_seen";
 
 // Create a custom event for triggering the modal
 export const SHOW_ONBOARDING_EVENT = "showOnboardingModal";
@@ -35,7 +34,7 @@ const OnboardingModal = () => {
 
   useEffect(() => {
     // Check if user has seen onboarding
-    const hasSeenOnboarding = localStorage.getItem(STORAGE_KEY);
+    const hasSeenOnboarding = localStorage.getItem(StorageKeys.ONBOARDING);
     if (!hasSeenOnboarding) {
       // Small delay for better UX
       setTimeout(() => setIsOpen(true), 800);
@@ -55,7 +54,7 @@ const OnboardingModal = () => {
   }, []);
   const handleClose = () => {
     setIsOpen(false);
-    localStorage.setItem(STORAGE_KEY, "true");
+    localStorage.setItem(StorageKeys.ONBOARDING, "true");
   };
 
   const nextStep = () => {

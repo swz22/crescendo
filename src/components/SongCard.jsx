@@ -117,7 +117,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       }
     } catch (error) {
       console.error("Error playing track:", error);
-      showToast("Error loading track", "error");
+      showToast("Error loading track", "error"); // Only show toast once
     } finally {
       setIsLoading(false);
     }
