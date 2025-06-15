@@ -46,7 +46,6 @@ const SongDetails = () => {
       dispatch(
         playTrack({
           track: songWithPreview,
-          source: "song_details",
         })
       );
     } else {

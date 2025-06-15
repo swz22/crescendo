@@ -42,7 +42,6 @@ const ArtistDetails = () => {
         dispatch(
           playTrack({
             track: songWithPreview,
-            source: "artist",
           })
         );
       } else {

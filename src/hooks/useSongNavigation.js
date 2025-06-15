@@ -1,91 +1,76 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { navigateInContext, playPause } from "../redux/features/playerSlice";
-import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import {
+  navigateInContext,
+  updateCurrentTrackPreview,
+} from "../redux/features/playerSlice";
+import { usePreviewUrl } from "./usePreviewUrl";
 
 export const useSongNavigation = () => {
   const dispatch = useDispatch();
   const [isNavigating, setIsNavigating] = useState(false);
-  const {
-    activeContext,
-    contexts,
-    activeCommunityPlaylist,
-    isActive,
-    isPlaying,
-  } = useSelector((state) => state.player);
   const { getPreviewUrl } = usePreviewUrl();
-
-  // Get current context data
-  const getCurrentContext = useCallback(() => {
-    if (activeContext === "community_playlist") {
-      return activeCommunityPlaylist;
-    }
-    return contexts[activeContext];
-  }, [activeContext, contexts, activeCommunityPlaylist]);
+  const { currentTrack } = useSelector((state) => state.player);
 
   const handleNextSong = useCallback(async () => {
-    if (!isActive || isNavigating) return;
-
-    const currentContext = getCurrentContext();
-    if (!currentContext || currentContext.tracks.length === 0) return;
-
-    // Single song - restart
-    if (currentContext.tracks.length === 1) {
-      dispatch(playPause(false));
-      setTimeout(() => dispatch(playPause(true)), 100);
-      return;
-    }
+    if (isNavigating) return;
 
     setIsNavigating(true);
     try {
+      // Navigate to next track
       dispatch(navigateInContext({ direction: "next" }));
 
-      // Ensure playback continues
-      if (!isPlaying) {
-        dispatch(playPause(true));
+      // Small delay to ensure state is updated
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Get updated track from store
+      const { store } = await import("../redux/store");
+      const updatedState = store.getState().player;
+      const newTrack = updatedState.currentTrack;
+
+      if (newTrack && !newTrack.preview_url) {
+        // Fetch preview URL
+        const trackWithPreview = await getPreviewUrl(newTrack);
+        if (trackWithPreview?.preview_url) {
+          dispatch(updateCurrentTrackPreview({ track: trackWithPreview }));
+        }
       }
     } finally {
-      setTimeout(() => setIsNavigating(false), 100);
+      setIsNavigating(false);
     }
-  }, [dispatch, isActive, isNavigating, getCurrentContext, isPlaying]);
+  }, [dispatch, isNavigating, getPreviewUrl]);
 
   const handlePrevSong = useCallback(async () => {
-    if (!isActive || isNavigating) return;
-
-    const currentContext = getCurrentContext();
-    if (!currentContext || currentContext.tracks.length === 0) return;
-
-    // Single song - restart
-    if (currentContext.tracks.length === 1) {
-      dispatch(playPause(false));
-      setTimeout(() => dispatch(playPause(true)), 100);
-      return;
-    }
+    if (isNavigating) return;
 
     setIsNavigating(true);
     try {
+      // Navigate to previous track
       dispatch(navigateInContext({ direction: "prev" }));
 
-      // Ensure playback continues
-      if (!isPlaying) {
-        dispatch(playPause(true));
+      // Small delay to ensure state is updated
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Get updated track from store
+      const { store } = await import("../redux/store");
+      const updatedState = store.getState().player;
+      const newTrack = updatedState.currentTrack;
+
+      if (newTrack && !newTrack.preview_url) {
+        // Fetch preview URL
+        const trackWithPreview = await getPreviewUrl(newTrack);
+        if (trackWithPreview?.preview_url) {
+          dispatch(updateCurrentTrackPreview({ track: trackWithPreview }));
+        }
       }
     } finally {
-      setTimeout(() => setIsNavigating(false), 100);
-    }
-  }, [dispatch, isActive, isNavigating, getCurrentContext, isPlaying]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
       setIsNavigating(false);
-    };
-  }, []);
+    }
+  }, [dispatch, isNavigating, getPreviewUrl]);
 
   return {
     handleNextSong,
     handlePrevSong,
     isNavigating,
-    currentContext: getCurrentContext(),
   };
 };

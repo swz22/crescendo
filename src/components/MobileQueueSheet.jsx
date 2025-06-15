@@ -16,46 +16,33 @@ import {
   toggleShuffle,
   toggleRepeat,
 } from "../redux/features/playerSlice";
+import {
+  selectCurrentContextTracks,
+  selectCurrentContextName,
+} from "../redux/features/playerSelectors";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 
 const MobileQueueSheet = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const {
     activeContext,
-    contexts,
-    activeCommunityPlaylist,
-    activeSong,
+    currentTrack,
+    currentIndex,
     isPlaying,
     shuffle,
     repeat,
   } = useSelector((state) => state.player);
+
+  const tracks = useSelector(selectCurrentContextTracks);
+  const contextName = useSelector(selectCurrentContextName);
 
   const [sheetHeight, setSheetHeight] = useState(60);
   const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
   const currentYRef = useRef(0);
   const sheetRef = useRef(null);
-  const { prefetchPreviewUrl, isPreviewCached } = usePreviewUrl();
-
-  // Get current context tracks
-  const getCurrentTracks = () => {
-    if (activeContext === "community_playlist") {
-      return activeCommunityPlaylist?.tracks || [];
-    }
-    const context = contexts[activeContext];
-    return context?.tracks || [];
-  };
-
-  const getCurrentIndex = () => {
-    if (activeContext === "community_playlist") {
-      return activeCommunityPlaylist?.currentIndex || -1;
-    }
-    const context = contexts[activeContext];
-    return context?.currentIndex || -1;
-  };
-
-  const tracks = getCurrentTracks();
-  const currentIndex = getCurrentIndex();
+  const { prefetchPreviewUrl, isPreviewCached, getPreviewUrl } =
+    usePreviewUrl();
 
   useEffect(() => {
     if (isOpen) {
@@ -101,21 +88,29 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
     }
   };
 
-  const handlePlayClick = (index) => {
+  const handlePlayClick = async (index) => {
     if (currentIndex === index) {
       dispatch(playPause(!isPlaying));
     } else {
-      dispatch(
-        playFromContext({
-          contextType: activeContext,
-          trackIndex: index,
-          playlistData:
-            activeContext === "community_playlist"
-              ? activeCommunityPlaylist
-              : null,
-        })
-      );
-      dispatch(playPause(true));
+      const track = tracks[index];
+      if (!track) return;
+
+      try {
+        const songWithPreview = await getPreviewUrl(track);
+        if (songWithPreview?.preview_url) {
+          dispatch(
+            playFromContext({
+              contextType: activeContext,
+              trackIndex: index,
+            })
+          );
+          dispatch(playPause(true));
+        } else {
+          console.warn("No preview URL available for track:", track.title);
+        }
+      } catch (error) {
+        console.error("Error getting preview URL:", error);
+      }
     }
   };
 
@@ -128,8 +123,11 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
   };
 
   const handleRemoveTrack = (index) => {
-    if (activeContext === "community_playlist") {
-      return; // Community playlists are read-only
+    if (
+      activeContext === "community_playlist" ||
+      activeContext === "recently_played"
+    ) {
+      return; // Read-only contexts
     }
     dispatch(removeFromContext({ trackIndex: index }));
   };
@@ -160,8 +158,7 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
             <div>
               <h3 className="text-xl font-semibold text-white">Now Playing</h3>
               <p className="text-sm text-white/60">
-                {tracks.length} tracks in{" "}
-                {contexts[activeContext]?.name || "context"}
+                {tracks.length} tracks in {contextName}
               </p>
             </div>
           </div>
@@ -186,19 +183,19 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {activeSong && (
+        {currentTrack && (
           <div className="p-6 pb-4">
             <div className="flex flex-col items-center">
               <img
-                src={activeSong.images?.coverart || placeholderImage}
-                alt={activeSong.title}
+                src={currentTrack.images?.coverart || placeholderImage}
+                alt={currentTrack.title}
                 className="w-48 h-48 rounded-2xl shadow-2xl mb-6"
               />
               <h2 className="text-2xl font-bold text-white text-center mb-1">
-                {activeSong.title}
+                {currentTrack.title}
               </h2>
               <p className="text-lg text-white/60 text-center">
-                {activeSong.subtitle}
+                {currentTrack.subtitle}
               </p>
             </div>
           </div>
@@ -215,7 +212,7 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
           ) : (
             <div className="px-4 space-y-2">
               <h4 className="text-sm font-medium text-white/60 uppercase tracking-wider px-2 py-2">
-                {contexts[activeContext]?.name || "Tracks"}
+                {contextName}
               </h4>
               {tracks.map((track, index) => {
                 const isActive = currentIndex === index;
@@ -256,17 +253,18 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
                       </p>
                     </div>
 
-                    {activeContext !== "community_playlist" && (
-                      <div
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveTrack(index);
-                        }}
-                      >
-                        <HiX className="w-4 h-4 text-white/40" />
-                      </div>
-                    )}
+                    {activeContext !== "community_playlist" &&
+                      activeContext !== "recently_played" && (
+                        <div
+                          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveTrack(index);
+                          }}
+                        >
+                          <HiX className="w-4 h-4 text-white/40" />
+                        </div>
+                      )}
                   </button>
                 );
               })}

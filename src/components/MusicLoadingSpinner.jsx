@@ -1,10 +1,10 @@
-import React from 'react';
+import React from "react";
 
-const MusicLoadingSpinner = ({ size = 'md' }) => {
+const MusicLoadingSpinner = ({ size = "md" }) => {
   const sizeClasses = {
-    sm: 'w-8 h-8',
-    md: 'w-12 h-12',
-    lg: 'w-16 h-16'
+    sm: "w-8 h-8",
+    md: "w-12 h-12",
+    lg: "w-16 h-16",
   };
 
   return (
@@ -30,19 +30,34 @@ const MusicLoadingSpinner = ({ size = 'md' }) => {
             </linearGradient>
           </defs>
         </svg>
-        
+
         {/* Center pulse */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
         </div>
       </div>
-      
+
       {/* Musical notes floating animation */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative w-full h-full">
-          <span className="absolute text-white/40 animate-float-note-1" style={{ fontSize: '10px', left: '50%', top: '50%' }}>♪</span>
-          <span className="absolute text-white/30 animate-float-note-2" style={{ fontSize: '8px', left: '45%', top: '45%' }}>♫</span>
-          <span className="absolute text-white/20 animate-float-note-3" style={{ fontSize: '12px', left: '55%', top: '55%' }}>♪</span>
+          <span
+            className="absolute text-white/40 animate-float-note-1"
+            style={{ fontSize: "10px", left: "50%", top: "50%" }}
+          >
+            ♪
+          </span>
+          <span
+            className="absolute text-white/30 animate-float-note-2"
+            style={{ fontSize: "8px", left: "45%", top: "45%" }}
+          >
+            ♫
+          </span>
+          <span
+            className="absolute text-white/20 animate-float-note-3"
+            style={{ fontSize: "12px", left: "55%", top: "55%" }}
+          >
+            ♪
+          </span>
         </div>
       </div>
     </div>

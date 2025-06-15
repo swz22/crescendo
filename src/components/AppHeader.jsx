@@ -2,6 +2,7 @@ import React, { memo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { selectCurrentContextTracks } from "../redux/features/playerSelectors";
 import Searchbar from "./Searchbar";
 import QueueButton from "./QueueButton";
 import MobileQueueSheet from "./MobileQueueSheet";
@@ -18,7 +19,7 @@ const AppHeader = memo(
   }) => {
     const { setMobileMenuOpen } = useApp();
     const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
-    const { queue } = useSelector((state) => state.player);
+    const currentTracks = useSelector(selectCurrentContextTracks);
     const location = useLocation();
 
     // Don't show queue button on certain pages
@@ -65,7 +66,7 @@ const AppHeader = memo(
                 <div className="flex-1">
                   <Searchbar />
                 </div>
-                {!hideQueueButton && queue.length > 0 && (
+                {!hideQueueButton && currentTracks.length > 0 && (
                   <QueueButton onClick={() => setMobileQueueOpen(true)} />
                 )}
               </div>

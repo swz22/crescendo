@@ -2,24 +2,14 @@ import React, { useEffect, useRef, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import PlayPause from "./PlayPause";
-import Portal from "./Portal";
 import SongMenu from "./SongMenu";
-import {
-  playPause,
-  playTrack,
-  addToQueue,
-} from "../redux/features/playerSlice";
+import { playPause, playTrack } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
-import {
-  HiLightningBolt,
-  HiDotsVertical,
-  HiOutlineDotsHorizontal,
-} from "react-icons/hi";
-import { BsFillPlayFill, BsFillPauseFill } from "react-icons/bs";
+import { HiLightningBolt, HiDotsVertical } from "react-icons/hi";
+import { BsFillPlayFill } from "react-icons/bs";
 import { useToast } from "../context/ToastContext";
-import { dispatchQueueEvent } from "../utils/queueEvents";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const dispatch = useDispatch();
@@ -34,10 +24,13 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const hoverTimeoutRef = useRef(null);
   const { showToast } = useToast();
   const songId = song?.key || song?.id || song?.track_id;
+
+  // Get current track from Redux
+  const currentTrack = useSelector((state) => state.player.currentTrack);
   const isCurrentSong =
-    activeSong?.key === song?.key ||
-    activeSong?.title === song?.title ||
-    (activeSong?.key && song?.key && activeSong.key === song.key);
+    currentTrack?.key === song?.key ||
+    currentTrack?.title === song?.title ||
+    (currentTrack?.key && song?.key && currentTrack.key === song.key);
 
   useEffect(() => {
     const isCached = isPreviewCached(song) || isPrefetched;
@@ -45,8 +38,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   }, [song, isPreviewCached, isPrefetched]);
 
   useEffect(() => {
-    const currentCardRef = cardRef.current;
-
     return () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
@@ -55,10 +46,10 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   }, []);
 
   useEffect(() => {
-    if (isCurrentSong && activeSong?.preview_url) {
+    if (isCurrentSong && currentTrack?.preview_url) {
       setIsPrefetched(true);
     }
-  }, [isCurrentSong, activeSong]);
+  }, [isCurrentSong, currentTrack]);
 
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
@@ -68,7 +59,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     }
 
     hoverTimeoutRef.current = setTimeout(async () => {
-      if (!song.preview_url && !isPreviewCached(song) && !hasNoPreview(song)) {
+      if (!isPreviewCached(song) && !hasNoPreview(song)) {
         const prefetchSuccess = await prefetchPreviewUrl(song, {
           priority: "high",
         });
@@ -79,15 +70,15 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       }
 
       if (songId && !isAudioReady(songId)) {
-        let previewUrl = song.preview_url || song.url;
-
-        if (!previewUrl && isPreviewCached(song)) {
+        try {
           const songWithPreview = await getPreviewUrl(song);
-          previewUrl = songWithPreview.preview_url;
-        }
+          const previewUrl = songWithPreview?.preview_url;
 
-        if (previewUrl) {
-          await preloadAudio(songId, previewUrl);
+          if (previewUrl) {
+            await preloadAudio(songId, previewUrl);
+          }
+        } catch (error) {
+          console.error("Error preloading audio:", error);
         }
       }
     }, 100);
@@ -119,15 +110,14 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         dispatch(
           playTrack({
             track: songWithPreview,
-            source: "song_card",
           })
         );
-        dispatchQueueEvent("Added to queue");
       } else {
         showToast("No preview available for this track", "error");
       }
     } catch (error) {
       console.error("Error playing track:", error);
+      showToast("Error loading track", "error");
     } finally {
       setIsLoading(false);
     }
@@ -280,7 +270,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                 />
                 <PlayPause
                   isPlaying={isPlaying}
-                  activeSong={activeSong}
+                  activeSong={currentTrack}
                   song={song}
                   handlePause={handlePauseClick}
                   handlePlay={handlePlayClick}

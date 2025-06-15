@@ -1,15 +1,13 @@
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSelector } from "react-redux";
-import { Route, Routes, useLocation } from "react-router-dom";
-import {
-  LeftSidebar,
-  MusicPlayer,
-  PlaylistPlayer,
-  QueueIndicator,
-  FloatingQueueButton,
-  MobileQueueSheet,
-  Loader,
-} from "./components";
+import { Route, Routes } from "react-router-dom";
+import LeftSidebar from "./components/LeftSidebar";
+import MusicPlayer from "./components/MusicPlayer";
+import PlaylistPlayer from "./components/PlaylistPlayer";
+import QueueIndicator from "./components/QueueIndicator";
+import FloatingQueueButton from "./components/FloatingQueueButton";
+import MobileQueueSheet from "./components/MobileQueueSheet";
+import Loader from "./components/Loader";
 import OnboardingModal from "./components/OnboardingModal";
 import {
   AlbumDetails,
@@ -30,16 +28,8 @@ const PageLoader = () => (
 );
 
 const App = () => {
-  const { activeSong, isModalOpen, isPlaying, activeContext, contexts } =
-    useSelector((state) => state.player);
-  const location = useLocation();
+  const { currentTrack } = useSelector((state) => state.player);
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
-  const hideMainPlayer = isModalOpen;
-
-  useEffect(() => {
-    console.log("App.jsx - activeSong:", activeSong?.title);
-    console.log("App.jsx - hideMainPlayer:", hideMainPlayer);
-  }, [activeSong, hideMainPlayer]);
 
   return (
     <div className="relative flex h-screen overflow-hidden">
@@ -69,7 +59,7 @@ const App = () => {
 
       {/* Mobile Queue Button - only show on mobile when music is playing */}
       <div className="sm:hidden">
-        {activeSong?.title && (
+        {currentTrack?.title && (
           <FloatingQueueButton onClick={() => setMobileQueueOpen(true)} />
         )}
       </div>
@@ -81,7 +71,7 @@ const App = () => {
       />
 
       {/* Music Player - Single instance for all screen sizes */}
-      {activeSong?.title && !hideMainPlayer && (
+      {currentTrack?.title && (
         <div className="fixed h-20 sm:h-28 bottom-0 left-0 right-0 lg:left-[240px] lg:right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
           <MusicPlayer />
         </div>

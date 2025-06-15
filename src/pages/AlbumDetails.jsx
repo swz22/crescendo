@@ -47,12 +47,6 @@ const AlbumDetails = () => {
     error: tracksError,
   } = useGetAlbumTracksQuery({ albumId });
 
-  console.log("Album ID:", albumId);
-  console.log("Album Data:", albumData);
-  console.log("Album Error:", albumError);
-  console.log("Tracks:", tracks);
-  console.log("Tracks Error:", tracksError);
-
   // Extract dominant color from album art
   useEffect(() => {
     if (albumData?.images?.[0]?.url && !isImageLoaded) {
@@ -109,7 +103,6 @@ const AlbumDetails = () => {
       dispatch(
         playTrack({
           track: songWithPreview,
-          source: "album",
         })
       );
     }
@@ -141,7 +134,6 @@ const AlbumDetails = () => {
             startIndex: 0,
           })
         );
-
         setTimeout(() => {
           dispatch(playPause(true));
         }, 100);
@@ -188,11 +180,13 @@ const AlbumDetails = () => {
         },
       }));
 
+      const randomIndex = Math.floor(Math.random() * tracks.length);
+
       dispatch(
-        replaceQueue({
-          songs: tracksWithAlbumArt,
-          source: "album",
-          startIndex: Math.floor(Math.random() * tracks.length),
+        replaceContext({
+          contextType: "queue",
+          tracks: tracksWithAlbumArt,
+          startIndex: randomIndex,
         })
       );
       dispatch(toggleShuffle());

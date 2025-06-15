@@ -25,21 +25,35 @@ import TrackLoadingState from "../TrackLoadingState";
 
 const MusicPlayer = () => {
   const {
-    activeSong,
-    activeContext,
-    contexts,
-    activeCommunityPlaylist,
+    currentTrack,
     isActive,
     isPlaying,
     shuffle,
     repeat,
+    activeContext,
+    queue,
+    recentlyPlayed,
+    playlists,
+    communityPlaylist,
   } = useSelector((state) => state.player);
 
+  // Get current context tracks
   const getCurrentTracks = () => {
-    if (activeContext === "community_playlist") {
-      return activeCommunityPlaylist?.tracks || [];
+    switch (activeContext) {
+      case "queue":
+        return queue;
+      case "recently_played":
+        return recentlyPlayed;
+      case "community":
+        return communityPlaylist?.tracks || [];
+      default:
+        if (activeContext.startsWith("playlist_")) {
+          const playlistId = activeContext.replace("playlist_", "");
+          const playlist = playlists.find((p) => p.id === playlistId);
+          return playlist?.tracks || [];
+        }
+        return [];
     }
-    return contexts[activeContext]?.tracks || [];
   };
 
   const currentSongs = getCurrentTracks();
@@ -71,7 +85,7 @@ const MusicPlayer = () => {
   };
 
   useEffect(() => {
-    const songUrl = activeSong?.preview_url || activeSong?.url;
+    const songUrl = currentTrack?.preview_url || currentTrack?.url;
 
     if (songUrl && songUrl !== lastSongUrlRef.current) {
       setIsChangingTrack(true);
@@ -79,7 +93,7 @@ const MusicPlayer = () => {
       setSeekTime(0);
       lastSongUrlRef.current = songUrl;
     }
-  }, [activeSong]);
+  }, [currentTrack]);
 
   const handleNextSong = async () => {
     if (!currentSongs || currentSongs.length <= 1) return;
@@ -111,14 +125,9 @@ const MusicPlayer = () => {
 
   useEffect(() => {
     if (!isPlaying && isChangingTrack) {
-      if (
-        (currentIndex === currentSongs.length - 1 && !repeat) ||
-        currentIndex === 0
-      ) {
-        setIsChangingTrack(false);
-      }
+      setIsChangingTrack(false);
     }
-  }, [isPlaying, isChangingTrack, currentIndex, currentSongs.length, repeat]);
+  }, [isPlaying, isChangingTrack]);
 
   useEffect(() => {
     if (isAudioReady && isChangingTrack) {
@@ -126,48 +135,53 @@ const MusicPlayer = () => {
     }
   }, [isAudioReady, isChangingTrack]);
 
-  useEffect(() => {}, [isNavigating]);
-
+  // Preload next tracks
   useEffect(() => {
-    if (currentSongs.length > 0 && currentIndex !== undefined && activeSong) {
-      const preloadSongs = async () => {
-        const nextSongs = [];
+    if (currentSongs.length > 0 && currentTrack) {
+      const currentIndex = currentSongs.findIndex((song) => {
+        const songId = song?.key || song?.id || song?.track_id;
+        const currentId =
+          currentTrack?.key || currentTrack?.id || currentTrack?.track_id;
+        return songId === currentId;
+      });
 
-        for (let i = 1; i <= 3; i++) {
-          const nextIndex = (currentIndex + i) % currentSongs.length;
-          let nextSong = currentSongs[nextIndex];
+      if (currentIndex !== -1) {
+        const preloadSongs = async () => {
+          const nextSongs = [];
 
-          if (nextSong?.track) nextSong = nextSong.track;
+          for (let i = 1; i <= 3; i++) {
+            const nextIndex = (currentIndex + i) % currentSongs.length;
+            let nextSong = currentSongs[nextIndex];
 
-          if (
-            !nextSong.preview_url &&
-            !nextSong.url &&
-            isPreviewCached(nextSong)
-          ) {
-            try {
-              const songWithPreview = await getPreviewUrl(nextSong);
-              if (songWithPreview.preview_url) {
-                nextSongs.push(songWithPreview);
+            if (!nextSong) continue;
+
+            if (nextSong?.track) nextSong = nextSong.track;
+
+            if (!isPreviewCached(nextSong)) {
+              try {
+                const songWithPreview = await getPreviewUrl(nextSong);
+                if (songWithPreview?.preview_url) {
+                  nextSongs.push(songWithPreview);
+                }
+              } catch (err) {
+                console.error("Error getting preview URL for preload:", err);
               }
-            } catch (err) {
-              console.error("Error getting preview URL for preload:", err);
+            } else {
+              nextSongs.push(nextSong);
             }
-          } else if (nextSong.preview_url || nextSong.url) {
-            nextSongs.push(nextSong);
           }
-        }
 
-        if (nextSongs.length > 0) {
-          preloadMultiple(nextSongs);
-        }
-      };
+          if (nextSongs.length > 0) {
+            preloadMultiple(nextSongs);
+          }
+        };
 
-      preloadSongs();
+        preloadSongs();
+      }
     }
   }, [
-    currentIndex,
+    currentTrack,
     currentSongs,
-    activeSong,
     preloadMultiple,
     getPreviewUrl,
     isPreviewCached,
@@ -179,32 +193,34 @@ const MusicPlayer = () => {
   };
 
   const getSongImage = () => {
-    if (!activeSong)
+    if (!currentTrack)
       return "https://via.placeholder.com/240x240.png?text=No+Song";
 
-    if (activeSong.images?.coverart) return activeSong.images.coverart;
-    if (activeSong.share?.image) return activeSong.share.image;
-    if (activeSong.images?.background) return activeSong.images.background;
-    if (activeSong.attributes?.artwork?.url) {
-      return activeSong.attributes.artwork.url
+    if (currentTrack.images?.coverart) return currentTrack.images.coverart;
+    if (currentTrack.share?.image) return currentTrack.share.image;
+    if (currentTrack.images?.background) return currentTrack.images.background;
+    if (currentTrack.attributes?.artwork?.url) {
+      return currentTrack.attributes.artwork.url
         .replace("{w}", "240")
         .replace("{h}", "240");
     }
-    if (activeSong.hub?.image) return activeSong.hub.image;
+    if (currentTrack.hub?.image) return currentTrack.hub.image;
 
     return "https://via.placeholder.com/240x240.png?text=No+Image";
   };
 
   const getSongUrl = () => {
-    if (!activeSong) return "";
-    if (activeSong.preview_url) return activeSong.preview_url;
-    if (activeSong.url) return activeSong.url;
-    if (activeSong.hub?.actions?.[1]?.uri) return activeSong.hub.actions[1].uri;
-    if (activeSong.hub?.actions?.[0]?.uri) return activeSong.hub.actions[0].uri;
-    if (activeSong.uri) return activeSong.uri;
+    if (!currentTrack) return "";
+    if (currentTrack.preview_url) return currentTrack.preview_url;
+    if (currentTrack.url) return currentTrack.url;
+    if (currentTrack.hub?.actions?.[1]?.uri)
+      return currentTrack.hub.actions[1].uri;
+    if (currentTrack.hub?.actions?.[0]?.uri)
+      return currentTrack.hub.actions[0].uri;
+    if (currentTrack.uri) return currentTrack.uri;
 
-    if (activeSong.hub?.actions) {
-      const action = activeSong.hub.actions.find((action) => action.uri);
+    if (currentTrack.hub?.actions) {
+      const action = currentTrack.hub.actions.find((action) => action.uri);
       if (action?.uri) return action.uri;
     }
 
@@ -214,17 +230,11 @@ const MusicPlayer = () => {
   const songUrl = getSongUrl();
 
   useEffect(() => {
-    console.log("MusicPlayer - isPlaying changed to:", isPlaying);
-    console.log("MusicPlayer - activeSong:", activeSong);
-    console.log("MusicPlayer - songUrl:", songUrl);
-  }, [isPlaying, activeSong, songUrl]);
-
-  useEffect(() => {
-    if (activeSong && !songUrl && isPlaying) {
+    if (currentTrack && !songUrl && isPlaying) {
       dispatch(playPause(false));
       setIsChangingTrack(false);
     }
-  }, [activeSong, songUrl, isPlaying, dispatch]);
+  }, [currentTrack, songUrl, isPlaying, dispatch]);
 
   return (
     <>
@@ -235,7 +245,7 @@ const MusicPlayer = () => {
         <Track
           isPlaying={isPlaying}
           isActive={isActive}
-          activeSong={activeSong}
+          activeSong={currentTrack}
           songImage={getSongImage()}
         />
         <div className="flex-1 flex flex-col items-center justify-center">
@@ -260,13 +270,13 @@ const MusicPlayer = () => {
             appTime={appTime}
           />
           <Player
-            activeSong={activeSong}
+            activeSong={currentTrack}
             songUrl={songUrl}
             volume={volume}
             isPlaying={isPlaying}
             seekTime={seekTime}
             repeat={repeat}
-            currentIndex={currentIndex}
+            currentIndex={0}
             onEnded={handleNextSong}
             onTimeUpdate={(event) => setAppTime(event.target.currentTime)}
             onLoadedData={(event) => {
@@ -296,10 +306,10 @@ const MusicPlayer = () => {
           />
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-medium truncate">
-              {activeSong?.title || "No active Song"}
+              {currentTrack?.title || "No active Song"}
             </p>
             <p className="text-gray-400 text-[10px] truncate">
-              {activeSong?.subtitle || "Unknown Artist"}
+              {currentTrack?.subtitle || "Unknown Artist"}
             </p>
           </div>
         </div>
@@ -342,13 +352,13 @@ const MusicPlayer = () => {
       {/* Hidden Player for Audio */}
       <div className="hidden">
         <Player
-          activeSong={activeSong}
+          activeSong={currentTrack}
           songUrl={songUrl}
           volume={volume}
           isPlaying={isPlaying}
           seekTime={seekTime}
           repeat={repeat}
-          currentIndex={currentIndex}
+          currentIndex={0}
           onEnded={handleNextSong}
           onTimeUpdate={(event) => setAppTime(event.target.currentTime)}
           onLoadedData={(event) => {

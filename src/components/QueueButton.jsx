@@ -1,10 +1,11 @@
 import React from "react";
 import { useSelector } from "react-redux";
+import { selectCurrentContextTracks } from "../redux/features/playerSelectors";
 import { HiOutlineQueueList } from "react-icons/hi2";
 
 const QueueButton = ({ onClick }) => {
-  const { queue } = useSelector((state) => state.player);
-  const queueCount = queue?.length || 0;
+  const tracks = useSelector(selectCurrentContextTracks);
+  const queueCount = tracks.length;
 
   return (
     <button

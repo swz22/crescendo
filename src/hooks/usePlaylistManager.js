@@ -12,8 +12,9 @@ import {
 
 export const usePlaylistManager = () => {
   const dispatch = useDispatch();
-  const { playlists, activeContext, contexts, activeCommunityPlaylist } =
-    useSelector((state) => state.player);
+  const { playlists, activeContext, currentTrack, currentIndex } = useSelector(
+    (state) => state.player
+  );
 
   const handleCreatePlaylist = useCallback(
     (name) => {
@@ -27,7 +28,7 @@ export const usePlaylistManager = () => {
   const handleDeletePlaylist = useCallback(
     (playlistId) => {
       if (window.confirm("Are you sure you want to delete this playlist?")) {
-        dispatch(deletePlaylist(playlistId));
+        dispatch(deletePlaylist({ playlistId }));
       }
     },
     [dispatch]
@@ -54,9 +55,9 @@ export const usePlaylistManager = () => {
     [dispatch]
   );
 
-  const handleSwitchPlaylist = useCallback(
-    (contextId, contextType) => {
-      dispatch(switchContext({ contextType: contextId }));
+  const handleSwitchContext = useCallback(
+    (contextType) => {
+      dispatch(switchContext({ contextType }));
     },
     [dispatch]
   );
@@ -68,44 +69,15 @@ export const usePlaylistManager = () => {
     [dispatch]
   );
 
-  const getCurrentPlaylistData = useCallback(() => {
-    if (activeContext === "community_playlist") {
-      return {
-        id: "community_playlist",
-        name: activeCommunityPlaylist?.name || "Community Playlist",
-        tracks: activeCommunityPlaylist?.tracks || [],
-        type: "community_playlist",
-      };
-    }
-
-    const context = contexts[activeContext];
-    if (!context) {
-      return {
-        id: "queue",
-        name: "Your Queue",
-        tracks: [],
-        type: "queue",
-      };
-    }
-
-    return {
-      id: activeContext,
-      name: context.name,
-      tracks: context.tracks,
-      type:
-        activeContext === "queue"
-          ? "queue"
-          : activeContext === "recently_played"
-          ? "recently_played"
-          : "playlist",
-    };
-  }, [activeContext, contexts, activeCommunityPlaylist]);
+  const getTrackId = (track) => {
+    return track?.key || track?.id || track?.track_id || track?.title;
+  };
 
   const isTrackInPlaylist = useCallback(
     (playlistId, trackId) => {
       const playlist = playlists.find((p) => p.id === playlistId);
       return playlist
-        ? playlist.tracks.some((t) => (t.key || t.id || t.track_id) === trackId)
+        ? playlist.tracks.some((t) => getTrackId(t) === trackId)
         : false;
     },
     [playlists]
@@ -118,45 +90,59 @@ export const usePlaylistManager = () => {
     [playlists]
   );
 
-  const getAllPlaylists = useCallback(() => {
-    const queueContext = contexts.queue || { tracks: [] };
-    const recentContext = contexts.recently_played || { tracks: [] };
-
-    return [
-      {
+  const getCurrentPlaylistData = useCallback(() => {
+    if (activeContext === "queue") {
+      return {
         id: "queue",
         name: "Your Queue",
-        tracks: queueContext.tracks,
         type: "queue",
-        icon: "queue",
-      },
-      {
+      };
+    } else if (activeContext === "recently_played") {
+      return {
         id: "recently_played",
         name: "Recently Played",
-        tracks: recentContext.tracks,
         type: "recently_played",
-        icon: "history",
-      },
-      ...playlists.map((p) => ({
-        ...p,
+      };
+    } else if (activeContext === "community_playlist") {
+      return {
+        id: "community_playlist",
+        name: "Community Playlist",
+        type: "community_playlist",
+      };
+    } else if (activeContext.startsWith("playlist_")) {
+      const playlist = playlists.find((p) => p.id === activeContext);
+      return {
+        id: activeContext,
+        name: playlist?.name || "Unknown Playlist",
         type: "playlist",
-        icon: "playlist",
-        tracks: contexts[p.id]?.tracks || p.tracks || [],
-      })),
-    ];
-  }, [playlists, contexts]);
+      };
+    }
+
+    return {
+      id: "queue",
+      name: "Your Queue",
+      type: "queue",
+    };
+  }, [activeContext, playlists]);
+
+  const getAllPlaylists = useCallback(() => {
+    return playlists.map((p) => ({
+      ...p,
+      type: "playlist",
+      icon: "playlist",
+    }));
+  }, [playlists]);
 
   return {
     playlists,
-    activePlaylistId: activeContext,
-    activePlaylistType: activeContext,
+    activeContext,
     currentPlaylist: getCurrentPlaylistData(),
     handleCreatePlaylist,
     handleDeletePlaylist,
     handleRenamePlaylist,
     handleAddToPlaylist,
     handleRemoveFromPlaylist,
-    handleSwitchPlaylist,
+    handleSwitchContext,
     handlePlayFromContext,
     isTrackInPlaylist,
     getPlaylistById,

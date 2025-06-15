@@ -3,14 +3,18 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   playPause,
   playFromContext,
-  switchContext,
+  playTrack,
   toggleShuffle,
   toggleRepeat,
   removeFromContext,
   clearQueue,
 } from "../redux/features/playerSlice";
+import {
+  selectCurrentContextTracks,
+  selectCurrentContextName,
+  selectCanModifyContext,
+} from "../redux/features/playerSelectors";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
-import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { useSongNavigation } from "../hooks/useSongNavigation";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
@@ -24,47 +28,33 @@ import {
   BsVolumeDown,
   BsVolumeMute,
   BsVolumeUp,
-  BsMusicNoteList,
-  BsPlayCircle,
-  BsSearch,
-  BsCollection,
 } from "react-icons/bs";
-import { HiOutlineQueueList, HiOutlineSparkles } from "react-icons/hi2";
+import { HiOutlineQueueList } from "react-icons/hi2";
 
 const PlaylistPlayer = () => {
   const dispatch = useDispatch();
   const {
-    activeSong,
+    currentTrack,
+    currentIndex,
     isPlaying,
     activeContext,
-    contexts,
-    activeCommunityPlaylist,
     shuffle,
     repeat,
   } = useSelector((state) => state.player);
 
+  const tracks = useSelector(selectCurrentContextTracks);
+  const contextName = useSelector(selectCurrentContextName);
+  const canModify = useSelector(selectCanModifyContext);
+
   const { handleNextSong, handlePrevSong } = useSongNavigation();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached } =
     usePreviewUrl();
-  const { currentPlaylist, getPlaylistById } = usePlaylistManager();
 
   const [volume, setVolume] = useState(0.7);
   const [isVolumeHovered, setIsVolumeHovered] = useState(false);
   const [showManagePanel, setShowManagePanel] = useState(false);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
-
-  // Get current context data
-  const getCurrentContext = () => {
-    if (activeContext === "community_playlist") {
-      return activeCommunityPlaylist;
-    }
-    return contexts[activeContext];
-  };
-
-  const currentContext = getCurrentContext();
-  const displayTracks = currentContext?.tracks || [];
-  const currentIndex = currentContext?.currentIndex || -1;
 
   // Auto-scroll to active track
   useEffect(() => {
@@ -103,38 +93,56 @@ const PlaylistPlayer = () => {
 
   // Prefetch next tracks
   useEffect(() => {
-    if (displayTracks.length > 0 && currentIndex >= 0) {
-      const nextTracks = displayTracks.slice(
-        currentIndex + 1,
-        currentIndex + 4
-      );
-      nextTracks.forEach((track, idx) => {
-        if (!isPreviewCached(track)) {
-          setTimeout(() => {
-            prefetchPreviewUrl(track, { priority: idx === 0 ? "high" : "low" });
-          }, idx * 1000);
+    if (tracks.length > 0 && currentIndex >= 0) {
+      const prefetchNext = async () => {
+        const nextTracks = tracks.slice(currentIndex + 1, currentIndex + 4);
+
+        for (let i = 0; i < nextTracks.length; i++) {
+          const track = nextTracks[i];
+          if (track && !isPreviewCached(track)) {
+            setTimeout(() => {
+              prefetchPreviewUrl(track, { priority: i === 0 ? "high" : "low" });
+            }, i * 1000);
+          }
         }
-      });
+      };
+
+      prefetchNext();
     }
-  }, [currentIndex, displayTracks, prefetchPreviewUrl, isPreviewCached]);
+  }, [currentIndex, tracks, prefetchPreviewUrl, isPreviewCached]);
 
   const handlePlayClick = async (track, index) => {
-    const songWithPreview = await getPreviewUrl(track);
-    if (songWithPreview.preview_url) {
-      dispatch(
-        playFromContext({
-          contextType: activeContext,
-          trackIndex: index,
-          playlistData:
-            activeContext === "community_playlist"
-              ? activeCommunityPlaylist
-              : null,
-        })
-      );
+    if (!track) return;
+
+    try {
+      const songWithPreview = await getPreviewUrl(track);
+      if (songWithPreview?.preview_url) {
+        // If we're in recently played, use special handling
+        if (activeContext === "recently_played") {
+          dispatch(
+            playTrack({
+              track: songWithPreview,
+              fromContext: "recently_played",
+            })
+          );
+        } else {
+          dispatch(
+            playFromContext({
+              contextType: activeContext,
+              trackIndex: index,
+            })
+          );
+        }
+      } else {
+        console.warn("No preview URL available for track:", track.title);
+      }
+    } catch (error) {
+      console.error("Error getting preview URL:", error);
     }
   };
 
   const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return "--:--";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
@@ -152,44 +160,38 @@ const PlaylistPlayer = () => {
         </div>
 
         {/* Now Playing Section */}
-        {activeSong?.title ? (
+        {currentTrack?.title ? (
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <div className="flex items-center gap-3">
               <img
-                src={activeSong?.images?.coverart || placeholderImage}
-                alt={activeSong?.title}
+                src={currentTrack?.images?.coverart || placeholderImage}
+                alt={currentTrack?.title || "Unknown"}
                 className="w-20 h-20 rounded-lg shadow-lg"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = placeholderImage;
+                }}
               />
               <div className="flex-1 min-w-0">
                 <h4 className="text-white font-semibold truncate">
-                  {activeSong?.title}
+                  {currentTrack?.title || "Unknown Title"}
                 </h4>
                 <p className="text-white/60 text-sm truncate">
-                  {activeSong?.subtitle}
+                  {currentTrack?.subtitle || "Unknown Artist"}
                 </p>
 
                 {isPlaying && (
                   <div className="flex items-end gap-1 mt-2 h-6">
-                    <div
-                      className="w-1 bg-gradient-to-t from-[#14b8a6] to-[#0d9488] rounded-full animate-pulse"
-                      style={{ height: "60%", animationDelay: "0ms" }}
-                    />
-                    <div
-                      className="w-1 bg-gradient-to-t from-[#14b8a6] to-[#0d9488] rounded-full animate-pulse"
-                      style={{ height: "100%", animationDelay: "150ms" }}
-                    />
-                    <div
-                      className="w-1 bg-gradient-to-t from-[#14b8a6] to-[#0d9488] rounded-full animate-pulse"
-                      style={{ height: "80%", animationDelay: "300ms" }}
-                    />
-                    <div
-                      className="w-1 bg-gradient-to-t from-[#14b8a6] to-[#0d9488] rounded-full animate-pulse"
-                      style={{ height: "90%", animationDelay: "450ms" }}
-                    />
-                    <div
-                      className="w-1 bg-gradient-to-t from-[#14b8a6] to-[#0d9488] rounded-full animate-pulse"
-                      style={{ height: "70%", animationDelay: "600ms" }}
-                    />
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-1 bg-gradient-to-t from-[#14b8a6] to-[#0d9488] rounded-full animate-pulse"
+                        style={{
+                          height: `${60 + (i % 3) * 20}%`,
+                          animationDelay: `${i * 150}ms`,
+                        }}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -211,7 +213,7 @@ const PlaylistPlayer = () => {
               <button
                 onClick={handlePrevSong}
                 className="p-2 text-white hover:bg-white/10 rounded-full transition-all hover:scale-110"
-                disabled={displayTracks.length === 0}
+                disabled={tracks.length === 0}
               >
                 <BsFillSkipStartFill size={20} />
               </button>
@@ -230,7 +232,7 @@ const PlaylistPlayer = () => {
               <button
                 onClick={handleNextSong}
                 className="p-2 text-white hover:bg-white/10 rounded-full transition-all hover:scale-110"
-                disabled={displayTracks.length === 0}
+                disabled={tracks.length === 0}
               >
                 <BsFillSkipEndFill size={20} />
               </button>
@@ -253,7 +255,10 @@ const PlaylistPlayer = () => {
               onMouseEnter={() => setIsVolumeHovered(true)}
               onMouseLeave={() => setIsVolumeHovered(false)}
             >
-              <button className="text-white/60 hover:text-white transition-colors">
+              <button
+                className="text-white/60 hover:text-white transition-colors"
+                onClick={() => setVolume(volume === 0 ? 0.7 : 0)}
+              >
                 {volume === 0 ? (
                   <BsVolumeMute size={20} />
                 ) : volume < 0.5 ? (
@@ -307,29 +312,33 @@ const PlaylistPlayer = () => {
         <div className="px-6 py-3 flex items-center justify-between border-b border-white/5">
           <h4 className="text-white font-semibold flex items-center gap-2">
             <HiOutlineQueueList size={20} />
-            {currentContext?.name || "Track List"}
+            {contextName}
           </h4>
-          <span className="text-white/60 text-sm">
-            {displayTracks.length} tracks
-          </span>
+          <span className="text-white/60 text-sm">{tracks.length} tracks</span>
         </div>
 
         <div
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2"
         >
-          {displayTracks && displayTracks.length > 0 ? (
+          {tracks.length > 0 ? (
             <>
               <div className="space-y-1">
-                {displayTracks.map((track, index) => {
+                {tracks.map((track, index) => {
+                  if (!track) return null;
+
                   const isActive = currentIndex === index;
                   const isCurrentSong =
-                    activeSong?.key === track.key ||
-                    activeSong?.id === track.id;
+                    currentTrack?.key === track.key ||
+                    currentTrack?.id === track.id ||
+                    (currentTrack?.title === track.title &&
+                      currentTrack?.subtitle === track.subtitle);
+
+                  const trackId = track.key || track.id || track.track_id;
 
                   return (
                     <div
-                      key={track.key || track.id || index}
+                      key={trackId || `track-${index}`}
                       ref={isActive ? activeTrackRef : null}
                       className={`group flex items-center gap-3 p-4 rounded-xl transition-all duration-200 cursor-pointer relative overflow-hidden ${
                         isActive
@@ -351,9 +360,13 @@ const PlaylistPlayer = () => {
                       >
                         {isCurrentSong && isPlaying ? (
                           <div className="flex justify-center gap-[2px]">
-                            <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse" />
-                            <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
-                            <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
+                            {[...Array(3)].map((_, i) => (
+                              <div
+                                key={i}
+                                className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse"
+                                style={{ animationDelay: `${i * 75}ms` }}
+                              />
+                            ))}
                           </div>
                         ) : (
                           index + 1
@@ -366,7 +379,7 @@ const PlaylistPlayer = () => {
                       >
                         <img
                           src={track.images?.coverart || placeholderImage}
-                          alt={track.title}
+                          alt={track.title || "Unknown"}
                           className={`w-full h-full rounded-lg object-cover shadow-lg transition-all duration-300 ${
                             isCurrentSong
                               ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-[#0f0e2e]"
@@ -397,20 +410,18 @@ const PlaylistPlayer = () => {
                               : "text-white group-hover:text-[#14b8a6]"
                           }`}
                         >
-                          {track.title}
+                          {track.title || "Unknown Title"}
                         </p>
                         <p className="text-gray-400 text-sm truncate group-hover:text-gray-300 transition-colors">
-                          {track.subtitle}
+                          {track.subtitle || "Unknown Artist"}
                         </p>
                       </div>
 
                       <span className="text-gray-400 text-sm font-medium bg-black/20 px-2.5 py-1 rounded-lg group-hover:bg-black/30 transition-all">
-                        {track.duration_ms
-                          ? formatTime(track.duration_ms / 1000)
-                          : "--:--"}
+                        {formatTime((track.duration_ms || 0) / 1000)}
                       </span>
 
-                      {activeContext !== "community_playlist" && (
+                      {canModify && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -443,7 +454,7 @@ const PlaylistPlayer = () => {
                 })}
               </div>
 
-              {activeContext === "queue" && displayTracks.length > 0 && (
+              {activeContext === "queue" && tracks.length > 0 && (
                 <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -453,10 +464,10 @@ const PlaylistPlayer = () => {
                       <div>
                         <p className="text-white font-medium">Queue Summary</p>
                         <p className="text-gray-400 text-sm">
-                          {displayTracks.length} tracks •{" "}
+                          {tracks.length} tracks •{" "}
                           {Math.floor(
-                            displayTracks.reduce(
-                              (acc, t) => acc + (t.duration_ms || 0),
+                            tracks.reduce(
+                              (acc, t) => acc + (t?.duration_ms || 0),
                               0
                             ) / 60000
                           )}{" "}

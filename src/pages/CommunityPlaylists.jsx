@@ -7,7 +7,6 @@ import {
   useGetFeaturedPlaylistsQuery,
   useGetPlaylistTracksQuery,
 } from "../redux/services/spotifyCore";
-import { setCurrentPlaylist } from "../redux/features/playerSlice";
 
 const CommunityPlaylists = () => {
   const dispatch = useDispatch();
@@ -29,12 +28,6 @@ const CommunityPlaylists = () => {
 
     return lonelyHeartPlaylist || data.playlists[0];
   }, [data]);
-
-  useEffect(() => {
-    if (featuredPlaylist && activeContext !== "community_playlist") {
-      // Only set if not already in community playlist context
-    }
-  }, [featuredPlaylist, activeContext, dispatch]);
 
   if (isFetching) return <Loader title="Loading community playlists..." />;
   if (error) return <Error />;

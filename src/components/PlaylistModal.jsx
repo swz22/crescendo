@@ -6,7 +6,6 @@ import {
   replaceContext,
   setModalOpen,
   toggleShuffle,
-  toggleRepeat,
   addToQueue,
   playTrack,
 } from "../redux/features/playerSlice";
@@ -18,7 +17,6 @@ import { IoClose, IoArrowBack } from "react-icons/io5";
 import {
   BsMusicNoteBeamed,
   BsClock,
-  BsArrowRepeat,
   BsCalendar3,
   BsShuffle,
 } from "react-icons/bs";
@@ -28,7 +26,7 @@ import { useToast } from "../context/ToastContext";
 
 const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
-  const { activeSong, isPlaying, shuffle, repeat } = useSelector(
+  const { currentTrack, isPlaying, activeContext, currentIndex } = useSelector(
     (state) => state.player
   );
   const {
@@ -94,9 +92,9 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
       activeTrackRef.current &&
       scrollContainerRef.current &&
       tracks &&
-      isAnimating
+      isAnimating &&
+      activeContext === "community_playlist"
     ) {
-      // Small delay to ensure DOM is ready
       setTimeout(() => {
         const container = scrollContainerRef.current;
         const activeElement = activeTrackRef.current;
@@ -106,7 +104,6 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
           const elementTop = activeElement.offsetTop;
           const elementHeight = activeElement.clientHeight;
 
-          // Calculate scroll position to center the element
           const scrollTo = elementTop - containerHeight / 2 + elementHeight / 2;
 
           container.scrollTo({
@@ -116,7 +113,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         }
       }, 300);
     }
-  }, [activeSong, tracks, isAnimating]);
+  }, [currentTrack, tracks, isAnimating, activeContext]);
 
   const handleClose = () => {
     setIsAnimating(false);
@@ -124,15 +121,29 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   };
 
   const handlePlayClick = async (song, i) => {
-    // Pause current playback while fetching
-    if (isPlaying) {
-      dispatch(playPause(false));
-    }
+    // Individual track play - switches to queue
+    dispatch(playPause(false));
 
-    const handlePlayAll = async () => {
-      if (tracks && tracks.length > 0) {
+    try {
+      const songWithPreview = await getPreviewUrl(song);
+
+      if (songWithPreview?.preview_url) {
+        dispatch(playTrack({ track: songWithPreview }));
+        showToast("Added to queue");
+      } else {
+        showToast("No preview available for this track", "error");
+      }
+    } catch (error) {
+      console.error("Error getting preview URL:", error);
+      showToast("Error loading track preview", "error");
+    }
+  };
+
+  const handlePlayAll = async () => {
+    if (tracks && tracks.length > 0) {
+      try {
         const firstTrackWithPreview = await getPreviewUrl(tracks[0]);
-        if (firstTrackWithPreview.preview_url) {
+        if (firstTrackWithPreview?.preview_url) {
           const updatedTracks = [...tracks];
           updatedTracks[0] = firstTrackWithPreview;
 
@@ -144,27 +155,14 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               playlistData: { ...playlist, tracks: updatedTracks },
             })
           );
-          dispatch(playPause(true));
           showToast("Playing playlist");
+        } else {
+          showToast("No preview available for this track", "error");
         }
+      } catch (error) {
+        console.error("Error getting preview URL:", error);
+        showToast("Error loading track preview", "error");
       }
-    };
-
-    const songWithPreview = await getPreviewUrl(song);
-
-    if (songWithPreview.preview_url) {
-      // Update the song in the tracks array
-      const updatedTracks = [...tracks];
-      updatedTracks[i] = songWithPreview;
-
-      dispatch(
-        setActiveSong({
-          song: songWithPreview,
-          data: updatedTracks,
-          i: i,
-        })
-      );
-      dispatch(playPause(true));
     }
   };
 
@@ -185,6 +183,11 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const isTrackActive = (track, index) => {
+    if (activeContext !== "community_playlist") return false;
+    return currentIndex === index;
+  };
+
   return (
     <>
       {/* Backdrop - only covers main content area */}
@@ -194,12 +197,11 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         }`}
         onClick={handleBackdropClick}
         style={{
-          right: "420px", // Add more margin to ensure no overlap
+          right: "420px",
           backdropFilter: isAnimating ? "blur(8px)" : "blur(0px)",
           WebkitBackdropFilter: isAnimating ? "blur(8px)" : "blur(0px)",
         }}
       >
-        {/* Scale down effect for background content */}
         <div
           className={`absolute inset-0 transition-transform duration-300 ${
             isAnimating ? "scale-95 opacity-50" : "scale-100 opacity-100"
@@ -213,7 +215,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
           isAnimating ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{
-          maxWidth: "calc(100% - 420px)", // Add buffer to prevent overlap
+          maxWidth: "calc(100% - 420px)",
           boxShadow: isAnimating ? "10px 0 40px rgba(0,0,0,0.5)" : "none",
         }}
       >
@@ -301,7 +303,10 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 )}
                 {/* Play button overlay */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                  <div className="w-14 h-14 bg-[#14b8a6] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                  <div
+                    onClick={handlePlayAll}
+                    className="w-14 h-14 bg-[#14b8a6] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                  >
                     <svg
                       className="w-6 h-6 text-white translate-x-0.5"
                       fill="currentColor"
@@ -409,40 +414,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 {/* Play All / Add to Queue / Shuffle Buttons */}
                 <div className="flex gap-3 mb-6">
                   <button
-                    onClick={async () => {
-                      if (tracks && tracks.length > 0) {
-                        // Get preview URL for first track
-                        const firstTrackWithPreview = await getPreviewUrl(
-                          tracks[0]
-                        );
-
-                        if (firstTrackWithPreview.preview_url) {
-                          // Update the first track in the tracks array with the preview URL
-                          const tracksWithFirstPreview = [...tracks];
-                          tracksWithFirstPreview[0] = firstTrackWithPreview;
-
-                          dispatch(
-                            replaceQueue({
-                              songs: tracksWithFirstPreview,
-                              source: "playlist",
-                              startIndex: 0,
-                            })
-                          );
-
-                          // Small delay to ensure state is updated
-                          setTimeout(() => {
-                            dispatch(playPause(true));
-                          }, 100);
-
-                          showToast("Playing playlist");
-                        } else {
-                          showToast(
-                            "No preview available for this track",
-                            "error"
-                          );
-                        }
-                      }
-                    }}
+                    onClick={handlePlayAll}
                     className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                   >
                     <svg
@@ -469,21 +441,44 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     Add to Queue
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (tracks && tracks.length > 0) {
-                        const randomIndex = Math.floor(
-                          Math.random() * tracks.length
-                        );
-                        dispatch(
-                          replaceQueue({
-                            songs: tracks,
-                            source: "playlist",
-                            startIndex: randomIndex,
-                          })
-                        );
-                        dispatch(toggleShuffle());
-                        dispatch(playPause(true));
-                        showToast("Shuffling playlist");
+                        try {
+                          const randomIndex = Math.floor(
+                            Math.random() * tracks.length
+                          );
+                          const firstTrackWithPreview = await getPreviewUrl(
+                            tracks[randomIndex]
+                          );
+
+                          if (firstTrackWithPreview?.preview_url) {
+                            const tracksWithFirstPreview = [...tracks];
+                            tracksWithFirstPreview[randomIndex] =
+                              firstTrackWithPreview;
+
+                            dispatch(
+                              replaceContext({
+                                contextType: "community_playlist",
+                                tracks: tracksWithFirstPreview,
+                                startIndex: randomIndex,
+                                playlistData: {
+                                  ...playlist,
+                                  tracks: tracksWithFirstPreview,
+                                },
+                              })
+                            );
+                            dispatch(toggleShuffle());
+                            showToast("Shuffling playlist");
+                          } else {
+                            showToast(
+                              "No preview available for this track",
+                              "error"
+                            );
+                          }
+                        } catch (error) {
+                          console.error("Error getting preview URL:", error);
+                          showToast("Error loading track preview", "error");
+                        }
                       }
                     }}
                     className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border border-white/10"
@@ -508,18 +503,15 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
                 <div className="space-y-1">
                   {tracks.map((track, i) => {
-                    const isCurrentSong =
-                      activeSong?.key === track.key ||
-                      (activeSong?.id && activeSong.id === track.id) ||
-                      (activeSong?.title === track.title &&
-                        activeSong?.subtitle === track.subtitle);
+                    const isActive = isTrackActive(track, i);
+                    const isCurrentSong = isActive && isPlaying;
 
                     return (
                       <div
                         key={track.key || track.id || i}
-                        ref={isCurrentSong ? activeTrackRef : null}
+                        ref={isActive ? activeTrackRef : null}
                         className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200 group relative overflow-hidden ${
-                          isCurrentSong
+                          isActive
                             ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent border-l-4 border-[#14b8a6]"
                             : "hover:bg-white/5"
                         }`}
@@ -532,12 +524,12 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         {/* Track number */}
                         <span
                           className={`text-sm w-8 text-center flex-shrink-0 ${
-                            isCurrentSong
+                            isActive
                               ? "text-[#14b8a6] font-bold"
                               : "text-gray-500"
                           }`}
                         >
-                          {isCurrentSong && isPlaying ? (
+                          {isCurrentSong ? (
                             <div className="flex justify-center gap-[2px]">
                               <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse" />
                               <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
@@ -553,7 +545,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           src={track.images?.coverart || placeholderImage}
                           alt={track.title}
                           className={`w-12 h-12 rounded-lg ml-3 mr-4 flex-shrink-0 ${
-                            isCurrentSong ? "ring-2 ring-[#14b8a6]" : ""
+                            isActive ? "ring-2 ring-[#14b8a6]" : ""
                           }`}
                           onError={(e) => {
                             e.target.onerror = null;
@@ -565,7 +557,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         <div className="flex-1 min-w-0">
                           <p
                             className={`font-medium truncate ${
-                              isCurrentSong ? "text-[#14b8a6]" : "text-white"
+                              isActive ? "text-[#14b8a6]" : "text-white"
                             }`}
                           >
                             {track.title}
@@ -584,7 +576,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                           <PlayPause
                             isPlaying={isPlaying}
-                            activeSong={activeSong}
+                            activeSong={currentTrack}
                             song={track}
                             handlePause={handlePauseClick}
                             handlePlay={() => handlePlayClick(track, i)}
@@ -593,7 +585,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         </div>
 
                         {/* Now playing indicator */}
-                        {isCurrentSong && (
+                        {isActive && (
                           <div className="absolute top-1 right-4 bg-[#14b8a6] text-white text-xs px-2 py-0.5 rounded-full font-medium">
                             Now Playing
                           </div>

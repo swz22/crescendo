@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { store } from "../redux/store";
 import { addToQueue } from "../redux/features/playerSlice";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
