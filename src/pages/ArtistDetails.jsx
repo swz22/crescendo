@@ -5,7 +5,7 @@ import {
   useGetArtistDetailsQuery,
   useGetArtistTopTracksQuery,
 } from "../redux/services/spotifyCore";
-import { setActiveSong, playPause } from "../redux/features/playerSlice";
+import { playTrack, playPause } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useToast } from "../context/ToastContext";
 
@@ -40,19 +40,16 @@ const ArtistDetails = () => {
 
       if (songWithPreview.preview_url) {
         dispatch(
-          setActiveSong({
-            song: songWithPreview,
-            data: topTracks || [],
-            i: i,
+          playTrack({
+            track: songWithPreview,
+            source: "artist",
           })
         );
-        dispatch(playPause(true));
       } else {
         showToast("Preview not available for this track", "error");
       }
     } catch (error) {
       console.error("Error playing track:", error);
-      // Don't show generic error toast - let the specific error handling in getPreviewUrl handle it
     }
   };
 

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useSelector } from "react-redux"; // Add this import!
-import { usePlaylistManager } from "../hooks/usePlaylistManager";
+import { useSelector, useDispatch } from "react-redux";
+import { switchContext } from "../redux/features/playerSlice";
 import {
   HiOutlineQueueList,
   HiOutlineClock,
@@ -14,15 +14,10 @@ import { BsMusicNoteList } from "react-icons/bs";
 const PlaylistDropdown = ({ onManageClick }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const {
-    currentPlaylist,
-    getAllPlaylists,
-    handleSwitchPlaylist,
-    activePlaylistType,
-    activePlaylistId,
-  } = usePlaylistManager();
+  const dispatch = useDispatch();
 
-  const { queue } = useSelector((state) => state.player);
+  const { activeContext, contexts, activeCommunityPlaylist, playlists } =
+    useSelector((state) => state.player);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -39,25 +34,62 @@ const PlaylistDropdown = ({ onManageClick }) => {
     }
   }, [isOpen]);
 
-  const allPlaylists = getAllPlaylists();
-
   const getIcon = (type) => {
     switch (type) {
       case "queue":
         return <HiOutlineQueueList className="w-5 h-5 text-white" />;
-      case "recent":
+      case "recently_played":
         return <HiOutlineClock className="w-5 h-5 text-white" />;
-      case "playlist":
+      case "community_playlist":
         return <BsMusicNoteList className="w-5 h-5 text-white" />;
       default:
         return <BsMusicNoteList className="w-5 h-5 text-white" />;
     }
   };
 
-  const handlePlaylistSelect = (playlist) => {
-    handleSwitchPlaylist(playlist.id, playlist.type);
+  const getCurrentContextName = () => {
+    if (activeContext === "community_playlist") {
+      return activeCommunityPlaylist?.name || "Community Playlist";
+    }
+    return contexts[activeContext]?.name || "Unknown Context";
+  };
+
+  const getCurrentTrackCount = () => {
+    if (activeContext === "community_playlist") {
+      return activeCommunityPlaylist?.tracks?.length || 0;
+    }
+    return contexts[activeContext]?.tracks?.length || 0;
+  };
+
+  const handleContextSelect = (contextId) => {
+    dispatch(switchContext({ contextType: contextId }));
     setIsOpen(false);
   };
+
+  const getAllContexts = () => {
+    return [
+      {
+        id: "queue",
+        name: contexts.queue?.name || "Your Queue",
+        tracks: contexts.queue?.tracks || [],
+        type: "queue",
+      },
+      {
+        id: "recently_played",
+        name: contexts.recently_played?.name || "Recently Played",
+        tracks: contexts.recently_played?.tracks || [],
+        type: "recently_played",
+      },
+      ...playlists.map((playlist) => ({
+        id: playlist.id,
+        name: playlist.name,
+        tracks: contexts[playlist.id]?.tracks || playlist.tracks || [],
+        type: "playlist",
+      })),
+    ];
+  };
+
+  const allContexts = getAllContexts();
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -67,12 +99,12 @@ const PlaylistDropdown = ({ onManageClick }) => {
         className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all duration-200 group max-w-full"
       >
         <div className="flex items-center gap-2 min-w-0">
-          {getIcon(currentPlaylist.type)}
+          {getIcon(activeContext)}
           <span className="text-white font-medium truncate">
-            {currentPlaylist.name}
+            {getCurrentContextName()}
           </span>
           <span className="text-white/60 text-sm">
-            ({currentPlaylist.tracks?.length || 0})
+            ({getCurrentTrackCount()})
           </span>
         </div>
         <HiChevronDown
@@ -86,85 +118,69 @@ const PlaylistDropdown = ({ onManageClick }) => {
       {isOpen && (
         <div className="absolute top-full mt-2 w-72 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden z-50 animate-fadeIn">
           <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
-            {/* System Playlists */}
+            {/* System Contexts */}
             <div className="px-3 py-2">
               <p className="text-xs text-white/40 uppercase tracking-wider mb-2">
                 System
               </p>
-              {allPlaylists
-                .filter((p) => p.type !== "playlist")
-                .map((playlist) => {
-                  // Calculate correct track count
-                  const trackCount =
-                    playlist.type === "recent"
-                      ? queue.length
-                      : playlist.tracks?.length || 0;
-
-                  return (
-                    <button
-                      key={playlist.id}
-                      onClick={() => handlePlaylistSelect(playlist)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                        activePlaylistId === playlist.id &&
-                        activePlaylistType === playlist.type
-                          ? "bg-[#14b8a6]/20 text-[#14b8a6]"
-                          : "hover:bg-white/10 text-white"
-                      }`}
-                    >
-                      <div className="flex-shrink-0">
-                        {getIcon(playlist.type)}
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-medium">{playlist.name}</p>
-                        <p className="text-xs opacity-60">
-                          {trackCount} tracks
-                        </p>
-                      </div>
-                      {activePlaylistId === playlist.id &&
-                        activePlaylistType === playlist.type && (
-                          <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                        )}
-                    </button>
-                  );
-                })}
+              {allContexts
+                .filter((c) => c.type !== "playlist")
+                .map((context) => (
+                  <button
+                    key={context.id}
+                    onClick={() => handleContextSelect(context.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                      activeContext === context.id
+                        ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                        : "hover:bg-white/10 text-white"
+                    }`}
+                  >
+                    <div className="flex-shrink-0">{getIcon(context.type)}</div>
+                    <div className="flex-1 text-left">
+                      <p className="font-medium">{context.name}</p>
+                      <p className="text-xs opacity-60">
+                        {context.tracks.length} tracks
+                      </p>
+                    </div>
+                    {activeContext === context.id && (
+                      <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                    )}
+                  </button>
+                ))}
             </div>
 
             {/* User Playlists */}
-            {allPlaylists.filter((p) => p.type === "playlist").length > 0 && (
+            {allContexts.filter((c) => c.type === "playlist").length > 0 && (
               <>
                 <div className="border-t border-white/10 my-2" />
                 <div className="px-3 py-2">
                   <p className="text-xs text-white/40 uppercase tracking-wider mb-2">
                     Your Playlists
                   </p>
-                  {allPlaylists
-                    .filter((p) => p.type === "playlist")
-                    .map((playlist) => (
+                  {allContexts
+                    .filter((c) => c.type === "playlist")
+                    .map((context) => (
                       <button
-                        key={playlist.id}
-                        onClick={() => handlePlaylistSelect(playlist)}
+                        key={context.id}
+                        onClick={() => handleContextSelect(context.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                          activePlaylistId === playlist.id &&
-                          activePlaylistType === playlist.type
+                          activeContext === context.id
                             ? "bg-[#14b8a6]/20 text-[#14b8a6]"
                             : "hover:bg-white/10 text-white"
                         }`}
                       >
                         <div className="flex-shrink-0">
-                          {getIcon(playlist.type)}
+                          {getIcon(context.type)}
                         </div>
                         <div className="flex-1 text-left">
-                          <p className="font-medium truncate">
-                            {playlist.name}
-                          </p>
+                          <p className="font-medium truncate">{context.name}</p>
                           <p className="text-xs opacity-60">
-                            {playlist.tracks?.length || 0} tracks
+                            {context.tracks.length} tracks
                           </p>
                         </div>
-                        {activePlaylistId === playlist.id &&
-                          activePlaylistType === playlist.type && (
-                            <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                          )}
+                        {activeContext === context.id && (
+                          <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                        )}
                       </button>
                     ))}
                 </div>

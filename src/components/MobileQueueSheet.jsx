@@ -9,10 +9,10 @@ import {
 } from "react-icons/bs";
 import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
 import {
-  removeFromQueue,
-  navigateSong,
+  removeFromContext,
+  navigateInContext,
   playPause,
-  setActiveSong,
+  playFromContext,
   toggleShuffle,
   toggleRepeat,
 } from "../redux/features/playerSlice";
@@ -20,14 +20,42 @@ import { usePreviewUrl } from "../hooks/usePreviewUrl";
 
 const MobileQueueSheet = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const { queue, currentIndex, activeSong, isPlaying, shuffle, repeat } =
-    useSelector((state) => state.player);
-  const [sheetHeight, setSheetHeight] = useState(60); // Percentage
+  const {
+    activeContext,
+    contexts,
+    activeCommunityPlaylist,
+    activeSong,
+    isPlaying,
+    shuffle,
+    repeat,
+  } = useSelector((state) => state.player);
+
+  const [sheetHeight, setSheetHeight] = useState(60);
   const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
   const currentYRef = useRef(0);
   const sheetRef = useRef(null);
   const { prefetchPreviewUrl, isPreviewCached } = usePreviewUrl();
+
+  // Get current context tracks
+  const getCurrentTracks = () => {
+    if (activeContext === "community_playlist") {
+      return activeCommunityPlaylist?.tracks || [];
+    }
+    const context = contexts[activeContext];
+    return context?.tracks || [];
+  };
+
+  const getCurrentIndex = () => {
+    if (activeContext === "community_playlist") {
+      return activeCommunityPlaylist?.currentIndex || -1;
+    }
+    const context = contexts[activeContext];
+    return context?.currentIndex || -1;
+  };
+
+  const tracks = getCurrentTracks();
+  const currentIndex = getCurrentIndex();
 
   useEffect(() => {
     if (isOpen) {
@@ -64,7 +92,6 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
   const handleTouchEnd = () => {
     setIsDragging(false);
 
-    // Snap points
     if (sheetHeight < 40) {
       onClose();
     } else if (sheetHeight < 70) {
@@ -78,12 +105,14 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
     if (currentIndex === index) {
       dispatch(playPause(!isPlaying));
     } else {
-      const song = queue[index];
       dispatch(
-        setActiveSong({
-          song: song,
-          data: queue,
-          i: index,
+        playFromContext({
+          contextType: activeContext,
+          trackIndex: index,
+          playlistData:
+            activeContext === "community_playlist"
+              ? activeCommunityPlaylist
+              : null,
         })
       );
       dispatch(playPause(true));
@@ -91,11 +120,18 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
   };
 
   const handleNextSong = () => {
-    dispatch(navigateSong({ direction: "next" }));
+    dispatch(navigateInContext({ direction: "next" }));
   };
 
   const handlePrevSong = () => {
-    dispatch(navigateSong({ direction: "prev" }));
+    dispatch(navigateInContext({ direction: "prev" }));
+  };
+
+  const handleRemoveTrack = (index) => {
+    if (activeContext === "community_playlist") {
+      return; // Community playlists are read-only
+    }
+    dispatch(removeFromContext({ trackIndex: index }));
   };
 
   const formatDuration = (ms) => {
@@ -112,149 +148,132 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Full Screen Queue Overlay */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] z-[100] lg:hidden animate-slideUp">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={onClose}
-                className="p-2 -ml-2 rounded-lg hover:bg-white/10 transition-colors"
-              >
-                <HiX className="w-6 h-6 text-white" />
-              </button>
-              <div>
-                <h3 className="text-xl font-semibold text-white">
-                  Now Playing
-                </h3>
-                <p className="text-sm text-white/60">
-                  {queue.length} tracks in queue
-                </p>
-              </div>
-            </div>
-
-            {/* Shuffle/Repeat Controls */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => dispatch(toggleShuffle())}
-                className={`p-2 rounded-lg ${
-                  shuffle ? "bg-[#14b8a6]/20 text-[#14b8a6]" : "text-white/60"
-                }`}
-              >
-                <BsShuffle size={20} />
-              </button>
-              <button
-                onClick={() => dispatch(toggleRepeat())}
-                className={`p-2 rounded-lg ${
-                  repeat ? "bg-[#14b8a6]/20 text-[#14b8a6]" : "text-white/60"
-                }`}
-              >
-                <BsArrowRepeat size={20} />
-              </button>
+      <div className="fixed inset-0 bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] z-[100] lg:hidden animate-slideUp">
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              className="p-2 -ml-2 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <HiX className="w-6 h-6 text-white" />
+            </button>
+            <div>
+              <h3 className="text-xl font-semibold text-white">Now Playing</h3>
+              <p className="text-sm text-white/60">
+                {tracks.length} tracks in{" "}
+                {contexts[activeContext]?.name || "context"}
+              </p>
             </div>
           </div>
 
-          {/* Current Track Showcase */}
-          {activeSong && (
-            <div className="p-6 pb-4">
-              <div className="flex flex-col items-center">
-                <img
-                  src={activeSong.images?.coverart || placeholderImage}
-                  alt={activeSong.title}
-                  className="w-48 h-48 rounded-2xl shadow-2xl mb-6"
-                />
-                <h2 className="text-2xl font-bold text-white text-center mb-1">
-                  {activeSong.title}
-                </h2>
-                <p className="text-lg text-white/60 text-center">
-                  {activeSong.subtitle}
-                </p>
-              </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => dispatch(toggleShuffle())}
+              className={`p-2 rounded-lg ${
+                shuffle ? "bg-[#14b8a6]/20 text-[#14b8a6]" : "text-white/60"
+              }`}
+            >
+              <BsShuffle size={20} />
+            </button>
+            <button
+              onClick={() => dispatch(toggleRepeat())}
+              className={`p-2 rounded-lg ${
+                repeat ? "bg-[#14b8a6]/20 text-[#14b8a6]" : "text-white/60"
+              }`}
+            >
+              <BsArrowRepeat size={20} />
+            </button>
+          </div>
+        </div>
+
+        {activeSong && (
+          <div className="p-6 pb-4">
+            <div className="flex flex-col items-center">
+              <img
+                src={activeSong.images?.coverart || placeholderImage}
+                alt={activeSong.title}
+                className="w-48 h-48 rounded-2xl shadow-2xl mb-6"
+              />
+              <h2 className="text-2xl font-bold text-white text-center mb-1">
+                {activeSong.title}
+              </h2>
+              <p className="text-lg text-white/60 text-center">
+                {activeSong.subtitle}
+              </p>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Queue List */}
-          <div className="flex-1 overflow-y-auto pb-24">
-            {queue.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full p-8">
-                <HiOutlineViewList className="w-16 h-16 text-white/20 mb-4" />
-                <p className="text-white/60 text-center">
-                  Your queue is empty. Start playing some music!
-                </p>
-              </div>
-            ) : (
-              <div className="px-4 space-y-2">
-                <h4 className="text-sm font-medium text-white/60 uppercase tracking-wider px-2 py-2">
-                  Up Next
-                </h4>
-                {queue.map((track, index) => {
-                  const isActive = currentIndex === index;
-                  const isNext = currentIndex + 1 === index;
+        <div className="flex-1 overflow-y-auto pb-24">
+          {tracks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full p-8">
+              <HiOutlineViewList className="w-16 h-16 text-white/20 mb-4" />
+              <p className="text-white/60 text-center">
+                No tracks in current context
+              </p>
+            </div>
+          ) : (
+            <div className="px-4 space-y-2">
+              <h4 className="text-sm font-medium text-white/60 uppercase tracking-wider px-2 py-2">
+                {contexts[activeContext]?.name || "Tracks"}
+              </h4>
+              {tracks.map((track, index) => {
+                const isActive = currentIndex === index;
 
-                  return (
-                    <button
-                      key={track.key || index}
-                      onClick={() => handlePlayClick(index)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
-                        isActive
-                          ? "bg-[#14b8a6]/20 scale-[1.02]"
-                          : isNext
-                          ? "bg-white/10"
-                          : "hover:bg-white/5 active:bg-white/10"
+                return (
+                  <button
+                    key={track.key || track.id || index}
+                    onClick={() => handlePlayClick(index)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                      isActive
+                        ? "bg-[#14b8a6]/20 scale-[1.02]"
+                        : "hover:bg-white/5 active:bg-white/10"
+                    }`}
+                  >
+                    <span
+                      className={`text-sm w-6 text-center ${
+                        isActive ? "text-[#14b8a6] font-bold" : "text-white/40"
                       }`}
                     >
-                      {/* Track Number */}
-                      <span
-                        className={`text-sm w-6 text-center ${
-                          isActive
-                            ? "text-[#14b8a6] font-bold"
-                            : "text-white/40"
+                      {index + 1}
+                    </span>
+
+                    <img
+                      src={track.images?.coverart || placeholderImage}
+                      alt={track.title}
+                      className="w-12 h-12 rounded-lg"
+                    />
+                    <div className="flex-1 text-left">
+                      <p
+                        className={`font-medium truncate ${
+                          isActive ? "text-[#14b8a6]" : "text-white"
                         }`}
                       >
-                        {index + 1}
-                      </span>
+                        {track.title}
+                      </p>
+                      <p className="text-sm text-white/60 truncate">
+                        {track.subtitle}
+                      </p>
+                    </div>
 
-                      {/* Track Info */}
-                      <img
-                        src={track.images?.coverart || placeholderImage}
-                        alt={track.title}
-                        className="w-12 h-12 rounded-lg"
-                      />
-                      <div className="flex-1 text-left">
-                        <p
-                          className={`font-medium truncate ${
-                            isActive ? "text-[#14b8a6]" : "text-white"
-                          }`}
-                        >
-                          {track.title}
-                        </p>
-                        <p className="text-sm text-white/60 truncate">
-                          {track.subtitle}
-                        </p>
-                      </div>
-
-                      {/* Remove Button */}
+                    {activeContext !== "community_playlist" && (
                       <div
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
-                          dispatch(removeFromQueue({ index }));
+                          handleRemoveTrack(index);
                         }}
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Remove from queue"
                       >
                         <HiX className="w-4 h-4 text-white/40" />
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </>
   );
 };

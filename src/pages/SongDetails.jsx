@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { DetailsHeader, Error, Loader, RelatedSongs } from "../components";
-import { setActiveSong, playPause } from "../redux/features/playerSlice";
+import { playTrack, playPause } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import {
   useGetSongDetailsQuery,
@@ -44,13 +44,11 @@ const SongDetails = () => {
 
     if (songWithPreview.preview_url) {
       dispatch(
-        setActiveSong({
-          song: songWithPreview,
-          data: relatedData || [],
-          i,
+        playTrack({
+          track: songWithPreview,
+          source: "song_details",
         })
       );
-      dispatch(playPause(true));
     } else {
       console.error("No preview available for this track");
     }

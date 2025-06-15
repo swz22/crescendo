@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  setActiveSong,
+  playTrack,
   playPause,
   addToQueue,
-  replaceQueue,
+  replaceContext,
   toggleShuffle,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -90,7 +90,6 @@ const AlbumDetails = () => {
   if (albumError || tracksError) return <Error />;
 
   const handlePlayClick = async (track, index) => {
-    // Ensure track has album art
     const trackWithAlbumArt = {
       ...track,
       images: {
@@ -107,24 +106,12 @@ const AlbumDetails = () => {
     const songWithPreview = await getPreviewUrl(trackWithAlbumArt);
 
     if (songWithPreview.preview_url) {
-      // Update all tracks to have album art
-      const allTracksWithArt = tracks.map((t) => ({
-        ...t,
-        images: {
-          ...t.images,
-          coverart: t.images?.coverart || albumData?.images?.[0]?.url,
-          background: t.images?.background || albumData?.images?.[0]?.url,
-        },
-      }));
-
       dispatch(
-        setActiveSong({
-          song: songWithPreview,
-          data: allTracksWithArt,
-          i: index,
+        playTrack({
+          track: songWithPreview,
+          source: "album",
         })
       );
-      dispatch(playPause(true));
     }
   };
 
@@ -142,21 +129,26 @@ const AlbumDetails = () => {
         },
       }));
 
-      // Get preview URL for first track
       const firstTrackWithPreview = await getPreviewUrl(tracksWithAlbumArt[0]);
 
       if (firstTrackWithPreview.preview_url) {
-        // Update the first track in the array
         tracksWithAlbumArt[0] = firstTrackWithPreview;
 
         dispatch(
-          setActiveSong({
-            song: firstTrackWithPreview,
-            data: tracksWithAlbumArt,
-            i: 0,
+          replaceContext({
+            contextType: "queue",
+            tracks: tracksWithAlbumArt,
+            startIndex: 0,
           })
         );
-        dispatch(playPause(true));
+
+        setTimeout(() => {
+          dispatch(playPause(true));
+        }, 100);
+
+        showToast("Playing album");
+      } else {
+        showToast("No preview available for this track", "error");
       }
     }
   };

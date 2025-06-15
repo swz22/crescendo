@@ -2,13 +2,12 @@ import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   playPause,
-  setActiveSong,
+  playFromContext,
+  replaceContext,
   setModalOpen,
-  setCurrentPlaylist,
   toggleShuffle,
   toggleRepeat,
   addToQueue,
-  replaceQueue,
   playTrack,
 } from "../redux/features/playerSlice";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
@@ -129,6 +128,27 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     if (isPlaying) {
       dispatch(playPause(false));
     }
+
+    const handlePlayAll = async () => {
+      if (tracks && tracks.length > 0) {
+        const firstTrackWithPreview = await getPreviewUrl(tracks[0]);
+        if (firstTrackWithPreview.preview_url) {
+          const updatedTracks = [...tracks];
+          updatedTracks[0] = firstTrackWithPreview;
+
+          dispatch(
+            replaceContext({
+              contextType: "community_playlist",
+              tracks: updatedTracks,
+              startIndex: 0,
+              playlistData: { ...playlist, tracks: updatedTracks },
+            })
+          );
+          dispatch(playPause(true));
+          showToast("Playing playlist");
+        }
+      }
+    };
 
     const songWithPreview = await getPreviewUrl(song);
 

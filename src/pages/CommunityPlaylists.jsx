@@ -11,7 +11,7 @@ import { setCurrentPlaylist } from "../redux/features/playerSlice";
 
 const CommunityPlaylists = () => {
   const dispatch = useDispatch();
-  const { currentPlaylist } = useSelector((state) => state.player);
+  const { activeContext } = useSelector((state) => state.player);
   const { data, isFetching, error } = useGetFeaturedPlaylistsQuery();
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [selectedMosaicImages, setSelectedMosaicImages] = useState([]);
@@ -30,12 +30,11 @@ const CommunityPlaylists = () => {
     return lonelyHeartPlaylist || data.playlists[0];
   }, [data]);
 
-  // Auto-load featured playlist as current if none selected
   useEffect(() => {
-    if (featuredPlaylist && !currentPlaylist) {
-      dispatch(setCurrentPlaylist(featuredPlaylist));
+    if (featuredPlaylist && activeContext !== "community_playlist") {
+      // Only set if not already in community playlist context
     }
-  }, [featuredPlaylist, currentPlaylist, dispatch]);
+  }, [featuredPlaylist, activeContext, dispatch]);
 
   if (isFetching) return <Loader title="Loading community playlists..." />;
   if (error) return <Error />;

@@ -1,469 +1,459 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-// LocalStorage helpers
-const QUEUE_STORAGE_KEY = "crescendo_queue_state";
+// Storage keys
+const STORAGE_KEYS = {
+  playbackState: "crescendo_playback_state",
+  playlists: "crescendo_playlists",
+  recentlyPlayed: "crescendo_recently_played",
+};
 
-const loadFromLocalStorage = (key) => {
+// Storage helpers
+const loadFromStorage = (key) => {
   try {
-    const stored = localStorage.getItem(`crescendo_${key}`);
+    const stored = localStorage.getItem(key);
     return stored ? JSON.parse(stored) : null;
   } catch (error) {
-    console.error(`Failed to load ${key} from localStorage:`, error);
+    console.error(`Failed to load ${key}:`, error);
     return null;
   }
 };
 
-const saveQueueState = (state) => {
+const saveToStorage = (key, data) => {
   try {
-    const queueState = {
-      queue: state.queue,
-      currentIndex: state.currentIndex,
-      queueSource: state.queueSource,
-      queueName: state.queueName,
-      isPlaying: state.isPlaying,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queueState));
+    localStorage.setItem(key, JSON.stringify(data));
   } catch (error) {
-    console.warn("Failed to save queue state:", error);
+    console.error(`Failed to save ${key}:`, error);
   }
 };
 
-// Load persisted queue on init
-const loadPersistedQueue = () => {
-  const stored = loadFromLocalStorage("queue_state");
-  if (
-    stored &&
-    stored.timestamp &&
-    Date.now() - stored.timestamp < 24 * 60 * 60 * 1000
-  ) {
-    // Ensure we have valid data
-    const queue = stored.queue || [];
-    const currentIndex = stored.currentIndex ?? -1; // Use ?? to handle 0 properly
+// Context types
+const CONTEXT_TYPES = {
+  QUEUE: "queue",
+  PLAYLIST: "playlist",
+  COMMUNITY_PLAYLIST: "community_playlist",
+  RECENTLY_PLAYED: "recently_played",
+};
 
+// Helper: Remove duplicates by track ID
+const removeDuplicates = (tracks, newTrack) => {
+  const newTrackId = newTrack?.key || newTrack?.id || newTrack?.track_id;
+  return tracks.filter((track) => {
+    const trackId = track?.key || track?.id || track?.track_id;
+    return trackId !== newTrackId;
+  });
+};
+
+// Helper: Find track index
+const findTrackIndex = (tracks, targetTrack) => {
+  const targetId = targetTrack?.key || targetTrack?.id || targetTrack?.track_id;
+  return tracks.findIndex((track) => {
+    const trackId = track?.key || track?.id || track?.track_id;
+    return trackId === targetId;
+  });
+};
+
+// Load persisted state
+const loadPersistedState = () => {
+  const playbackState = loadFromStorage(STORAGE_KEYS.playbackState);
+  const playlists = loadFromStorage(STORAGE_KEYS.playlists) || [];
+  const recentlyPlayed = loadFromStorage(STORAGE_KEYS.recentlyPlayed) || [];
+
+  // Validate and return safe defaults
+  if (
+    playbackState &&
+    playbackState.timestamp &&
+    Date.now() - playbackState.timestamp < 24 * 60 * 60 * 1000
+  ) {
     return {
-      queue: queue,
-      currentIndex: currentIndex,
-      queueSource: stored.queueSource,
-      queueName: stored.queueName || "Your Queue",
-      // Set activeSong even for index 0
-      activeSong:
-        currentIndex >= 0 && queue[currentIndex] ? queue[currentIndex] : {},
-      isActive: currentIndex >= 0 && queue.length > 0,
-      // Initialize empty shuffleOrder - will be regenerated if shuffle is on
-      shuffleOrder: [],
-      // Never restore playing state - always start paused
-      wasPlaying: stored.isPlaying || false,
+      ...playbackState,
+      playlists,
+      recentlyPlayed,
+      isPlaying: false, // Never auto-resume playback
     };
   }
+
   return {
-    queue: [],
-    currentIndex: -1,
-    queueSource: null,
-    queueName: "Your Queue",
+    // Playback contexts
+    contexts: {
+      [CONTEXT_TYPES.QUEUE]: {
+        tracks: [],
+        name: "Your Queue",
+        currentIndex: -1,
+      },
+      [CONTEXT_TYPES.RECENTLY_PLAYED]: {
+        tracks: recentlyPlayed.slice(0, 20),
+        name: "Recently Played",
+        currentIndex: -1,
+      },
+    },
+
+    // Active context
+    activeContext: CONTEXT_TYPES.QUEUE,
+    activeCommunityPlaylist: null,
+
+    // Current playback
     activeSong: {},
+    isPlaying: false,
     isActive: false,
-    shuffleOrder: [],
-    wasPlaying: false,
+
+    // Playback modes
+    shuffle: false,
+    repeat: false,
+
+    // Custom playlists
+    playlists,
+    recentlyPlayed,
+
+    // UI state
+    genreListId: "POP",
+    isModalOpen: false,
+
+    // Legacy support (will be gradually removed)
+    queue: [],
+    currentSongs: [],
+    currentIndex: -1,
   };
 };
 
-// Helper functions
-const generateShuffleOrder = (length, currentIndex) => {
-  const indices = Array.from({ length }, (_, i) => i).filter(
-    (i) => i !== currentIndex
-  );
-
-  // Fisher-Yates shuffle
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
-  }
-
-  return indices;
+// Save state
+const savePlaybackState = (state) => {
+  const toSave = {
+    contexts: state.contexts,
+    activeContext: state.activeContext,
+    activeCommunityPlaylist: state.activeCommunityPlaylist,
+    activeSong: state.activeSong,
+    isActive: state.isActive,
+    shuffle: state.shuffle,
+    repeat: state.repeat,
+    timestamp: Date.now(),
+  };
+  saveToStorage(STORAGE_KEYS.playbackState, toSave);
 };
 
-const addToHistory = (state, song) => {
-  if (!song || !song.title) return;
-
-  const songKey = song.key || song.id || song.track_id;
-  state.recentlyPlayed = [
-    song,
-    ...state.recentlyPlayed.filter((s) => {
-      const sKey = s.key || s.id || s.track_id;
-      return sKey !== songKey;
-    }),
-  ].slice(0, 50); // Keep last 50
-
-  // Save to localStorage
-  try {
-    localStorage.setItem(
-      "crescendo_recentlyPlayed",
-      JSON.stringify(state.recentlyPlayed)
-    );
-  } catch (error) {
-    console.error("Failed to save recently played:", error);
-  }
-};
-
-// Load playlists from localStorage
-const loadPlaylistsFromStorage = () => {
-  try {
-    const stored = localStorage.getItem("crescendo_playlists");
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (error) {
-    console.error("Failed to load playlists:", error);
-  }
-  return [];
-};
-
-// Save playlists to localStorage
-const savePlaylistsToStorage = (playlists) => {
-  try {
-    localStorage.setItem("crescendo_playlists", JSON.stringify(playlists));
-  } catch (error) {
-    console.error("Failed to save playlists:", error);
-  }
-};
-
-const persistedQueue = loadPersistedQueue();
-
-const initialState = {
-  // Unified queue - single source of truth
-  queue: persistedQueue.queue,
-  currentIndex: persistedQueue.currentIndex,
-
-  // Playback state
-  isActive: persistedQueue.isActive,
-  isPlaying: false, // Never auto-play on refresh
-  activeSong: persistedQueue.activeSong || {},
-
-  // Playback modes
-  shuffle: false,
-  shuffleOrder: [],
-  repeat: false,
-
-  // History
-  recentlyPlayed: loadFromLocalStorage("recentlyPlayed") || [],
-
-  // UI state
-  genreListId: "POP",
-  isModalOpen: false,
-
-  // Playlist management
-  playlists: loadPlaylistsFromStorage(),
-  activePlaylistId: null,
-  activePlaylistType: "queue",
-
-  // Queue metadata
-  queueSource: persistedQueue.queueSource,
-  queueName: persistedQueue.queueName,
-
-  // Legacy state (kept for compatibility)
-  currentSongs: persistedQueue.queue,
-  currentPlaylist: null,
-  playlistContext: null,
-};
-
-if (initialState.shuffle && initialState.queue.length > 1) {
-  initialState.shuffleOrder = generateShuffleOrder(
-    initialState.queue.length,
-    initialState.currentIndex
-  );
-}
+// Initialize state
+const initialState = loadPersistedState();
 
 const playerSlice = createSlice({
   name: "player",
   initialState,
   reducers: {
-    // Main play action
+    // Core playback action - handles context switching automatically
     playTrack: (state, action) => {
-      const { track, source } = action.payload;
+      const { track, source = "manual" } = action.payload;
 
-      // Find if track exists in queue
-      const existingIndex = state.queue.findIndex(
-        (s) => (s.key || s.id) === (track.key || track.id)
-      );
+      // Always switch to queue context and add track
+      state.activeContext = CONTEXT_TYPES.QUEUE;
+      state.activeCommunityPlaylist = null;
 
-      if (existingIndex !== -1) {
-        // Track exists, just play it
-        state.currentIndex = existingIndex;
-        state.activeSong = state.queue[existingIndex];
-      } else {
-        // Add to queue and play
-        state.queue.push(track);
-        state.currentIndex = state.queue.length - 1;
-        state.activeSong = track;
-      }
+      const queueContext = state.contexts[CONTEXT_TYPES.QUEUE];
 
+      // Remove duplicates and add to end
+      queueContext.tracks = removeDuplicates(queueContext.tracks, track);
+      queueContext.tracks.push(track);
+      queueContext.currentIndex = queueContext.tracks.length - 1;
+
+      // Set as active song
+      state.activeSong = track;
       state.isActive = true;
       state.isPlaying = true;
-      state.queueSource = source || "manual";
+
+      // Add to recently played
+      state.recentlyPlayed = removeDuplicates(state.recentlyPlayed, track);
+      state.recentlyPlayed.unshift(track);
+      state.recentlyPlayed = state.recentlyPlayed.slice(0, 20);
+
+      // Update recently played context
+      state.contexts[CONTEXT_TYPES.RECENTLY_PLAYED].tracks = [
+        ...state.recentlyPlayed,
+      ];
 
       // Update legacy state
-      state.currentSongs = state.queue;
+      state.queue = queueContext.tracks;
+      state.currentSongs = queueContext.tracks;
+      state.currentIndex = queueContext.currentIndex;
 
-      // Add to history
-      addToHistory(state, track);
-
-      // Handle shuffle
-      if (state.shuffle && state.queue.length > 1) {
-        state.shuffleOrder = generateShuffleOrder(
-          state.queue.length,
-          state.currentIndex
-        );
-      }
-
-      // Persist state
-      saveQueueState(state);
+      savePlaybackState(state);
+      saveToStorage(STORAGE_KEYS.recentlyPlayed, state.recentlyPlayed);
     },
 
-    setActiveSong: (state, action) => {
-      const { song, data, i } = action.payload;
+    // Play from specific context position
+    playFromContext: (state, action) => {
+      const { contextType, trackIndex, playlistData = null } = action.payload;
 
-      // Update active song
-      state.activeSong = song;
+      let context;
 
-      // Add to history
-      addToHistory(state, song);
-
-      // Update queue if new data provided
-      if (data && Array.isArray(data)) {
-        state.queue = data;
-        state.currentIndex = i || 0;
-        state.currentSongs = data; // Legacy support
-      } else if (
-        !state.queue.some((s) => (s.key || s.id) === (song.key || song.id))
-      ) {
-        // Add single song to queue if not exists
-        state.queue.push(song);
-        state.currentIndex = state.queue.length - 1;
+      if (contextType === CONTEXT_TYPES.COMMUNITY_PLAYLIST && playlistData) {
+        // Set up community playlist context
+        state.activeCommunityPlaylist = {
+          ...playlistData,
+          currentIndex: trackIndex,
+        };
+        context = state.activeCommunityPlaylist;
+        state.activeContext = CONTEXT_TYPES.COMMUNITY_PLAYLIST;
       } else {
-        // Find and set current index
-        state.currentIndex = state.queue.findIndex(
-          (s) => (s.key || s.id) === (song.key || song.id)
-        );
+        context = state.contexts[contextType];
+        if (!context) return;
+        state.activeContext = contextType;
+        state.activeCommunityPlaylist = null;
       }
 
-      state.isActive = true;
+      if (trackIndex >= 0 && trackIndex < context.tracks.length) {
+        context.currentIndex = trackIndex;
+        const track = context.tracks[trackIndex];
 
-      // Handle shuffle
-      if (state.shuffle && state.queue.length > 1) {
-        state.shuffleOrder = generateShuffleOrder(
-          state.queue.length,
-          state.currentIndex
-        );
+        state.activeSong = track;
+        state.isActive = true;
+        state.isPlaying = true;
+
+        // Add to recently played
+        state.recentlyPlayed = removeDuplicates(state.recentlyPlayed, track);
+        state.recentlyPlayed.unshift(track);
+        state.recentlyPlayed = state.recentlyPlayed.slice(0, 20);
+
+        // Update recently played context
+        state.contexts[CONTEXT_TYPES.RECENTLY_PLAYED].tracks = [
+          ...state.recentlyPlayed,
+        ];
+
+        // Update legacy state
+        state.queue = context.tracks;
+        state.currentSongs = context.tracks;
+        state.currentIndex = context.currentIndex;
+
+        savePlaybackState(state);
+        saveToStorage(STORAGE_KEYS.recentlyPlayed, state.recentlyPlayed);
       }
-
-      // Persist state
-      saveQueueState(state);
     },
 
-    navigateSong: (state, action) => {
+    // Navigate within current context
+    navigateInContext: (state, action) => {
       const { direction } = action.payload;
 
-      if (state.queue.length === 0) return;
+      let context;
+      if (state.activeContext === CONTEXT_TYPES.COMMUNITY_PLAYLIST) {
+        context = state.activeCommunityPlaylist;
+      } else {
+        context = state.contexts[state.activeContext];
+      }
+
+      if (!context || context.tracks.length === 0) return;
 
       let newIndex;
 
-      if (state.shuffle && state.shuffleOrder.length > 0) {
-        // Shuffle navigation
-        const currentShuffleIndex = state.shuffleOrder.indexOf(
-          state.currentIndex
-        );
-
-        if (direction === "next") {
-          const nextShuffleIndex =
-            (currentShuffleIndex + 1) % state.shuffleOrder.length;
-          newIndex = state.shuffleOrder[nextShuffleIndex];
-        } else {
-          const prevShuffleIndex = currentShuffleIndex - 1;
-          newIndex =
-            state.shuffleOrder[
-              prevShuffleIndex >= 0
-                ? prevShuffleIndex
-                : state.shuffleOrder.length - 1
-            ];
+      if (direction === "next") {
+        newIndex = (context.currentIndex + 1) % context.tracks.length;
+        if (newIndex === 0 && !state.repeat) {
+          state.isPlaying = false;
+          return;
         }
       } else {
-        // Sequential navigation
-        if (direction === "next") {
-          newIndex = (state.currentIndex + 1) % state.queue.length;
-          if (newIndex === 0 && !state.repeat) {
-            state.isPlaying = false;
-            return;
-          }
-        } else {
-          newIndex = state.currentIndex - 1;
-          if (newIndex < 0) {
-            newIndex = state.repeat ? state.queue.length - 1 : 0;
-          }
+        newIndex = context.currentIndex - 1;
+        if (newIndex < 0) {
+          newIndex = state.repeat ? context.tracks.length - 1 : 0;
         }
       }
 
-      state.currentIndex = newIndex;
-      state.activeSong = state.queue[newIndex];
-      addToHistory(state, state.activeSong);
+      context.currentIndex = newIndex;
+      const track = context.tracks[newIndex];
 
-      // Persist state
-      saveQueueState(state);
+      state.activeSong = track;
+
+      // Add to recently played
+      state.recentlyPlayed = removeDuplicates(state.recentlyPlayed, track);
+      state.recentlyPlayed.unshift(track);
+      state.recentlyPlayed = state.recentlyPlayed.slice(0, 20);
+
+      // Update recently played context
+      state.contexts[CONTEXT_TYPES.RECENTLY_PLAYED].tracks = [
+        ...state.recentlyPlayed,
+      ];
+
+      // Update legacy state
+      state.queue = context.tracks;
+      state.currentSongs = context.tracks;
+      state.currentIndex = context.currentIndex;
+
+      savePlaybackState(state);
+      saveToStorage(STORAGE_KEYS.recentlyPlayed, state.recentlyPlayed);
     },
 
+    // Switch active context without playing
+    switchContext: (state, action) => {
+      const { contextType, playlistData = null } = action.payload;
+
+      if (contextType === CONTEXT_TYPES.COMMUNITY_PLAYLIST && playlistData) {
+        state.activeCommunityPlaylist = {
+          ...playlistData,
+          currentIndex: -1,
+        };
+        state.activeContext = CONTEXT_TYPES.COMMUNITY_PLAYLIST;
+      } else if (state.contexts[contextType]) {
+        state.activeContext = contextType;
+        state.activeCommunityPlaylist = null;
+      }
+
+      savePlaybackState(state);
+    },
+
+    // Add track to queue context
     addToQueue: (state, action) => {
-      const { song, playNext = false } = action.payload;
-      const songId = song.key || song.id || song.track_id;
+      const { track, playNext = false } = action.payload;
+      const queueContext = state.contexts[CONTEXT_TYPES.QUEUE];
 
-      // Find if song already exists in queue
-      const existingIndex = state.queue.findIndex(
-        (s) => (s.key || s.id || s.track_id) === songId
-      );
+      // Remove duplicates
+      queueContext.tracks = removeDuplicates(queueContext.tracks, track);
 
-      // Remove from current position if exists
-      if (existingIndex !== -1) {
-        state.queue.splice(existingIndex, 1);
-
-        // Adjust currentIndex if needed
-        if (existingIndex < state.currentIndex) {
-          state.currentIndex--;
-        } else if (existingIndex === state.currentIndex) {
-          // Handle edge case where we're removing the current song
-          state.currentIndex = Math.min(
-            state.currentIndex,
-            state.queue.length - 1
-          );
-        }
-      }
-
-      // Add to new position
-      if (playNext && state.currentIndex >= 0) {
-        // Insert after current song
-        const insertIndex = state.currentIndex + 1;
-        state.queue.splice(insertIndex, 0, song);
-
-        // If we removed a song before the insert position, adjust
-        if (existingIndex !== -1 && existingIndex <= state.currentIndex) {
-          // No adjustment needed, already handled above
-        }
+      if (playNext && queueContext.currentIndex >= 0) {
+        queueContext.tracks.splice(queueContext.currentIndex + 1, 0, track);
       } else {
-        // Add to end
-        state.queue.push(song);
+        queueContext.tracks.push(track);
       }
 
-      // Update shuffle order if active
-      if (state.shuffle && state.queue.length > 1) {
-        state.shuffleOrder = generateShuffleOrder(
-          state.queue.length,
-          state.currentIndex
-        );
+      // Update legacy state if queue is active
+      if (state.activeContext === CONTEXT_TYPES.QUEUE) {
+        state.queue = queueContext.tracks;
+        state.currentSongs = queueContext.tracks;
+      }
+
+      savePlaybackState(state);
+    },
+
+    // Remove track from current context
+    removeFromContext: (state, action) => {
+      const { trackIndex } = action.payload;
+
+      let context;
+      if (state.activeContext === CONTEXT_TYPES.COMMUNITY_PLAYLIST) {
+        return; // Community playlists are read-only
+      } else {
+        context = state.contexts[state.activeContext];
+      }
+
+      if (!context || trackIndex < 0 || trackIndex >= context.tracks.length)
+        return;
+
+      context.tracks.splice(trackIndex, 1);
+
+      // Adjust current index
+      if (trackIndex < context.currentIndex) {
+        context.currentIndex--;
+      } else if (trackIndex === context.currentIndex) {
+        if (context.tracks.length === 0) {
+          context.currentIndex = -1;
+          state.activeSong = {};
+          state.isActive = false;
+          state.isPlaying = false;
+        } else {
+          context.currentIndex = Math.min(
+            context.currentIndex,
+            context.tracks.length - 1
+          );
+          state.activeSong = context.tracks[context.currentIndex] || {};
+        }
       }
 
       // Update legacy state
-      state.currentSongs = state.queue;
+      state.queue = context.tracks;
+      state.currentSongs = context.tracks;
+      state.currentIndex = context.currentIndex;
 
-      saveQueueState(state);
+      savePlaybackState(state);
     },
 
-    removeFromQueue: (state, action) => {
-      const { index } = action.payload;
-
-      if (index >= 0 && index < state.queue.length) {
-        state.queue.splice(index, 1);
-
-        // Adjust current index
-        if (index < state.currentIndex) {
-          state.currentIndex--;
-        } else if (index === state.currentIndex) {
-          if (state.queue.length === 0) {
-            state.currentIndex = -1;
-            state.activeSong = {};
-            state.isActive = false;
-            state.isPlaying = false;
-          } else {
-            state.currentIndex = Math.min(
-              state.currentIndex,
-              state.queue.length - 1
-            );
-            state.activeSong = state.queue[state.currentIndex] || {};
-          }
-        }
-
-        // Regenerate shuffle if active
-        if (state.shuffle && state.queue.length > 1) {
-          state.shuffleOrder = generateShuffleOrder(
-            state.queue.length,
-            state.currentIndex
-          );
-        }
-
-        saveQueueState(state);
-      }
-    },
-
+    // Clear queue context
     clearQueue: (state) => {
-      state.queue = [];
-      state.currentIndex = -1;
-      state.activeSong = {};
-      state.isActive = false;
-      state.isPlaying = false;
-      state.shuffleOrder = [];
-      state.currentSongs = []; // Legacy support
+      const queueContext = state.contexts[CONTEXT_TYPES.QUEUE];
+      queueContext.tracks = [];
+      queueContext.currentIndex = -1;
 
-      saveQueueState(state);
+      if (state.activeContext === CONTEXT_TYPES.QUEUE) {
+        state.activeSong = {};
+        state.isActive = false;
+        state.isPlaying = false;
+        state.queue = [];
+        state.currentSongs = [];
+        state.currentIndex = -1;
+      }
+
+      savePlaybackState(state);
     },
 
-    replaceQueue: (state, action) => {
+    // Replace entire context
+    replaceContext: (state, action) => {
       const {
-        songs,
+        contextType,
+        tracks,
         startIndex = 0,
-        source = null,
-        name = "Your Queue",
+        playlistData = null,
       } = action.payload;
 
-      state.queue = songs;
-      state.currentIndex = startIndex;
-      state.activeSong = songs[startIndex] || {};
-      state.isActive = songs.length > 0;
-      state.queueSource = source;
-      state.queueName = name;
-      state.currentSongs = songs; // Legacy support
+      if (contextType === CONTEXT_TYPES.COMMUNITY_PLAYLIST) {
+        state.activeCommunityPlaylist = {
+          ...playlistData,
+          tracks,
+          currentIndex: startIndex,
+        };
+        state.activeContext = CONTEXT_TYPES.COMMUNITY_PLAYLIST;
 
-      // Generate shuffle order if needed
-      if (state.shuffle && songs.length > 1) {
-        state.shuffleOrder = generateShuffleOrder(songs.length, startIndex);
+        if (startIndex >= 0 && startIndex < tracks.length) {
+          const track = tracks[startIndex];
+          state.activeSong = track;
+          state.isActive = true;
+
+          // Add to recently played
+          state.recentlyPlayed = removeDuplicates(state.recentlyPlayed, track);
+          state.recentlyPlayed.unshift(track);
+          state.recentlyPlayed = state.recentlyPlayed.slice(0, 20);
+          state.contexts[CONTEXT_TYPES.RECENTLY_PLAYED].tracks = [
+            ...state.recentlyPlayed,
+          ];
+          saveToStorage(STORAGE_KEYS.recentlyPlayed, state.recentlyPlayed);
+        }
+      } else if (state.contexts[contextType]) {
+        const context = state.contexts[contextType];
+        context.tracks = tracks;
+        context.currentIndex = startIndex;
+
+        if (state.activeContext === contextType) {
+          if (startIndex >= 0 && startIndex < tracks.length) {
+            const track = tracks[startIndex];
+            state.activeSong = track;
+            state.isActive = true;
+
+            // Add to recently played
+            state.recentlyPlayed = removeDuplicates(
+              state.recentlyPlayed,
+              track
+            );
+            state.recentlyPlayed.unshift(track);
+            state.recentlyPlayed = state.recentlyPlayed.slice(0, 20);
+            state.contexts[CONTEXT_TYPES.RECENTLY_PLAYED].tracks = [
+              ...state.recentlyPlayed,
+            ];
+            saveToStorage(STORAGE_KEYS.recentlyPlayed, state.recentlyPlayed);
+          }
+
+          // Update legacy state
+          state.queue = tracks;
+          state.currentSongs = tracks;
+          state.currentIndex = startIndex;
+        }
       }
 
-      saveQueueState(state);
+      savePlaybackState(state);
     },
 
-    toggleShuffle: (state) => {
-      state.shuffle = !state.shuffle;
-
-      if (state.shuffle && state.queue.length > 1) {
-        state.shuffleOrder = generateShuffleOrder(
-          state.queue.length,
-          state.currentIndex
-        );
-      } else {
-        state.shuffleOrder = [];
-      }
-    },
-
-    toggleRepeat: (state) => {
-      state.repeat = !state.repeat;
-    },
-
+    // Playback controls
     playPause: (state, action) => {
       state.isPlaying = action.payload;
     },
 
-    selectGenreListId: (state, action) => {
-      state.genreListId = action.payload;
+    toggleShuffle: (state) => {
+      state.shuffle = !state.shuffle;
     },
 
-    setModalOpen: (state, action) => {
-      state.isModalOpen = action.payload;
+    toggleRepeat: (state) => {
+      state.repeat = !state.repeat;
     },
 
     // Playlist management
@@ -474,144 +464,155 @@ const playerSlice = createSlice({
         tracks: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        imageUrl: null,
       };
+
       state.playlists.push(newPlaylist);
-      savePlaylistsToStorage(state.playlists);
+
+      // Create context for this playlist
+      state.contexts[newPlaylist.id] = {
+        tracks: [],
+        name: newPlaylist.name,
+        currentIndex: -1,
+      };
+
+      saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+      savePlaybackState(state);
     },
 
     deletePlaylist: (state, action) => {
-      state.playlists = state.playlists.filter(
-        (playlist) => playlist.id !== action.payload
-      );
-      if (state.activePlaylistId === action.payload) {
-        state.activePlaylistId = null;
-        state.activePlaylistType = "queue";
+      const playlistId = action.payload;
+
+      state.playlists = state.playlists.filter((p) => p.id !== playlistId);
+
+      // Remove context
+      delete state.contexts[playlistId];
+
+      // Switch away if this was active
+      if (state.activeContext === playlistId) {
+        state.activeContext = CONTEXT_TYPES.QUEUE;
       }
-      savePlaylistsToStorage(state.playlists);
+
+      saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+      savePlaybackState(state);
     },
 
     renamePlaylist: (state, action) => {
-      const playlist = state.playlists.find(
-        (p) => p.id === action.payload.playlistId
-      );
+      const { playlistId, name } = action.payload;
+      const playlist = state.playlists.find((p) => p.id === playlistId);
+
       if (playlist) {
-        playlist.name = action.payload.name;
+        playlist.name = name;
         playlist.updatedAt = new Date().toISOString();
-        savePlaylistsToStorage(state.playlists);
+
+        // Update context name
+        if (state.contexts[playlistId]) {
+          state.contexts[playlistId].name = name;
+        }
+
+        saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+        savePlaybackState(state);
       }
     },
 
     addToPlaylist: (state, action) => {
       const { playlistId, track } = action.payload;
       const playlist = state.playlists.find((p) => p.id === playlistId);
+
       if (playlist) {
-        const trackExists = playlist.tracks.some(
-          (t) => (t.key || t.id) === (track.key || track.id)
-        );
-        if (!trackExists) {
-          playlist.tracks.push(track);
-          playlist.updatedAt = new Date().toISOString();
-          savePlaylistsToStorage(state.playlists);
+        // Remove duplicates and add
+        playlist.tracks = removeDuplicates(playlist.tracks, track);
+        playlist.tracks.push(track);
+        playlist.updatedAt = new Date().toISOString();
+
+        // Update context
+        if (state.contexts[playlistId]) {
+          state.contexts[playlistId].tracks = [...playlist.tracks];
         }
+
+        saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+        savePlaybackState(state);
       }
     },
 
     removeFromPlaylist: (state, action) => {
       const { playlistId, trackId } = action.payload;
       const playlist = state.playlists.find((p) => p.id === playlistId);
+
       if (playlist) {
-        playlist.tracks = playlist.tracks.filter(
-          (t) => (t.key || t.id) !== trackId
-        );
+        playlist.tracks = playlist.tracks.filter((track) => {
+          const tId = track?.key || track?.id || track?.track_id;
+          return tId !== trackId;
+        });
         playlist.updatedAt = new Date().toISOString();
-        savePlaylistsToStorage(state.playlists);
-      }
-    },
 
-    switchPlaylist: (state, action) => {
-      const { playlistId, playlistType } = action.payload;
-      state.activePlaylistId = playlistId;
-      state.activePlaylistType = playlistType;
+        // Update context
+        if (state.contexts[playlistId]) {
+          state.contexts[playlistId].tracks = [...playlist.tracks];
 
-      if (playlistType === "playlist") {
-        const playlist = state.playlists.find((p) => p.id === playlistId);
-        if (playlist) {
-          state.currentPlaylist = playlist;
-          state.queueName = playlist.name;
+          // Adjust current index if needed
+          const context = state.contexts[playlistId];
+          if (context.currentIndex >= playlist.tracks.length) {
+            context.currentIndex = playlist.tracks.length - 1;
+          }
         }
-      } else if (playlistType === "recent") {
-        state.currentPlaylist = {
-          id: "recent",
-          name: "Recently Played",
-          tracks: [...state.queue].reverse(), // Use queue, not recentlyPlayed
-        };
-        state.queueName = "Recently Played";
-      } else if (playlistType === "queue") {
-        state.currentPlaylist = {
-          id: "queue",
-          name: "Your Queue",
-          tracks: state.queue,
-        };
-        state.queueName = "Your Queue";
-      }
 
-      saveQueueState(state);
-    },
-
-    reorderPlaylistTracks: (state, action) => {
-      const { playlistId, fromIndex, toIndex } = action.payload;
-      const playlist = state.playlists.find((p) => p.id === playlistId);
-      if (playlist) {
-        const [movedTrack] = playlist.tracks.splice(fromIndex, 1);
-        playlist.tracks.splice(toIndex, 0, movedTrack);
-        playlist.updatedAt = new Date().toISOString();
-        savePlaylistsToStorage(state.playlists);
+        saveToStorage(STORAGE_KEYS.playlists, state.playlists);
+        savePlaybackState(state);
       }
     },
 
     // UI state
-    clearPlaylistContext: (state) => {
-      state.playlistContext = null;
+    selectGenreListId: (state, action) => {
+      state.genreListId = action.payload;
     },
 
-    setCurrentPlaylist: (state, action) => {
-      state.currentPlaylist = action.payload;
+    setModalOpen: (state, action) => {
+      state.isModalOpen = action.payload;
     },
 
-    clearCurrentPlaylist: (state) => {
-      state.currentPlaylist = null;
+    // Legacy actions (kept for compatibility)
+    setActiveSong: (state, action) => {
+      // Redirect to playTrack
+      playerSlice.caseReducers.playTrack(state, action);
+    },
+
+    navigateSong: (state, action) => {
+      // Redirect to navigateInContext
+      playerSlice.caseReducers.navigateInContext(state, action);
     },
   },
 });
 
 export const {
-  // Core playback actions
+  // Core playback
   playTrack,
-  setActiveSong,
-  navigateSong,
+  playFromContext,
+  navigateInContext,
+  switchContext,
   playPause,
   toggleShuffle,
   toggleRepeat,
-  // Queue management
+
+  // Context management
   addToQueue,
-  removeFromQueue,
+  removeFromContext,
   clearQueue,
-  replaceQueue,
-  // UI state
-  selectGenreListId,
-  setModalOpen,
-  clearPlaylistContext,
-  setCurrentPlaylist,
-  clearCurrentPlaylist,
+  replaceContext,
+
   // Playlist management
   createPlaylist,
   deletePlaylist,
   renamePlaylist,
   addToPlaylist,
   removeFromPlaylist,
-  switchPlaylist,
-  reorderPlaylistTracks,
+
+  // UI state
+  selectGenreListId,
+  setModalOpen,
+
+  // Legacy (will be removed)
+  setActiveSong,
+  navigateSong,
 } = playerSlice.actions;
 
 export default playerSlice.reducer;

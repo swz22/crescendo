@@ -26,13 +26,23 @@ import TrackLoadingState from "../TrackLoadingState";
 const MusicPlayer = () => {
   const {
     activeSong,
-    currentSongs,
-    currentIndex,
+    activeContext,
+    contexts,
+    activeCommunityPlaylist,
     isActive,
     isPlaying,
     shuffle,
     repeat,
   } = useSelector((state) => state.player);
+
+  const getCurrentTracks = () => {
+    if (activeContext === "community_playlist") {
+      return activeCommunityPlaylist?.tracks || [];
+    }
+    return contexts[activeContext]?.tracks || [];
+  };
+
+  const currentSongs = getCurrentTracks();
 
   const [duration, setDuration] = useState(0);
   const [seekTime, setSeekTime] = useState(0);

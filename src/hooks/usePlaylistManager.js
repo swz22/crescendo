@@ -6,22 +6,15 @@ import {
   renamePlaylist,
   addToPlaylist,
   removeFromPlaylist,
-  switchPlaylist,
-  reorderPlaylistTracks,
+  switchContext,
+  playFromContext,
 } from "../redux/features/playerSlice";
 
 export const usePlaylistManager = () => {
   const dispatch = useDispatch();
-  const {
-    playlists,
-    activePlaylistId,
-    activePlaylistType,
-    currentSongs,
-    recentlyPlayed,
-    queue, // Add this line - it was missing!
-  } = useSelector((state) => state.player);
+  const { playlists, activeContext, contexts, activeCommunityPlaylist } =
+    useSelector((state) => state.player);
 
-  // Create new playlist
   const handleCreatePlaylist = useCallback(
     (name) => {
       const newId = `playlist_${Date.now()}`;
@@ -31,7 +24,6 @@ export const usePlaylistManager = () => {
     [dispatch]
   );
 
-  // Delete playlist
   const handleDeletePlaylist = useCallback(
     (playlistId) => {
       if (window.confirm("Are you sure you want to delete this playlist?")) {
@@ -41,7 +33,6 @@ export const usePlaylistManager = () => {
     [dispatch]
   );
 
-  // Rename playlist
   const handleRenamePlaylist = useCallback(
     (playlistId, newName) => {
       dispatch(renamePlaylist({ playlistId, name: newName }));
@@ -49,7 +40,6 @@ export const usePlaylistManager = () => {
     [dispatch]
   );
 
-  // Add track to playlist
   const handleAddToPlaylist = useCallback(
     (playlistId, track) => {
       dispatch(addToPlaylist({ playlistId, track }));
@@ -57,7 +47,6 @@ export const usePlaylistManager = () => {
     [dispatch]
   );
 
-  // Remove track from playlist
   const handleRemoveFromPlaylist = useCallback(
     (playlistId, trackId) => {
       dispatch(removeFromPlaylist({ playlistId, trackId }));
@@ -65,69 +54,63 @@ export const usePlaylistManager = () => {
     [dispatch]
   );
 
-  // Switch active playlist
   const handleSwitchPlaylist = useCallback(
-    (playlistId, playlistType) => {
-      dispatch(switchPlaylist({ playlistId, playlistType }));
+    (contextId, contextType) => {
+      dispatch(switchContext({ contextType: contextId }));
     },
     [dispatch]
   );
 
-  // Reorder tracks in playlist
-  const handleReorderTracks = useCallback(
-    (playlistId, fromIndex, toIndex) => {
-      dispatch(reorderPlaylistTracks({ playlistId, fromIndex, toIndex }));
+  const handlePlayFromContext = useCallback(
+    (contextType, trackIndex, playlistData = null) => {
+      dispatch(playFromContext({ contextType, trackIndex, playlistData }));
     },
     [dispatch]
   );
 
-  // Get current playlist data
   const getCurrentPlaylistData = useCallback(() => {
-    if (activePlaylistType === "queue") {
+    if (activeContext === "community_playlist") {
+      return {
+        id: "community_playlist",
+        name: activeCommunityPlaylist?.name || "Community Playlist",
+        tracks: activeCommunityPlaylist?.tracks || [],
+        type: "community_playlist",
+      };
+    }
+
+    const context = contexts[activeContext];
+    if (!context) {
       return {
         id: "queue",
         name: "Your Queue",
-        tracks: queue, // Use queue directly
+        tracks: [],
         type: "queue",
       };
-    } else if (activePlaylistType === "recent") {
-      return {
-        id: "recent",
-        name: "Recently Played",
-        tracks: [...queue].reverse(), // Queue in reverse
-        type: "recent",
-      };
-    } else if (activePlaylistType === "playlist") {
-      const playlist = playlists.find((p) => p.id === activePlaylistId);
-      return playlist
-        ? { ...playlist, type: "playlist" }
-        : {
-            id: "queue",
-            name: "Your Queue",
-            tracks: queue,
-            type: "queue",
-          };
     }
-    return {
-      id: "queue",
-      name: "Your Queue",
-      tracks: queue,
-      type: "queue",
-    };
-  }, [activePlaylistType, activePlaylistId, queue, playlists]);
 
-  // Check if track is in playlist
+    return {
+      id: activeContext,
+      name: context.name,
+      tracks: context.tracks,
+      type:
+        activeContext === "queue"
+          ? "queue"
+          : activeContext === "recently_played"
+          ? "recently_played"
+          : "playlist",
+    };
+  }, [activeContext, contexts, activeCommunityPlaylist]);
+
   const isTrackInPlaylist = useCallback(
     (playlistId, trackId) => {
       const playlist = playlists.find((p) => p.id === playlistId);
       return playlist
-        ? playlist.tracks.some((t) => (t.key || t.id) === trackId)
+        ? playlist.tracks.some((t) => (t.key || t.id || t.track_id) === trackId)
         : false;
     },
     [playlists]
   );
 
-  // Get playlist by ID
   const getPlaylistById = useCallback(
     (playlistId) => {
       return playlists.find((p) => p.id === playlistId);
@@ -135,31 +118,38 @@ export const usePlaylistManager = () => {
     [playlists]
   );
 
-  // Get all playlists with metadata
   const getAllPlaylists = useCallback(() => {
+    const queueContext = contexts.queue || { tracks: [] };
+    const recentContext = contexts.recently_played || { tracks: [] };
+
     return [
       {
         id: "queue",
         name: "Your Queue",
-        tracks: queue,
+        tracks: queueContext.tracks,
         type: "queue",
         icon: "queue",
       },
       {
-        id: "recent",
+        id: "recently_played",
         name: "Recently Played",
-        tracks: queue, // Same as queue, will be reversed in display
-        type: "recent",
+        tracks: recentContext.tracks,
+        type: "recently_played",
         icon: "history",
       },
-      ...playlists.map((p) => ({ ...p, type: "playlist", icon: "playlist" })),
+      ...playlists.map((p) => ({
+        ...p,
+        type: "playlist",
+        icon: "playlist",
+        tracks: contexts[p.id]?.tracks || p.tracks || [],
+      })),
     ];
-  }, [playlists, queue]);
+  }, [playlists, contexts]);
 
   return {
     playlists,
-    activePlaylistId,
-    activePlaylistType,
+    activePlaylistId: activeContext,
+    activePlaylistType: activeContext,
     currentPlaylist: getCurrentPlaylistData(),
     handleCreatePlaylist,
     handleDeletePlaylist,
@@ -167,7 +157,7 @@ export const usePlaylistManager = () => {
     handleAddToPlaylist,
     handleRemoveFromPlaylist,
     handleSwitchPlaylist,
-    handleReorderTracks,
+    handlePlayFromContext,
     isTrackInPlaylist,
     getPlaylistById,
     getAllPlaylists,

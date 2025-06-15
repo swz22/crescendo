@@ -7,9 +7,7 @@ import SongMenu from "./SongMenu";
 import {
   playPause,
   playTrack,
-  setActiveSong,
   addToQueue,
-  replaceQueue,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
@@ -124,7 +122,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             source: "song_card",
           })
         );
-        dispatch(playPause(true));
         dispatchQueueEvent("Added to queue");
       } else {
         showToast("No preview available for this track", "error");
@@ -162,7 +159,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       >
         {/* Mobile List View - Only visible on mobile */}
         <div className="sm:hidden w-full flex items-center p-3 hover:bg-white/10 rounded-lg transition-all duration-200">
-          {/* Album art */}
           <div
             className="relative w-14 h-14 mr-3 flex-shrink-0"
             onClick={() =>
@@ -188,7 +184,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                 <span className="text-white/50 text-xl">♪</span>
               </div>
             )}
-            {/* Mobile loading overlay */}
             {isLoading && (
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg flex items-center justify-center">
                 <MusicLoadingSpinner size="sm" />
@@ -196,7 +191,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             )}
           </div>
 
-          {/* Song info */}
           <div
             className="flex-1 min-w-0"
             onClick={() =>
@@ -212,7 +206,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             <p className="text-sm text-gray-400 truncate">{artistName}</p>
           </div>
 
-          {/* Play indicator */}
           <div className="ml-3 mr-2">
             {isLoading ? (
               <div className="w-6 h-6 flex items-center justify-center">
@@ -229,7 +222,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             )}
           </div>
 
-          {/* Menu button for mobile */}
           <SongMenu song={song}>
             <button className="p-2 -mr-2">
               <HiDotsVertical className="w-5 h-5 text-white/60" />
@@ -242,7 +234,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           className={`hidden sm:flex flex-col w-full sm:max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10
           ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}`}
         >
-          {/* Cache indicator */}
           {showCacheIndicator && (
             <div className="absolute top-2 left-2 z-20 bg-black/60 backdrop-blur-sm rounded-full p-1.5">
               <HiLightningBolt
@@ -252,7 +243,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             </div>
           )}
 
-          {/* Now playing badge */}
           {isCurrentSong && (
             <div className="absolute top-3 left-3 z-10 bg-[#14b8a6]/20 backdrop-blur-sm rounded-full px-2 py-1">
               <span className="text-xs text-[#14b8a6] font-semibold">
@@ -262,7 +252,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           )}
 
           <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
-            {/* Persistent loading overlay */}
             {isLoading && (
               <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-30">
                 <MusicLoadingSpinner size="md" />
@@ -272,7 +261,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
               </div>
             )}
 
-            {/* Hover play/pause overlay */}
             {(isHovered || isCurrentSong) && !isLoading && (
               <div
                 className="absolute inset-0 flex items-center justify-center z-20 cursor-pointer"
@@ -301,7 +289,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
               </div>
             )}
 
-            {/* Album art */}
             {coverArt ? (
               <img
                 alt="song_img"
@@ -315,7 +302,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             )}
           </div>
 
-          {/* Track info */}
           <div className="mt-4 flex flex-col pr-10">
             <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
               <Link
@@ -339,7 +325,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             </p>
           </div>
 
-          {/* Context menu button */}
           <SongMenu
             song={song}
             className="absolute bottom-4 right-3 z-30 opacity-0 group-hover:opacity-90 transition-all duration-300"
@@ -356,7 +341,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
             </button>
           </SongMenu>
 
-          {/* Subtle loading indicator in corner */}
           {isLoading && (
             <div className="absolute bottom-2 right-2 z-30">
               <div className="bg-black/70 backdrop-blur-sm rounded-full p-1.5">

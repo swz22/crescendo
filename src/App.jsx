@@ -30,16 +30,9 @@ const PageLoader = () => (
 );
 
 const App = () => {
-  const {
-    activeSong,
-    isModalOpen,
-    playlistContext,
-    isPlaying,
-    currentPlaylist,
-    currentSongs,
-  } = useSelector((state) => state.player);
+  const { activeSong, isModalOpen, isPlaying, activeContext, contexts } =
+    useSelector((state) => state.player);
   const location = useLocation();
-  const [playlistSession, setPlaylistSession] = useState(false);
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
   const hideMainPlayer = isModalOpen;
 
@@ -47,18 +40,6 @@ const App = () => {
     console.log("App.jsx - activeSong:", activeSong?.title);
     console.log("App.jsx - hideMainPlayer:", hideMainPlayer);
   }, [activeSong, hideMainPlayer]);
-
-  useEffect(() => {
-    if (playlistContext && location.pathname === "/playlists") {
-      setPlaylistSession(true);
-    }
-  }, [playlistContext, location.pathname]);
-
-  useEffect(() => {
-    if (location.pathname !== "/playlists") {
-      setPlaylistSession(false);
-    }
-  }, [location.pathname]);
 
   return (
     <div className="relative flex h-screen overflow-hidden">
@@ -83,7 +64,7 @@ const App = () => {
 
       {/* Desktop Queue - Hidden on mobile */}
       <div className="w-[380px] h-screen hidden lg:block">
-        <PlaylistPlayer playlist={currentPlaylist} tracks={currentSongs} />
+        <PlaylistPlayer />
       </div>
 
       {/* Mobile Queue Button - only show on mobile when music is playing */}
