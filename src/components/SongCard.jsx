@@ -8,7 +8,7 @@ import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import { HiLightningBolt, HiDotsVertical } from "react-icons/hi";
-import { BsFillPlayFill } from "react-icons/bs";
+import { BsFillPlayFill, BsFillPauseFill } from "react-icons/bs";
 import { useToast } from "../context/ToastContext";
 
 const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
@@ -155,15 +155,16 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
         className="group"
       >
         {/* Mobile List View - Only visible on mobile */}
-        <div className="sm:hidden w-full flex items-center p-3 hover:bg-white/10 rounded-lg transition-all duration-200">
+        <div className="sm:hidden w-full flex items-center p-3 hover:bg-white/10 rounded-lg transition-all duration-200 active:bg-white/20">
           <div
             className="relative w-14 h-14 mr-3 flex-shrink-0"
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               !isLoading &&
-              (isCurrentSong && isPlaying
-                ? handlePauseClick()
-                : handlePlayClick())
-            }
+                (isCurrentSong && isPlaying
+                  ? handlePauseClick()
+                  : handlePlayClick());
+            }}
           >
             {showCacheIndicator && (
               <div className="absolute -top-1 -right-1 z-20 bg-black/60 backdrop-blur-sm rounded-full p-0.5">
@@ -175,6 +176,11 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                 alt="song_img"
                 src={coverArt}
                 className="w-full h-full object-cover rounded-lg"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src =
+                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE1NTY4Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2EwYWVjMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
+                }}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-[#14b8a6] to-[#0891b2] rounded-lg flex items-center justify-center">
@@ -186,16 +192,25 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                 <MusicLoadingSpinner size="sm" />
               </div>
             )}
+            {/* Play/Pause overlay for mobile */}
+            <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 active:opacity-100 transition-opacity">
+              {isCurrentSong && isPlaying ? (
+                <BsFillPauseFill className="w-6 h-6 text-white" />
+              ) : (
+                <BsFillPlayFill className="w-6 h-6 text-white translate-x-0.5" />
+              )}
+            </div>
           </div>
 
           <div
             className="flex-1 min-w-0"
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               !isLoading &&
-              (isCurrentSong && isPlaying
-                ? handlePauseClick()
-                : handlePlayClick())
-            }
+                (isCurrentSong && isPlaying
+                  ? handlePauseClick()
+                  : handlePlayClick());
+            }}
           >
             <p className="font-medium text-base text-white truncate">
               {songTitle}
@@ -214,13 +229,11 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                 <div className="w-1 h-5 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
                 <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
               </div>
-            ) : (
-              <BsFillPlayFill className="w-6 h-6 text-white/60" />
-            )}
+            ) : null}
           </div>
 
           <SongMenu song={song}>
-            <button className="p-2 -mr-2">
+            <button className="p-2 -mr-2 touch-manipulation">
               <HiDotsVertical className="w-5 h-5 text-white/60" />
             </button>
           </SongMenu>

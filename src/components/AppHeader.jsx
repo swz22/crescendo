@@ -62,13 +62,17 @@ const AppHeader = memo(
 
             {/* Row 2: Search and Queue */}
             {showSearch && (
-              <div className="px-4 pb-4 flex items-center gap-2">
-                <div className="flex-1">
-                  <Searchbar />
+              <div className="px-4 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <Searchbar />
+                  </div>
+                  {!hideQueueButton && currentTracks.length > 0 && (
+                    <div className="flex-shrink-0">
+                      <QueueButton onClick={() => setMobileQueueOpen(true)} />
+                    </div>
+                  )}
                 </div>
-                {!hideQueueButton && currentTracks.length > 0 && (
-                  <QueueButton onClick={() => setMobileQueueOpen(true)} />
-                )}
               </div>
             )}
           </div>

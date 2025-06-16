@@ -50,15 +50,20 @@ const Searchbar = () => {
             name="search-field"
             id="search-field"
             className="w-full bg-white/[0.08] backdrop-blur-xl border border-white/20 rounded-full 
-                       placeholder-gray-400 outline-none text-sm sm:text-base text-white pl-10 sm:pl-12 pr-10 sm:pr-4 py-2.5 sm:py-3
-                       focus:bg-white/[0.12] focus:border-[#2dd4bf]/50 focus:shadow-[0_0_30px_rgba(45,212,191,0.3)] 
-                       transition-all duration-300 hover:bg-white/10 hover:border-white/30"
+             placeholder-gray-400 outline-none text-sm sm:text-base text-white pl-10 sm:pl-12 pr-10 sm:pr-4 py-2.5 sm:py-3
+             focus:bg-white/[0.12] focus:border-[#14b8a6]/50 focus:shadow-[0_0_30px_rgba(45,212,191,0.3)] 
+             transition-all duration-300 hover:bg-white/10 hover:border-white/30"
             placeholder="Search songs..."
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            inputMode="search"
           />
           {searchTerm && (
             <button

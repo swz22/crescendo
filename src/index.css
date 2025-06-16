@@ -878,3 +878,48 @@ a,
 .grid-responsive {
   contain: layout style;
 }
+
+/* Mobile-specific touch improvements */
+@media (max-width: 640px) {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Prevent double-tap zoom on buttons */
+  button {
+    touch-action: manipulation;
+  }
+
+  /* Improve tap targets */
+  .tap-target-min {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Safe area utilities */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Overscroll behavior */
+.overscroll-contain {
+  overscroll-behavior: contain;
+}
+
+/* Fix iOS momentum scrolling */
+.momentum-scrolling {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text selection on interactive elements */
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

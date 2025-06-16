@@ -146,7 +146,7 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0 bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] z-[100] lg:hidden animate-slideUp">
+      <div className="fixed inset-0 bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] z-[100] lg:hidden animate-slideUp pb-safe">
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <button
@@ -201,7 +201,7 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto pb-24">
+        <div className="flex-1 overflow-y-auto pb-32 overscroll-contain">
           {tracks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full p-8">
               <HiOutlineViewList className="w-16 h-16 text-white/20 mb-4" />
@@ -210,7 +210,7 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
               </p>
             </div>
           ) : (
-            <div className="px-4 space-y-2">
+            <div className="px-4 space-y-2 pb-safe">
               <h4 className="text-sm font-medium text-white/60 uppercase tracking-wider px-2 py-2">
                 {contextName}
               </h4>
