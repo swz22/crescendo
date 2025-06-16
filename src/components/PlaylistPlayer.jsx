@@ -252,47 +252,53 @@ const PlaylistPlayer = () => {
             </div>
 
             {/* Seek bar */}
-            <div className="mt-3 px-2">
-              <div className="flex items-center gap-2 text-xs text-white/60">
-                <span>{formatTime(currentTime || 0)}</span>
-                <div className="flex-1">
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 0}
-                    value={currentTime || 0}
-                    onChange={(e) => seek(parseFloat(e.target.value))}
-                    className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-[#0d9488]"
-                    style={{
-                      background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
-                        duration > 0 ? (currentTime / duration) * 100 : 0
-                      }%, rgba(255,255,255,0.2) ${
-                        duration > 0 ? (currentTime / duration) * 100 : 0
-                      }%, rgba(255,255,255,0.2) 100%)`,
-                    }}
-                  />
-                </div>
-                <span>{formatTime(duration || 0)}</span>
+            <div className="mt-4 px-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/50 w-8">
+                  {formatTime(currentTime || 0)}
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max={duration || 0}
+                  value={currentTime || 0}
+                  onChange={(e) => seek(parseFloat(e.target.value))}
+                  className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer 
+                           [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
+                           [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
+                           [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer 
+                           hover:[&::-webkit-slider-thumb]:bg-[#0d9488] [&::-webkit-slider-thumb]:transition-all"
+                  style={{
+                    background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
+                      duration > 0 ? (currentTime / duration) * 100 : 0
+                    }%, rgba(255,255,255,0.2) ${
+                      duration > 0 ? (currentTime / duration) * 100 : 0
+                    }%, rgba(255,255,255,0.2) 100%)`,
+                  }}
+                />
+                <span className="text-xs text-white/50 w-8 text-right">
+                  {formatTime(duration || 0)}
+                </span>
               </div>
             </div>
 
             {/* Volume control */}
-            <div className="mt-3 flex items-center gap-2 px-2">
-              <button
-                className="text-white/60 hover:text-white transition-colors"
-                onClick={() =>
-                  dispatch(setVolumeAction(volume === 0 ? 0.7 : 0))
-                }
-              >
-                {volume === 0 ? (
-                  <BsVolumeMute size={20} />
-                ) : volume < 0.5 ? (
-                  <BsVolumeDown size={20} />
-                ) : (
-                  <BsVolumeUp size={20} />
-                )}
-              </button>
-              <div className="flex-1">
+            <div className="mt-3 px-2">
+              <div className="flex items-center gap-2">
+                <button
+                  className="text-white/60 hover:text-white transition-colors w-8 flex justify-start pl-0.5"
+                  onClick={() =>
+                    dispatch(setVolumeAction(volume === 0 ? 0.7 : 0))
+                  }
+                >
+                  {volume === 0 ? (
+                    <BsVolumeMute size={20} />
+                  ) : volume < 0.5 ? (
+                    <BsVolumeDown size={20} />
+                  ) : (
+                    <BsVolumeUp size={20} />
+                  )}
+                </button>
                 <input
                   type="range"
                   min="0"
@@ -302,7 +308,11 @@ const PlaylistPlayer = () => {
                   onChange={(e) =>
                     dispatch(setVolumeAction(parseFloat(e.target.value)))
                   }
-                  className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-[#0d9488] [&::-webkit-slider-thumb]:transition-all"
+                  className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer 
+                           [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
+                           [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
+                           [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer 
+                           hover:[&::-webkit-slider-thumb]:bg-[#0d9488] [&::-webkit-slider-thumb]:transition-all"
                   style={{
                     background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
                       volume * 100
@@ -311,10 +321,10 @@ const PlaylistPlayer = () => {
                     }%, rgba(255,255,255,0.2) 100%)`,
                   }}
                 />
+                <span className="text-xs text-white/50 w-8 text-right">
+                  {Math.round(volume * 100)}%
+                </span>
               </div>
-              <span className="text-white/60 text-xs w-10 text-right">
-                {Math.round(volume * 100)}%
-              </span>
             </div>
           </div>
         ) : (
