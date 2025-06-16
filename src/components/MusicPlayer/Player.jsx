@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { useAudioState } from "../../hooks/useAudioState";
 
 const Player = ({
   activeSong,
@@ -18,6 +19,7 @@ const Player = ({
   const [hasError, setHasError] = useState(false);
   const isLoadingRef = useRef(false);
   const currentUrlRef = useRef(null);
+  const { setAudioElement } = useAudioState();
 
   // Clean up on unmount
   useEffect(() => {
@@ -29,6 +31,13 @@ const Player = ({
       }
     };
   }, []);
+
+  // Register audio element for global state
+  useEffect(() => {
+    if (ref.current) {
+      setAudioElement(ref.current);
+    }
+  }, [setAudioElement]);
 
   // Handle source changes
   useEffect(() => {

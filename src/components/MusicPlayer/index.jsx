@@ -23,6 +23,7 @@ import Seekbar from "./Seekbar";
 import Track from "./Track";
 import VolumeBar from "./VolumeBar";
 import TrackLoadingState from "../TrackLoadingState";
+import { useAudioState } from "../../hooks/useAudioState";
 
 const MusicPlayer = () => {
   const {
@@ -61,9 +62,8 @@ const MusicPlayer = () => {
 
   const currentSongs = getCurrentTracks();
 
-  const [duration, setDuration] = useState(0);
+  const { duration, currentTime, seek } = useAudioState();
   const [seekTime, setSeekTime] = useState(0);
-  const [appTime, setAppTime] = useState(0);
   const [isChangingTrack, setIsChangingTrack] = useState(false);
   const [isAudioReady, setIsAudioReady] = useState(false);
 
@@ -264,12 +264,12 @@ const MusicPlayer = () => {
             handleNextSong={handleNextSong}
           />
           <Seekbar
-            value={appTime}
+            value={currentTime}
             min="0"
             max={duration}
-            onInput={(event) => setSeekTime(event.target.value)}
-            setSeekTime={setSeekTime}
-            appTime={appTime}
+            onInput={(event) => seek(event.target.value)}
+            setSeekTime={seek}
+            appTime={currentTime}
           />
           <Player
             activeSong={currentTrack}
@@ -280,9 +280,7 @@ const MusicPlayer = () => {
             repeat={repeat}
             currentIndex={0}
             onEnded={handleNextSong}
-            onTimeUpdate={(event) => setAppTime(event.target.currentTime)}
             onLoadedData={(event) => {
-              setDuration(event.target.duration);
               handleAudioReady();
             }}
             onCanPlay={handleAudioReady}
@@ -347,7 +345,7 @@ const MusicPlayer = () => {
           <div
             className="h-full bg-[#14b8a6] transition-all duration-300"
             style={{
-              width: `${duration > 0 ? (appTime / duration) * 100 : 0}%`,
+              width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
             }}
           />
         </div>

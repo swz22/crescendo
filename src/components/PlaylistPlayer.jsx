@@ -8,6 +8,7 @@ import {
   toggleRepeat,
   removeFromContext,
   clearQueue,
+  setVolume as setVolumeAction,
 } from "../redux/features/playerSlice";
 import {
   selectCurrentContextTracks,
@@ -16,6 +17,7 @@ import {
 } from "../redux/features/playerSelectors";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useSongNavigation } from "../hooks/useSongNavigation";
+import { useAudioState } from "../hooks/useAudioState";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
 import {
@@ -42,6 +44,7 @@ const PlaylistPlayer = () => {
     repeat,
   } = useSelector((state) => state.player);
 
+  const volume = useSelector((state) => state.player.volume);
   const tracks = useSelector(selectCurrentContextTracks);
   const contextName = useSelector(selectCurrentContextName);
   const canModify = useSelector(selectCanModifyContext);
@@ -50,11 +53,10 @@ const PlaylistPlayer = () => {
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached } =
     usePreviewUrl();
 
-  const [volume, setVolume] = useState(0.7);
-  const [isVolumeHovered, setIsVolumeHovered] = useState(false);
   const [showManagePanel, setShowManagePanel] = useState(false);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
+  const { duration, currentTime, seek } = useAudioState();
 
   // Auto-scroll to active track
   useEffect(() => {
@@ -249,15 +251,38 @@ const PlaylistPlayer = () => {
               </button>
             </div>
 
+            {/* Seek bar */}
+            <div className="mt-3 px-2">
+              <div className="flex items-center gap-2 text-xs text-white/60">
+                <span>{formatTime(currentTime || 0)}</span>
+                <div className="flex-1">
+                  <input
+                    type="range"
+                    min="0"
+                    max={duration || 0}
+                    value={currentTime || 0}
+                    onChange={(e) => seek(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-[#0d9488]"
+                    style={{
+                      background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
+                        duration > 0 ? (currentTime / duration) * 100 : 0
+                      }%, rgba(255,255,255,0.2) ${
+                        duration > 0 ? (currentTime / duration) * 100 : 0
+                      }%, rgba(255,255,255,0.2) 100%)`,
+                    }}
+                  />
+                </div>
+                <span>{formatTime(duration || 0)}</span>
+              </div>
+            </div>
+
             {/* Volume control */}
-            <div
-              className="mt-3 flex items-center gap-2 px-2"
-              onMouseEnter={() => setIsVolumeHovered(true)}
-              onMouseLeave={() => setIsVolumeHovered(false)}
-            >
+            <div className="mt-3 flex items-center gap-2 px-2">
               <button
                 className="text-white/60 hover:text-white transition-colors"
-                onClick={() => setVolume(volume === 0 ? 0.7 : 0)}
+                onClick={() =>
+                  dispatch(setVolumeAction(volume === 0 ? 0.7 : 0))
+                }
               >
                 {volume === 0 ? (
                   <BsVolumeMute size={20} />
@@ -267,18 +292,16 @@ const PlaylistPlayer = () => {
                   <BsVolumeUp size={20} />
                 )}
               </button>
-              <div
-                className={`flex-1 transition-all duration-300 ${
-                  isVolumeHovered ? "opacity-100" : "opacity-60"
-                }`}
-              >
+              <div className="flex-1">
                 <input
                   type="range"
                   min="0"
                   max="1"
                   step="0.01"
                   value={volume}
-                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    dispatch(setVolumeAction(parseFloat(e.target.value)))
+                  }
                   className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-[#0d9488] [&::-webkit-slider-thumb]:transition-all"
                   style={{
                     background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
@@ -289,6 +312,9 @@ const PlaylistPlayer = () => {
                   }}
                 />
               </div>
+              <span className="text-white/60 text-xs w-10 text-right">
+                {Math.round(volume * 100)}%
+              </span>
             </div>
           </div>
         ) : (
