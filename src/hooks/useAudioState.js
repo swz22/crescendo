@@ -13,7 +13,7 @@ export const useAudioState = () => {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isBuffering, setIsBuffering] = useState(false);
-  const { isPlaying } = useSelector((state) => state.player);
+  const { isPlaying, volume } = useSelector((state) => state.player);
 
   useEffect(() => {
     const handleUpdate = (state) => {
@@ -28,6 +28,13 @@ export const useAudioState = () => {
       audioStateListeners.delete(handleUpdate);
     };
   }, []);
+
+  // Sync volume with global audio element
+  useEffect(() => {
+    if (globalAudioElement && typeof volume === "number") {
+      globalAudioElement.volume = Math.max(0, Math.min(1, volume));
+    }
+  }, [volume]);
 
   const setAudioElement = useCallback((element) => {
     if (!element || globalAudioElement === element) return;

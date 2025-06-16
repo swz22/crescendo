@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useAudioState } from "../../hooks/useAudioState";
+import { useAudioCleanup } from "../../hooks/useAudioCleanup";
 
 const Player = ({
   activeSong,
@@ -19,7 +20,14 @@ const Player = ({
   const [hasError, setHasError] = useState(false);
   const isLoadingRef = useRef(false);
   const currentUrlRef = useRef(null);
+  const volumeRef = useRef(volume);
   const { setAudioElement } = useAudioState();
+  const { registerAudioElement, cleanupExceptCurrent } = useAudioCleanup();
+
+  // Update volume ref when prop changes
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -36,8 +44,13 @@ const Player = ({
   useEffect(() => {
     if (ref.current) {
       setAudioElement(ref.current);
+      registerAudioElement(ref.current);
+      // Cleanup any other audio instances
+      cleanupExceptCurrent(ref.current);
+      // Set initial volume
+      ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
     }
-  }, [setAudioElement]);
+  }, [setAudioElement, registerAudioElement, cleanupExceptCurrent]);
 
   // Handle source changes
   useEffect(() => {
@@ -59,6 +72,8 @@ const Player = ({
 
     // Set new source
     ref.current.src = songUrl;
+    // Ensure volume is set before loading
+    ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
     ref.current.load();
 
     if (onLoadStart) {
@@ -71,6 +86,9 @@ const Player = ({
     if (!ref.current || !songUrl || !isReady || hasError) return;
 
     if (isPlaying) {
+      // Ensure volume is set before playing
+      ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
+
       const playPromise = ref.current.play();
 
       if (playPromise !== undefined) {
@@ -89,7 +107,9 @@ const Player = ({
   // Handle volume changes
   useEffect(() => {
     if (ref.current && typeof volume === "number") {
-      ref.current.volume = Math.max(0, Math.min(1, volume));
+      const clampedVolume = Math.max(0, Math.min(1, volume));
+      ref.current.volume = clampedVolume;
+      volumeRef.current = clampedVolume;
     }
   }, [volume]);
 
@@ -108,6 +128,11 @@ const Player = ({
     setIsReady(true);
     setHasError(false);
 
+    // Ensure volume is set when audio is ready
+    if (ref.current) {
+      ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
+    }
+
     if (onCanPlay) {
       onCanPlay();
     }
@@ -121,6 +146,11 @@ const Player = ({
   };
 
   const handleLoadedData = (e) => {
+    // Set volume when metadata is loaded
+    if (ref.current) {
+      ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
+    }
+
     if (onLoadedData) {
       onLoadedData(e);
     }

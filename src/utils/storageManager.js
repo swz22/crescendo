@@ -4,6 +4,7 @@ export const StorageKeys = {
   PLAYLISTS: "crescendo_playlists_v2",
   PREVIEW_CACHE: "crescendo_preview_cache_v2",
   ONBOARDING: "crescendo_onboarding_seen",
+  VOLUME: "crescendo_volume",
 };
 
 export const clearAllAppData = () => {

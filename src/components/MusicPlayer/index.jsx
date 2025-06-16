@@ -98,7 +98,7 @@ const MusicPlayer = () => {
   }, [currentTrack]);
 
   const handleNextSong = async () => {
-    if (!currentSongs || currentSongs.length <= 1) return;
+    if (!currentSongs || currentSongs.length <= 1 || isNavigating) return;
 
     setIsChangingTrack(true);
     setIsAudioReady(false);
@@ -112,7 +112,7 @@ const MusicPlayer = () => {
   };
 
   const handlePrevSong = async () => {
-    if (!currentSongs || currentSongs.length <= 1) return;
+    if (!currentSongs || currentSongs.length <= 1 || isNavigating) return;
 
     setIsChangingTrack(true);
     setIsAudioReady(false);

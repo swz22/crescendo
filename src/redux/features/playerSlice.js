@@ -27,7 +27,7 @@ const initialState = {
   currentTrack: null,
   isPlaying: false,
   isActive: false,
-  volume: 0.7,
+  volume: loadFromStorage(StorageKeys.VOLUME) || 0.7,
 
   // Playback modes
   shuffle: false,
@@ -301,7 +301,9 @@ const playerSlice = createSlice({
 
     // Volume control
     setVolume: (state, action) => {
-      state.volume = Math.max(0, Math.min(1, action.payload));
+      const newVolume = Math.max(0, Math.min(1, action.payload));
+      state.volume = newVolume;
+      saveToStorage(StorageKeys.VOLUME, newVolume);
     },
 
     // Playlist management

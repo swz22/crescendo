@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   navigateInContext,
@@ -9,19 +9,23 @@ import { usePreviewUrl } from "./usePreviewUrl";
 export const useSongNavigation = () => {
   const dispatch = useDispatch();
   const [isNavigating, setIsNavigating] = useState(false);
+  const navigationLockRef = useRef(false);
   const { getPreviewUrl } = usePreviewUrl();
   const { currentTrack } = useSelector((state) => state.player);
 
   const handleNextSong = useCallback(async () => {
-    if (isNavigating) return;
+    // Prevent concurrent navigation
+    if (navigationLockRef.current) return;
 
+    navigationLockRef.current = true;
     setIsNavigating(true);
+
     try {
       // Navigate to next track
       dispatch(navigateInContext({ direction: "next" }));
 
       // Small delay to ensure state is updated
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Get updated track from store
       const { store } = await import("../redux/store");
@@ -36,20 +40,24 @@ export const useSongNavigation = () => {
         }
       }
     } finally {
+      navigationLockRef.current = false;
       setIsNavigating(false);
     }
-  }, [dispatch, isNavigating, getPreviewUrl]);
+  }, [dispatch, getPreviewUrl]);
 
   const handlePrevSong = useCallback(async () => {
-    if (isNavigating) return;
+    // Prevent concurrent navigation
+    if (navigationLockRef.current) return;
 
+    navigationLockRef.current = true;
     setIsNavigating(true);
+
     try {
       // Navigate to previous track
       dispatch(navigateInContext({ direction: "prev" }));
 
       // Small delay to ensure state is updated
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Get updated track from store
       const { store } = await import("../redux/store");
@@ -64,9 +72,10 @@ export const useSongNavigation = () => {
         }
       }
     } finally {
+      navigationLockRef.current = false;
       setIsNavigating(false);
     }
-  }, [dispatch, isNavigating, getPreviewUrl]);
+  }, [dispatch, getPreviewUrl]);
 
   return {
     handleNextSong,
