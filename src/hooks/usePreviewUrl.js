@@ -1,35 +1,52 @@
 import { useCallback, useState } from "react";
 import { previewUrlManager } from "../utils/previewUrlManager";
+import { useToast } from "../context/ToastContext";
 
 export const usePreviewUrl = () => {
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
-  const getPreviewUrl = useCallback(async (song) => {
-    if (song.preview_url) {
-      return song;
-    }
-
-    const trackId = song.key || song.id || song.track_id;
-    if (!trackId) {
-      return song;
-    }
-
-    setLoading(true);
-    try {
-      const previewUrl = await previewUrlManager.getPreviewUrl(trackId);
-      if (previewUrl) {
-        return {
-          ...song,
-          preview_url: previewUrl,
-          url: previewUrl,
-        };
+  const getPreviewUrl = useCallback(
+    async (song) => {
+      if (!song) {
+        console.warn("getPreviewUrl called with no song");
+        return null;
       }
-    } finally {
-      setLoading(false);
-    }
 
-    return song;
-  }, []);
+      if (song.preview_url) {
+        return song;
+      }
+
+      const trackId = song.key || song.id || song.track_id;
+      if (!trackId) {
+        console.warn("Song has no valid track ID", song);
+        return song;
+      }
+
+      setLoading(true);
+      try {
+        const previewUrl = await previewUrlManager.getPreviewUrl(trackId);
+        if (previewUrl) {
+          return {
+            ...song,
+            preview_url: previewUrl,
+            url: previewUrl,
+          };
+        }
+      } catch (error) {
+        console.error("Error getting preview URL:", error);
+        // Only show toast for user-initiated actions, not background prefetching
+        if (loading) {
+          showToast("Unable to load preview for this track", "error");
+        }
+      } finally {
+        setLoading(false);
+      }
+
+      return song;
+    },
+    [loading, showToast]
+  );
 
   const prefetchPreviewUrl = useCallback(async (song, options = {}) => {
     if (!song || song.preview_url) return false;
@@ -37,16 +54,23 @@ export const usePreviewUrl = () => {
     const trackId = song.key || song.id || song.track_id;
     if (!trackId) return false;
 
-    if (options.priority === "high") {
-      const url = await previewUrlManager.getPreviewUrl(trackId);
-      return url !== null;
+    try {
+      if (options.priority === "high") {
+        const url = await previewUrlManager.getPreviewUrl(trackId);
+        return url !== null;
+      }
+
+      setTimeout(() => {
+        previewUrlManager.getPreviewUrl(trackId).catch((error) => {
+          console.debug("Background prefetch failed:", error.message);
+        });
+      }, options.delay || 500);
+
+      return true;
+    } catch (error) {
+      console.debug("Prefetch error:", error);
+      return false;
     }
-
-    setTimeout(() => {
-      previewUrlManager.getPreviewUrl(trackId);
-    }, options.delay || 500);
-
-    return true;
   }, []);
 
   const isPreviewCached = useCallback((song) => {
@@ -77,11 +101,18 @@ export const usePreviewUrl = () => {
     (songs, options = {}) => {
       if (!songs || songs.length === 0) return;
 
-      const songsToFetch = songs.slice(0, options.maxConcurrent || 3);
+      const validSongs = songs.filter((song) => {
+        const trackId = song?.key || song?.id || song?.track_id;
+        return trackId && !song.preview_url;
+      });
+
+      const songsToFetch = validSongs.slice(0, options.maxConcurrent || 3);
 
       songsToFetch.forEach((song, index) => {
         setTimeout(() => {
-          prefetchPreviewUrl(song, { priority: "low" });
+          prefetchPreviewUrl(song, { priority: "low" }).catch((error) => {
+            console.debug("Batch prefetch error:", error);
+          });
         }, index * 1000);
       });
     },

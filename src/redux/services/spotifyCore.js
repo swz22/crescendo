@@ -3,12 +3,56 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Get API URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
+// Custom base query with retry logic
+const baseQueryWithRetry = async (args, api, extraOptions) => {
+  const baseQuery = fetchBaseQuery({
+    baseUrl: `${API_URL}/api/spotify`,
+    timeout: 30000,
+  });
+
+  let result = await baseQuery(args, api, extraOptions);
+
+  // Retry on 5xx errors or network failures
+  let retries = 0;
+  while (
+    retries < MAX_RETRIES &&
+    (result.error?.status >= 500 ||
+      result.error?.originalStatus >= 500 ||
+      result.error?.error === "FETCH_ERROR")
+  ) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, RETRY_DELAY * Math.pow(2, retries))
+    );
+    result = await baseQuery(args, api, extraOptions);
+    retries++;
+  }
+
+  // Log persistent errors
+  if (result.error) {
+    console.error("Spotify API error:", {
+      endpoint: args.url || args,
+      error: result.error,
+      retries,
+    });
+  }
+
+  return result;
+};
+
 const adaptTrackData = (track) => {
+  if (!track) return null;
+
   return {
     key: track.id,
-    title: track.name,
-    subtitle: track.artists?.map((artist) => artist.name).join(", "),
-    artists: track.artists,
+    title: track.name || "Unknown Title",
+    subtitle:
+      track.artists?.map((artist) => artist.name).join(", ") ||
+      "Unknown Artist",
+    artists: track.artists || [],
     images: {
       coverart: track.album?.images?.[0]?.url || "",
       background: track.album?.images?.[0]?.url || "",
@@ -23,32 +67,34 @@ const adaptTrackData = (track) => {
     preview_url: track.preview_url,
     url: track.preview_url,
     track_id: track.id,
-    duration_ms: track.duration_ms,
-    album: track.album,
+    duration_ms: track.duration_ms || 0,
+    album: track.album || {},
     track: track,
     spotify_uri: track.uri,
-    external_urls: track.external_urls,
+    external_urls: track.external_urls || {},
   };
 };
 
-const adaptArtistData = (artist) => ({
-  adamid: artist.id,
-  name: artist.name,
-  images: {
-    background: artist.images?.[0]?.url || "",
-    coverart: artist.images?.[0]?.url || "",
-  },
-  genres: artist.genres,
-  followers: artist.followers?.total,
-  popularity: artist.popularity,
-  artist: artist,
-});
+const adaptArtistData = (artist) => {
+  if (!artist) return null;
+
+  return {
+    adamid: artist.id,
+    name: artist.name || "Unknown Artist",
+    images: {
+      background: artist.images?.[0]?.url || "",
+      coverart: artist.images?.[0]?.url || "",
+    },
+    genres: artist.genres || [],
+    followers: artist.followers?.total || 0,
+    popularity: artist.popularity || 0,
+    artist: artist,
+  };
+};
 
 export const spotifyCoreApi = createApi({
   reducerPath: "spotifyCoreApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/api/spotify`,
-  }),
+  baseQuery: baseQueryWithRetry,
   keepUnusedDataFor: 300,
   refetchOnMountOrArgChange: false,
   endpoints: (builder) => ({
@@ -56,77 +102,159 @@ export const spotifyCoreApi = createApi({
       query: (market = "US") =>
         `/search?q=top%2050%20${market}%202024&type=track&limit=50&market=${market}`,
       transformResponse: (response) => {
-        const tracks = response.tracks?.items?.map(adaptTrackData) || [];
+        if (!response?.tracks?.items) return [];
+        const tracks = response.tracks.items
+          .map(adaptTrackData)
+          .filter(Boolean);
         return tracks.sort(
           (a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0)
         );
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch top charts" },
+        };
       },
     }),
 
     getTopArtists: builder.query({
       query: () => "/search?q=year:2024&type=artist&limit=20&market=US",
       transformResponse: (response) => {
-        const artists =
-          response.artists?.items?.map((artist) => ({
+        if (!response?.artists?.items) return [];
+        const artists = response.artists.items
+          .map((artist) => ({
             ...adaptArtistData(artist),
             coverart: artist.images?.[0]?.url || "",
-          })) || [];
+          }))
+          .filter(Boolean);
         return artists;
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch artists" },
+        };
       },
     }),
 
     getSongDetails: builder.query({
-      query: ({ songid }) => `/tracks/${songid}`,
+      query: ({ songid }) => {
+        if (!songid) throw new Error("Song ID is required");
+        return `/tracks/${songid}`;
+      },
       transformResponse: (response) => adaptTrackData(response),
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch song details" },
+        };
+      },
     }),
 
     getAlbumDetails: builder.query({
-      query: ({ albumId }) => `/albums/${albumId}`,
-      transformResponse: (response) => ({
-        id: response.id,
-        name: response.name,
-        artists: response.artists,
-        images: response.images,
-        release_date: response.release_date,
-        total_tracks: response.total_tracks,
-        album_type: response.album_type,
-        label: response.label,
-        popularity: response.popularity,
-        genres: response.genres || [],
-        copyrights: response.copyrights,
-        external_urls: response.external_urls,
-      }),
+      query: ({ albumId }) => {
+        if (!albumId) throw new Error("Album ID is required");
+        return `/albums/${albumId}`;
+      },
+      transformResponse: (response) => {
+        if (!response) return null;
+        return {
+          id: response.id,
+          name: response.name || "Unknown Album",
+          artists: response.artists || [],
+          images: response.images || [],
+          release_date: response.release_date,
+          total_tracks: response.total_tracks || 0,
+          album_type: response.album_type,
+          label: response.label,
+          popularity: response.popularity || 0,
+          genres: response.genres || [],
+          copyrights: response.copyrights || [],
+          external_urls: response.external_urls || {},
+        };
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch album details" },
+        };
+      },
     }),
 
     getAlbumTracks: builder.query({
-      query: ({ albumId }) => `/albums/${albumId}/tracks?limit=50`,
-      transformResponse: (response, meta, arg) =>
-        response.items?.map((track) =>
-          adaptTrackData({
-            ...track,
-            album: {
-              id: arg.albumId,
-              images: [], // Album images will come from album details
-            },
-          })
-        ) || [],
+      query: ({ albumId }) => {
+        if (!albumId) throw new Error("Album ID is required");
+        return `/albums/${albumId}/tracks?limit=50`;
+      },
+      transformResponse: (response, meta, arg) => {
+        if (!response?.items) return [];
+        return response.items
+          .map((track) =>
+            adaptTrackData({
+              ...track,
+              album: {
+                id: arg.albumId,
+                images: [], // Album images will come from album details
+              },
+            })
+          )
+          .filter(Boolean);
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch album tracks" },
+        };
+      },
     }),
 
     getArtistDetails: builder.query({
-      query: ({ artistid }) => `/artists/${artistid}`,
+      query: ({ artistid }) => {
+        if (!artistid) throw new Error("Artist ID is required");
+        return `/artists/${artistid}`;
+      },
       transformResponse: (response) => adaptArtistData(response),
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch artist details" },
+        };
+      },
     }),
 
     getArtistTopTracks: builder.query({
-      query: ({ artistid }) => `/artists/${artistid}/top-tracks?market=US`,
-      transformResponse: (response) =>
-        response.tracks?.map(adaptTrackData) || [],
+      query: ({ artistid }) => {
+        if (!artistid) throw new Error("Artist ID is required");
+        return `/artists/${artistid}/top-tracks?market=US`;
+      },
+      transformResponse: (response) => {
+        if (!response?.tracks) return [];
+        return response.tracks.map(adaptTrackData).filter(Boolean);
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch artist top tracks" },
+        };
+      },
     }),
 
     getSongRelated: builder.query({
-      query: ({ songid }) => `/recommendations?seed_tracks=${songid}&limit=20`,
-      transformResponse: (response) =>
-        response.tracks?.map(adaptTrackData) || [],
+      query: ({ songid }) => {
+        if (!songid) throw new Error("Song ID is required");
+        return `/recommendations?seed_tracks=${songid}&limit=20`;
+      },
+      transformResponse: (response) => {
+        if (!response?.tracks) return [];
+        return response.tracks.map(adaptTrackData).filter(Boolean);
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch related songs" },
+        };
+      },
     }),
 
     getSongsByGenre: builder.query({
@@ -164,76 +292,115 @@ export const spotifyCoreApi = createApi({
         )}&type=track&limit=50&market=US`;
       },
       transformResponse: (response) => {
-        const tracks = response.tracks?.items?.map(adaptTrackData) || [];
+        if (!response?.tracks?.items) return [];
+        const tracks = response.tracks.items
+          .map(adaptTrackData)
+          .filter(Boolean);
         return tracks.sort(
           (a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0)
         );
       },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch songs by genre" },
+        };
+      },
     }),
 
     getSongsBySearch: builder.query({
-      query: (searchTerm) =>
-        `/search?q=${encodeURIComponent(searchTerm)}&type=track&limit=50`,
+      query: (searchTerm) => {
+        if (!searchTerm?.trim()) throw new Error("Search term is required");
+        return `/search?q=${encodeURIComponent(
+          searchTerm
+        )}&type=track&limit=50`;
+      },
       transformResponse: (response) => {
-        const tracks = response.tracks?.items?.map(adaptTrackData) || [];
+        if (!response?.tracks?.items) return { tracks: { hits: [] } };
+        const tracks = response.tracks.items
+          .map(adaptTrackData)
+          .filter(Boolean);
         return { tracks: { hits: tracks.map((track) => ({ track })) } };
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to search songs" },
+        };
       },
     }),
 
     getNewReleases: builder.query({
       query: () => "/browse/new-releases?country=US&limit=50",
-      transformResponse: (response) => response.albums?.items || [],
+      transformResponse: (response) => response?.albums?.items || [],
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch new releases" },
+        };
+      },
     }),
 
     getFeaturedPlaylists: builder.query({
       query: () => "/search?q=owner:spotify&type=playlist&limit=50&market=US",
       transformResponse: (response) => ({
         message: "Spotify Curated Playlists",
-        playlists: response.playlists?.items || [],
+        playlists: response?.playlists?.items || [],
       }),
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch playlists" },
+        };
+      },
     }),
 
     getPlaylistTracks: builder.query({
-      query: ({ playlistId }) => `/playlists/${playlistId}/tracks?limit=50`,
-      transformResponse: (response) =>
-        response.items
-          ?.filter((item) => item && item.track)
-          .map((item) => adaptTrackData(item.track)) || [],
+      query: ({ playlistId }) => {
+        if (!playlistId) throw new Error("Playlist ID is required");
+        return `/playlists/${playlistId}/tracks?limit=50`;
+      },
+      transformResponse: (response) => {
+        if (!response?.items) return [];
+        return response.items
+          .filter((item) => item && item.track)
+          .map((item) => adaptTrackData(item.track))
+          .filter(Boolean);
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch playlist tracks" },
+        };
+      },
     }),
 
     getTrackFeatures: builder.query({
-      query: ({ songid }) => `/audio-features/${songid}`,
+      query: ({ songid }) => {
+        if (!songid) throw new Error("Song ID is required");
+        return `/audio-features/${songid}`;
+      },
       transformResponse: (response) => {
         if (!response || typeof response === "string") return null;
 
+        const keyNames = [
+          "C",
+          "C♯/D♭",
+          "D",
+          "D♯/E♭",
+          "E",
+          "F",
+          "F♯/G♭",
+          "G",
+          "G♯/A♭",
+          "A",
+          "A♯/B♭",
+          "B",
+        ];
+
         return {
           key: {
-            name:
-              response.key === 0
-                ? "C"
-                : response.key === 1
-                ? "C♯/D♭"
-                : response.key === 2
-                ? "D"
-                : response.key === 3
-                ? "D♯/E♭"
-                : response.key === 4
-                ? "E"
-                : response.key === 5
-                ? "F"
-                : response.key === 6
-                ? "F♯/G♭"
-                : response.key === 7
-                ? "G"
-                : response.key === 8
-                ? "G♯/A♭"
-                : response.key === 9
-                ? "A"
-                : response.key === 10
-                ? "A♯/B♭"
-                : response.key === 11
-                ? "B"
-                : "Unknown",
+            name: keyNames[response.key] || "Unknown",
             number: response.key,
           },
           mode: response.mode === 1 ? "Major" : "Minor",
