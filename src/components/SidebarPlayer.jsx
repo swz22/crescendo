@@ -33,7 +33,7 @@ import {
 } from "react-icons/bs";
 import { HiOutlineQueueList } from "react-icons/hi2";
 
-const PlaylistPlayer = () => {
+const SidebarPlayer = () => {
   const dispatch = useDispatch();
   const {
     currentTrack,
@@ -562,4 +562,4 @@ const PlaylistPlayer = () => {
   );
 };
 
-export default PlaylistPlayer;
+export default SidebarPlayer;

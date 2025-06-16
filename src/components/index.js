@@ -17,7 +17,7 @@ import RelatedSongs from "./RelatedSongs";
 
 // Playlist Components
 import PlaylistModal from "./PlaylistModal";
-import PlaylistPlayer from "./PlaylistPlayer";
+import SidebarPlayer from "./SidebarPlayer";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
 import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
@@ -64,7 +64,7 @@ export {
 
   // Playlists
   PlaylistModal,
-  PlaylistPlayer,
+  SidebarPlayer,
   PlaylistDropdown,
   PlaylistManager,
   AddToPlaylistDropdown,

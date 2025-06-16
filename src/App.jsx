@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { Route, Routes } from "react-router-dom";
 import LeftSidebar from "./components/LeftSidebar";
 import MusicPlayer from "./components/MusicPlayer";
-import PlaylistPlayer from "./components/PlaylistPlayer";
+import SidebarPlayer from "./components/SidebarPlayer";
 import QueueIndicator from "./components/QueueIndicator";
 import FloatingQueueButton from "./components/FloatingQueueButton";
 import MobileQueueSheet from "./components/MobileQueueSheet";
@@ -54,7 +54,7 @@ const App = () => {
 
       {/* Desktop Queue - Hidden on mobile */}
       <div className="w-[380px] h-screen hidden lg:block">
-        <PlaylistPlayer />
+        <SidebarPlayer />
       </div>
 
       {/* Mobile Queue Button - only show on mobile when music is playing */}
