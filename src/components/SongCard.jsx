@@ -39,10 +39,14 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     setShowCacheIndicator(isCached);
   }, [song, isPreviewCached, isPrefetched]);
 
+  // Replace the useEffect cleanup and hover handlers section (around line 35-90):
+
   useEffect(() => {
+    // Cleanup timeout on unmount
     return () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
       }
     };
   }, []);
@@ -56,27 +60,31 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
 
+    // Clear any existing timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
 
     hoverTimeoutRef.current = setTimeout(async () => {
+      // Check if component is still mounted
+      if (!cardRef.current) return;
+
       if (!isPreviewCached(song) && !hasNoPreview(song)) {
         const prefetchSuccess = await prefetchPreviewUrl(song, {
           priority: "high",
         });
 
-        if (prefetchSuccess) {
+        if (prefetchSuccess && cardRef.current) {
           setIsPrefetched(true);
         }
       }
 
-      if (songId && !isAudioReady(songId)) {
+      if (songId && !isAudioReady(songId) && cardRef.current) {
         try {
           const songWithPreview = await getPreviewUrl(song);
           const previewUrl = songWithPreview?.preview_url;
 
-          if (previewUrl) {
+          if (previewUrl && cardRef.current) {
             await preloadAudio(songId, previewUrl);
           }
         } catch (error) {
@@ -99,6 +107,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     setIsHovered(false);
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
   }, []);
 

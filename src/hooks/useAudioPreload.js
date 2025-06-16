@@ -3,16 +3,42 @@ import { useCallback, useRef, useEffect } from "react";
 // Preloaded audio buffers
 const audioBuffers = new Map();
 const bufferUrls = new Map();
+const loadingBuffers = new Set();
 
 // Maximum cached audio buffers
 const MAX_CACHED_BUFFERS = 20;
 
+// Cleanup old buffers
+const cleanupOldBuffers = (keepCount = 10) => {
+  if (audioBuffers.size <= keepCount) return;
+
+  const entriesToRemove = audioBuffers.size - keepCount;
+  const iterator = audioBuffers.entries();
+
+  for (let i = 0; i < entriesToRemove; i++) {
+    const [oldSongId] = iterator.next().value;
+    const oldBlobUrl = bufferUrls.get(oldSongId);
+
+    if (oldBlobUrl && oldBlobUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(oldBlobUrl);
+    }
+
+    audioBuffers.delete(oldSongId);
+    bufferUrls.delete(oldSongId);
+    loadingBuffers.delete(oldSongId);
+  }
+};
+
 export const useAudioPreload = () => {
   const cleanupTimeoutRef = useRef(null);
+  const mountedRef = useRef(true);
 
   // Clean up on unmount
   useEffect(() => {
+    mountedRef.current = true;
+
     return () => {
+      mountedRef.current = false;
       if (cleanupTimeoutRef.current) {
         clearTimeout(cleanupTimeoutRef.current);
       }
@@ -21,28 +47,16 @@ export const useAudioPreload = () => {
 
   // Preload audio with proper cleanup
   const preloadAudio = useCallback(async (songId, previewUrl) => {
-    if (!previewUrl || audioBuffers.has(songId)) {
+    if (!previewUrl || audioBuffers.has(songId) || loadingBuffers.has(songId)) {
       return true;
     }
+
+    loadingBuffers.add(songId);
 
     try {
       // Check cache size and clean if needed
       if (audioBuffers.size >= MAX_CACHED_BUFFERS) {
-        // Remove oldest entries
-        const entriesToRemove = Math.floor(MAX_CACHED_BUFFERS / 2);
-        const iterator = audioBuffers.entries();
-
-        for (let i = 0; i < entriesToRemove; i++) {
-          const [oldSongId] = iterator.next().value;
-          const oldBlobUrl = bufferUrls.get(oldSongId);
-
-          if (oldBlobUrl && oldBlobUrl.startsWith("blob:")) {
-            URL.revokeObjectURL(oldBlobUrl);
-          }
-
-          audioBuffers.delete(oldSongId);
-          bufferUrls.delete(oldSongId);
-        }
+        cleanupOldBuffers(Math.floor(MAX_CACHED_BUFFERS / 2));
       }
 
       // Fetch with timeout
@@ -62,6 +76,12 @@ export const useAudioPreload = () => {
       }
 
       const blob = await response.blob();
+
+      // Check if component is still mounted
+      if (!mountedRef.current) {
+        return false;
+      }
+
       const blobUrl = URL.createObjectURL(blob);
 
       // Store both buffer and blob URL for cleanup
@@ -74,6 +94,8 @@ export const useAudioPreload = () => {
         console.error(`Failed to preload ${songId}:`, error);
       }
       return false;
+    } finally {
+      loadingBuffers.delete(songId);
     }
   }, []);
 
@@ -90,20 +112,25 @@ export const useAudioPreload = () => {
   // Preload multiple tracks efficiently
   const preloadMultiple = useCallback(
     async (songs) => {
-      if (!songs || songs.length === 0) return;
+      if (!songs || songs.length === 0 || !mountedRef.current) return;
 
       const MAX_CONCURRENT = 2;
       const preloadQueue = [...songs];
       const activePreloads = [];
 
       const processNext = async () => {
-        if (preloadQueue.length === 0) return;
+        if (preloadQueue.length === 0 || !mountedRef.current) return;
 
         const song = preloadQueue.shift();
         const previewUrl = song?.preview_url || song?.url;
         const songId = song?.key || song?.id || song?.track_id;
 
-        if (previewUrl && songId && !audioBuffers.has(songId)) {
+        if (
+          previewUrl &&
+          songId &&
+          !audioBuffers.has(songId) &&
+          !loadingBuffers.has(songId)
+        ) {
           try {
             await preloadAudio(songId, previewUrl);
           } catch (error) {
@@ -111,7 +138,9 @@ export const useAudioPreload = () => {
           }
         }
 
-        await processNext();
+        if (mountedRef.current) {
+          await processNext();
+        }
       };
 
       // Start concurrent preloads
@@ -128,7 +157,7 @@ export const useAudioPreload = () => {
   const getCacheStats = useCallback(() => {
     return {
       cached: audioBuffers.size,
-      loading: 0,
+      loading: loadingBuffers.size,
       maxCache: MAX_CACHED_BUFFERS,
     };
   }, []);
@@ -144,6 +173,7 @@ export const useAudioPreload = () => {
 
     audioBuffers.clear();
     bufferUrls.clear();
+    loadingBuffers.clear();
   }, []);
 
   return {

@@ -14,6 +14,7 @@ class PreviewUrlManager {
     this.circuitBreakerResetTime = 60000;
     this.consecutiveFailures = 0;
     this.circuitBreakerTrippedAt = null;
+    this.maxCacheSize = 1000; // Prevent unbounded growth
     this.loadPersistedCache();
   }
 
@@ -30,6 +31,8 @@ class PreviewUrlManager {
   }
 
   async getPreviewUrl(trackId) {
+    if (!trackId) return null;
+
     // Check and potentially reset circuit breaker
     this.checkCircuitBreaker();
 
@@ -45,6 +48,8 @@ class PreviewUrlManager {
       if (age < maxAge) {
         return cached.url;
       }
+      // Remove stale entry
+      this.cache.delete(trackId);
     }
 
     if (this.pendingRequests.has(trackId)) {
@@ -63,11 +68,6 @@ class PreviewUrlManager {
   }
 
   async fetchPreviewUrl(trackId) {
-    // Check if already being fetched
-    if (this.pendingRequests.has(trackId)) {
-      return this.pendingRequests.get(trackId);
-    }
-
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
     if (timeSinceLastRequest < this.minRequestInterval) {
@@ -85,7 +85,7 @@ class PreviewUrlManager {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const response = await fetch(`${API_URL}/api/preview/${trackId}`, {
         signal: controller.signal,
@@ -108,11 +108,22 @@ class PreviewUrlManager {
       const data = await response.json();
       const url = data.preview_url || null;
 
+      // Enforce cache size limit
+      if (this.cache.size >= this.maxCacheSize) {
+        const entriesToDelete = Math.floor(this.maxCacheSize * 0.2);
+        const iterator = this.cache.keys();
+        for (let i = 0; i < entriesToDelete; i++) {
+          const key = iterator.next().value;
+          if (key) this.cache.delete(key);
+        }
+      }
+
       this.cache.set(trackId, { url, timestamp: Date.now() });
       this.consecutiveFailures = 0;
       this.failureCount.delete(trackId);
 
-      this.persistCache();
+      // Throttle persistence to avoid excessive writes
+      this.schedulePersist();
 
       return url;
     } catch (error) {
@@ -133,15 +144,21 @@ class PreviewUrlManager {
     }
   }
 
+  persistTimeout = null;
+
+  schedulePersist() {
+    if (this.persistTimeout) return;
+
+    this.persistTimeout = setTimeout(() => {
+      this.persistCache();
+      this.persistTimeout = null;
+    }, 5000);
+  }
+
   isCircuitBreakerOpen() {
     if (!this.circuitBreakerTrippedAt) return false;
     const elapsed = Date.now() - this.circuitBreakerTrippedAt;
-    if (elapsed > this.circuitBreakerResetTime) {
-      this.circuitBreakerTrippedAt = null;
-      this.consecutiveFailures = 0;
-      return false;
-    }
-    return true;
+    return elapsed <= this.circuitBreakerResetTime;
   }
 
   persistCache() {
@@ -172,6 +189,10 @@ class PreviewUrlManager {
       }
     } catch (error) {
       console.warn("Failed to load persisted cache:", error);
+      // Clear corrupted cache
+      try {
+        localStorage.removeItem(StorageKeys.PREVIEW_CACHE);
+      } catch {}
     }
   }
 
@@ -181,6 +202,12 @@ class PreviewUrlManager {
     this.failureCount.clear();
     this.consecutiveFailures = 0;
     this.circuitBreakerTrippedAt = null;
+
+    if (this.persistTimeout) {
+      clearTimeout(this.persistTimeout);
+      this.persistTimeout = null;
+    }
+
     try {
       localStorage.removeItem(StorageKeys.PREVIEW_CACHE);
     } catch (error) {
