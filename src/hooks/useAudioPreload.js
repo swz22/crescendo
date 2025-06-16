@@ -1,40 +1,14 @@
 import { useCallback, useRef, useEffect } from "react";
 
-// Global audio element for consistent playback
-let globalAudioElement = null;
-
 // Preloaded audio buffers
 const audioBuffers = new Map();
-const bufferUrls = new Map(); // Track blob URLs for cleanup
-
-// Cleanup old blob URLs
-const cleanupBlobUrl = (url) => {
-  if (url && url.startsWith("blob:")) {
-    URL.revokeObjectURL(url);
-  }
-};
+const bufferUrls = new Map();
 
 // Maximum cached audio buffers
 const MAX_CACHED_BUFFERS = 20;
 
 export const useAudioPreload = () => {
   const cleanupTimeoutRef = useRef(null);
-
-  // Set the main audio element reference
-  const setAudioElement = useCallback((element) => {
-    globalAudioElement = element;
-
-    // Add event listeners for better resource management
-    if (element) {
-      element.addEventListener("error", (e) => {
-        console.error("Audio playback error:", e);
-      });
-
-      element.addEventListener("stalled", () => {
-        console.warn("Audio playback stalled");
-      });
-    }
-  }, []);
 
   // Clean up on unmount
   useEffect(() => {
@@ -54,7 +28,7 @@ export const useAudioPreload = () => {
     try {
       // Check cache size and clean if needed
       if (audioBuffers.size >= MAX_CACHED_BUFFERS) {
-        // Remove oldest entries (first half)
+        // Remove oldest entries
         const entriesToRemove = Math.floor(MAX_CACHED_BUFFERS / 2);
         const iterator = audioBuffers.entries();
 
@@ -62,24 +36,23 @@ export const useAudioPreload = () => {
           const [oldSongId] = iterator.next().value;
           const oldBlobUrl = bufferUrls.get(oldSongId);
 
-          if (oldBlobUrl) {
-            cleanupBlobUrl(oldBlobUrl);
-            bufferUrls.delete(oldSongId);
+          if (oldBlobUrl && oldBlobUrl.startsWith("blob:")) {
+            URL.revokeObjectURL(oldBlobUrl);
           }
 
           audioBuffers.delete(oldSongId);
+          bufferUrls.delete(oldSongId);
         }
       }
 
       // Fetch with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch(previewUrl, {
         signal: controller.signal,
         mode: "cors",
         credentials: "omit",
-        cache: "force-cache",
       });
 
       clearTimeout(timeoutId);
@@ -94,38 +67,6 @@ export const useAudioPreload = () => {
       // Store both buffer and blob URL for cleanup
       audioBuffers.set(songId, blobUrl);
       bufferUrls.set(songId, blobUrl);
-
-      // Preload in audio element if available
-      if (globalAudioElement && !globalAudioElement.src) {
-        const audio = new Audio();
-        audio.preload = "auto";
-        audio.src = blobUrl;
-
-        // Set up cleanup with multiple fallbacks
-        const cleanupAudio = () => {
-          audio.src = "";
-          audio.remove();
-        };
-
-        audio.addEventListener(
-          "canplaythrough",
-          () => {
-            setTimeout(cleanupAudio, 100);
-          },
-          { once: true }
-        );
-
-        audio.addEventListener(
-          "error",
-          () => {
-            setTimeout(cleanupAudio, 100);
-          },
-          { once: true }
-        );
-
-        // Fallback cleanup after 5 seconds
-        setTimeout(cleanupAudio, 5000);
-      }
 
       return true;
     } catch (error) {
@@ -151,7 +92,6 @@ export const useAudioPreload = () => {
     async (songs) => {
       if (!songs || songs.length === 0) return;
 
-      // Limit concurrent preloads
       const MAX_CONCURRENT = 2;
       const preloadQueue = [...songs];
       const activePreloads = [];
@@ -197,39 +137,21 @@ export const useAudioPreload = () => {
   const clearCache = useCallback(() => {
     // Clean up all blob URLs
     bufferUrls.forEach((blobUrl) => {
-      cleanupBlobUrl(blobUrl);
+      if (blobUrl && blobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(blobUrl);
+      }
     });
 
     audioBuffers.clear();
     bufferUrls.clear();
-
-    // Reset audio element
-    if (globalAudioElement) {
-      globalAudioElement.src = "";
-      globalAudioElement.load();
-    }
-  }, []);
-
-  // Clean up specific track
-  const cleanupTrack = useCallback((songId) => {
-    const blobUrl = bufferUrls.get(songId);
-
-    if (blobUrl) {
-      cleanupBlobUrl(blobUrl);
-      bufferUrls.delete(songId);
-    }
-
-    audioBuffers.delete(songId);
   }, []);
 
   return {
-    setAudioElement,
     preloadAudio,
     isAudioReady,
     getPreloadedUrl,
     preloadMultiple,
     getCacheStats,
     clearCache,
-    cleanupTrack,
   };
 };

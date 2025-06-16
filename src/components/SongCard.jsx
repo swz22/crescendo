@@ -27,6 +27,8 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
 
   // Get current track from Redux
   const currentTrack = useSelector((state) => state.player.currentTrack);
+  const { queue } = useSelector((state) => state.player);
+
   const isCurrentSong =
     currentTrack?.key === song?.key ||
     currentTrack?.title === song?.title ||
@@ -101,12 +103,17 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   }, []);
 
   const handlePlayClick = useCallback(async () => {
+    if (!song) {
+      console.error("No song data available");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const songWithPreview = await getPreviewUrl(song);
 
-      if (songWithPreview.preview_url) {
+      if (songWithPreview?.preview_url) {
         dispatch(
           playTrack({
             track: songWithPreview,
@@ -117,7 +124,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
       }
     } catch (error) {
       console.error("Error playing track:", error);
-      // Don't show error toast here - let the error boundary handle it
+      showToast("Error playing track", "error");
     } finally {
       setIsLoading(false);
     }

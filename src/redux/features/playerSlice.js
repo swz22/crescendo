@@ -27,6 +27,7 @@ const initialState = {
   currentTrack: null,
   isPlaying: false,
   isActive: false,
+  volume: 0.7,
 
   // Playback modes
   shuffle: false,
@@ -298,6 +299,11 @@ const playerSlice = createSlice({
       }
     },
 
+    // Volume control
+    setVolume: (state, action) => {
+      state.volume = Math.max(0, Math.min(1, action.payload));
+    },
+
     // Playlist management
     createPlaylist: (state, action) => {
       const { name, id = `playlist_${Date.now()}` } = action.payload;
@@ -523,6 +529,7 @@ export const {
   selectGenreListId,
   setModalOpen,
   updateCurrentTrackPreview,
+  setVolume,
 } = playerSlice.actions;
 
 export default playerSlice.reducer;

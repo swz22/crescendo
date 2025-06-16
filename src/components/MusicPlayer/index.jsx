@@ -12,6 +12,7 @@ import {
   playPause,
   toggleShuffle,
   toggleRepeat,
+  setVolume as setVolumeAction,
 } from "../../redux/features/playerSlice";
 import { useSongNavigation } from "../../hooks/useSongNavigation";
 import { useAudioPreload } from "../../hooks/useAudioPreload";
@@ -37,6 +38,8 @@ const MusicPlayer = () => {
     communityPlaylist,
   } = useSelector((state) => state.player);
 
+  const volume = useSelector((state) => state.player.volume);
+
   // Get current context tracks
   const getCurrentTracks = () => {
     switch (activeContext) {
@@ -61,7 +64,6 @@ const MusicPlayer = () => {
   const [duration, setDuration] = useState(0);
   const [seekTime, setSeekTime] = useState(0);
   const [appTime, setAppTime] = useState(0);
-  const [volume, setVolume] = useState(0.3);
   const [isChangingTrack, setIsChangingTrack] = useState(false);
   const [isAudioReady, setIsAudioReady] = useState(false);
 
@@ -291,8 +293,10 @@ const MusicPlayer = () => {
           value={volume}
           min="0"
           max="1"
-          onChange={(event) => setVolume(event.target.value)}
-          setVolume={setVolume}
+          onChange={(event) =>
+            dispatch(setVolumeAction(parseFloat(event.target.value)))
+          }
+          setVolume={(val) => dispatch(setVolumeAction(val))}
         />
       </div>
 

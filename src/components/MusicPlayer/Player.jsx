@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from "react";
-import { useAudioPreload } from "../../hooks/useAudioPreload";
 
 const Player = ({
   activeSong,
@@ -15,57 +14,48 @@ const Player = ({
   songUrl,
 }) => {
   const ref = useRef(null);
-  const isMountedRef = useRef(true);
-  const { setAudioElement, getPreloadedUrl } = useAudioPreload();
-  const currentUrlRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const isLoadingRef = useRef(false);
+  const currentUrlRef = useRef(null);
 
-  // Add cleanup on unmount
+  // Clean up on unmount
   useEffect(() => {
     return () => {
-      isMountedRef.current = false;
+      if (ref.current) {
+        ref.current.pause();
+        ref.current.src = "";
+        ref.current.load();
+      }
     };
   }, []);
 
-  // Register audio element globally
-  useEffect(() => {
-    if (ref.current) {
-      setAudioElement(ref.current);
-    }
-  }, [setAudioElement]);
-
-  // Handle source changes - optimized
+  // Handle source changes
   useEffect(() => {
     if (!ref.current || !songUrl) return;
 
-    // Check for preloaded URL
-    const songId = activeSong?.key || activeSong?.id || activeSong?.track_id;
-    const preloadedUrl = songId ? getPreloadedUrl(songId) : null;
-    const urlToUse = preloadedUrl || songUrl;
+    // Prevent duplicate loads
+    if (currentUrlRef.current === songUrl && !hasError) return;
 
-    // Only change source if it's actually different
-    if (currentUrlRef.current !== urlToUse) {
-      currentUrlRef.current = urlToUse;
-      setIsReady(false);
-      setHasError(false);
-
-      // Notify parent that loading has started
-      if (onLoadStart) {
-        onLoadStart();
-      }
-
-      // Clean previous source
+    // Clean up previous audio
+    if (ref.current.src) {
       ref.current.pause();
-
-      // Set new source
-      ref.current.src = urlToUse;
-      ref.current.load();
-
-      // For better performance
-      ref.current.preload = "auto";
+      ref.current.currentTime = 0;
     }
-  }, [songUrl, activeSong, getPreloadedUrl, onLoadStart]);
+
+    currentUrlRef.current = songUrl;
+    isLoadingRef.current = true;
+    setIsReady(false);
+    setHasError(false);
+
+    // Set new source
+    ref.current.src = songUrl;
+    ref.current.load();
+
+    if (onLoadStart) {
+      onLoadStart();
+    }
+  }, [songUrl, onLoadStart, hasError]);
 
   // Handle play/pause
   useEffect(() => {
@@ -76,10 +66,7 @@ const Player = ({
 
       if (playPromise !== undefined) {
         playPromise.catch((error) => {
-          if (error.name === "NotAllowedError") {
-            // Browser blocked autoplay, user interaction needed
-            console.log("Autoplay blocked, user interaction required");
-          } else if (error.name !== "AbortError") {
+          if (error.name !== "AbortError") {
             console.error("Error playing audio:", error);
             setHasError(true);
           }
@@ -92,7 +79,7 @@ const Player = ({
 
   // Handle volume changes
   useEffect(() => {
-    if (ref.current) {
+    if (ref.current && typeof volume === "number") {
       ref.current.volume = Math.max(0, Math.min(1, volume));
     }
   }, [volume]);
@@ -106,20 +93,14 @@ const Player = ({
 
   // Event handlers
   const handleCanPlay = () => {
+    if (!isLoadingRef.current) return;
+
+    isLoadingRef.current = false;
     setIsReady(true);
     setHasError(false);
 
     if (onCanPlay) {
       onCanPlay();
-    }
-
-    // Auto-play if should be playing
-    if (isPlaying && ref.current && ref.current.paused) {
-      ref.current.play().catch((error) => {
-        if (error.name !== "AbortError") {
-          console.error("Error auto-playing:", error);
-        }
-      });
     }
   };
 
@@ -137,24 +118,12 @@ const Player = ({
   };
 
   const handleError = (e) => {
-    console.error("Audio error:", e.target.error);
-    if (isMountedRef.current) {
-      setHasError(true);
-      setIsReady(false);
-    }
-    // Try fallback to original URL if using preloaded
-    const songId = activeSong?.key || activeSong?.id || activeSong?.track_id;
-    const preloadedUrl = songId ? getPreloadedUrl(songId) : null;
+    if (!ref.current?.src) return;
 
-    if (
-      preloadedUrl &&
-      ref.current.src === preloadedUrl &&
-      songUrl !== preloadedUrl
-    ) {
-      console.log("Falling back to original URL");
-      ref.current.src = songUrl;
-      ref.current.load();
-    }
+    console.error("Audio error:", e.target.error);
+    isLoadingRef.current = false;
+    setHasError(true);
+    setIsReady(false);
   };
 
   const handleEnded = () => {
@@ -177,12 +146,10 @@ const Player = ({
       onTimeUpdate={onTimeUpdate}
       onLoadedData={handleLoadedData}
       onCanPlay={handleCanPlay}
+      onCanPlayThrough={handleCanPlay}
       onLoadStart={handleLoadStart}
       onError={handleError}
-      onStalled={() => console.log("Audio stalled")}
-      onWaiting={() => console.log("Audio waiting")}
       preload="auto"
-      crossOrigin="anonymous"
     />
   );
 };
