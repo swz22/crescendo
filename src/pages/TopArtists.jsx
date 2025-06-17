@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useGetTopArtistsQuery } from "../redux/services/spotifyCore";
 import {
   Error,
@@ -7,6 +7,7 @@ import {
   AppHeader,
   ResponsiveGrid,
 } from "../components";
+import DropdownPortal from "../components/DropdownPortal";
 import { IoChevronDown, IoGlobe } from "react-icons/io5";
 
 const TopArtists = () => {
@@ -15,6 +16,7 @@ const TopArtists = () => {
     name: "United States",
   });
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+  const regionButtonRef = useRef(null);
   const { data, isFetching, error } = useGetTopArtistsQuery(
     selectedRegion.code
   );
@@ -69,23 +71,10 @@ const TopArtists = () => {
     loadArtistImages();
   }, [data]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest(".region-dropdown-container")) {
-        setShowRegionDropdown(false);
-      }
-    };
-
-    if (showRegionDropdown) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [showRegionDropdown]);
-
   const regionSelector = (
-    <div className="relative region-dropdown-container">
+    <>
       <button
+        ref={regionButtonRef}
         onClick={() => setShowRegionDropdown(!showRegionDropdown)}
         className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-300 border border-white/20"
       >
@@ -98,39 +87,42 @@ const TopArtists = () => {
         />
       </button>
 
-      {showRegionDropdown && (
-        <div className="absolute top-full right-0 mt-2 z-50 min-w-[240px] bg-[#1a1848]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-fadeIn">
-          <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
-            {regions.map((region) => (
-              <button
-                key={region.code}
-                onClick={() => {
-                  setSelectedRegion(region);
-                  setShowRegionDropdown(false);
-                }}
-                className={`
-                  w-full text-left px-4 py-3 rounded-lg
-                  transition-all duration-200 flex items-center gap-3
-                  ${
-                    selectedRegion.code === region.code
-                      ? "bg-[#14b8a6]/20 text-white font-semibold border-l-4 border-[#14b8a6]"
-                      : "hover:bg-white/10 text-gray-300 hover:text-white border-l-4 border-transparent"
-                  }
-                `}
-              >
-                <span className="text-gray-400 text-sm font-medium min-w-[35px]">
-                  {region.code}
-                </span>
-                <span className="flex-1">{region.name}</span>
-                {selectedRegion.code === region.code && (
-                  <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      <DropdownPortal
+        isOpen={showRegionDropdown}
+        onClose={() => setShowRegionDropdown(false)}
+        triggerRef={regionButtonRef}
+        minWidth={240}
+        maxHeight={400}
+        placement="bottom-end"
+      >
+        {regions.map((region) => (
+          <button
+            key={region.code}
+            onClick={() => {
+              setSelectedRegion(region);
+              setShowRegionDropdown(false);
+            }}
+            className={`
+              w-full text-left px-4 py-3 rounded-lg
+              transition-all duration-200 flex items-center gap-3
+              ${
+                selectedRegion.code === region.code
+                  ? "bg-[#14b8a6]/20 text-white font-semibold border-l-4 border-[#14b8a6]"
+                  : "hover:bg-white/10 text-gray-300 hover:text-white border-l-4 border-transparent"
+              }
+            `}
+          >
+            <span className="text-gray-400 text-sm font-medium min-w-[35px]">
+              {region.code}
+            </span>
+            <span className="flex-1">{region.name}</span>
+            {selectedRegion.code === region.code && (
+              <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+            )}
+          </button>
+        ))}
+      </DropdownPortal>
+    </>
   );
 
   if (isFetching || loadingImages)

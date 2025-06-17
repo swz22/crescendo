@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import {
@@ -8,6 +8,7 @@ import {
   AppHeader,
   ResponsiveGrid,
 } from "../components";
+import DropdownPortal from "../components/DropdownPortal";
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -22,6 +23,7 @@ const Discover = () => {
   const { activeSong, isPlaying } = useSelector((state) => state.player);
   const { prefetchPreviewUrl, getPagePrefetchStrategy } = usePreviewUrl();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+  const genreButtonRef = useRef(null);
 
   const selectedGenre = genreListId || "POP";
   const genreTitle =
@@ -66,20 +68,6 @@ const Discover = () => {
     location.pathname,
   ]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest(".genre-dropdown-container")) {
-        setShowGenreDropdown(false);
-      }
-    };
-
-    if (showGenreDropdown) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [showGenreDropdown]);
-
   const handleGenreChange = (value) => {
     dispatch(selectGenreListId(value));
     setShowGenreDropdown(false);
@@ -121,8 +109,9 @@ const Discover = () => {
       <AppHeader
         title={`${genreTitle} Music`}
         action={
-          <div className="relative genre-dropdown-container">
+          <>
             <button
+              ref={genreButtonRef}
               onClick={() => setShowGenreDropdown(!showGenreDropdown)}
               className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all duration-200 text-white"
             >
@@ -135,37 +124,38 @@ const Discover = () => {
               />
             </button>
 
-            {/* Genre Dropdown - Positioned relative to button */}
-            {showGenreDropdown && (
-              <div className="absolute top-full right-0 mt-2 w-72 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-fadeIn z-50">
-                <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
-                  {genres.map((genre) => (
-                    <button
-                      key={genre.value}
-                      onClick={() => handleGenreChange(genre.value)}
-                      className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center justify-between group ${
-                        selectedGenre === genre.value
-                          ? "bg-[#14b8a6]/20 text-[#14b8a6]"
-                          : "text-white"
-                      }`}
-                    >
-                      <span className="font-medium">{genre.title}</span>
-                      <div
-                        className={`w-3 h-3 rounded-full bg-gradient-to-r ${
-                          genreColors[genre.value] ||
-                          "from-gray-400 to-gray-600"
-                        } ${
-                          selectedGenre === genre.value
-                            ? "opacity-100"
-                            : "opacity-0 group-hover:opacity-50"
-                        } transition-opacity`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+            <DropdownPortal
+              isOpen={showGenreDropdown}
+              onClose={() => setShowGenreDropdown(false)}
+              triggerRef={genreButtonRef}
+              minWidth={288}
+              maxHeight={384}
+              placement="bottom-end"
+            >
+              {genres.map((genre) => (
+                <button
+                  key={genre.value}
+                  onClick={() => handleGenreChange(genre.value)}
+                  className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center justify-between group ${
+                    selectedGenre === genre.value
+                      ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                      : "text-white"
+                  }`}
+                >
+                  <span className="font-medium">{genre.title}</span>
+                  <div
+                    className={`w-3 h-3 rounded-full bg-gradient-to-r ${
+                      genreColors[genre.value] || "from-gray-400 to-gray-600"
+                    } ${
+                      selectedGenre === genre.value
+                        ? "opacity-100"
+                        : "opacity-0 group-hover:opacity-50"
+                    } transition-opacity`}
+                  />
+                </button>
+              ))}
+            </DropdownPortal>
+          </>
         }
       />
 

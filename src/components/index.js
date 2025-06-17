@@ -33,6 +33,7 @@ import Searchbar from "./Searchbar";
 import Loader from "./Loader";
 import Error from "./Error";
 import Portal from "./Portal";
+import DropdownPortal from "./DropdownPortal";
 import TrackLoadingState from "./TrackLoadingState";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import SongMenu from "./SongMenu";
@@ -80,6 +81,7 @@ export {
   Loader,
   Error,
   Portal,
+  DropdownPortal,
   TrackLoadingState,
   MusicLoadingSpinner,
   SongMenu,

@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { switchContext } from "../redux/features/playerSlice";
 import {
   selectAllContexts,
   selectCurrentContextName,
 } from "../redux/features/playerSelectors";
+import DropdownPortal from "./DropdownPortal";
 import {
   HiOutlineQueueList,
   HiOutlineClock,
@@ -15,27 +16,12 @@ import { BsMusicNoteList } from "react-icons/bs";
 
 const PlaylistDropdown = ({ onManageClick }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const dropdownButtonRef = useRef(null);
   const dispatch = useDispatch();
 
   const { activeContext } = useSelector((state) => state.player);
   const contexts = useSelector(selectAllContexts);
   const currentContextName = useSelector(selectCurrentContextName);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isOpen]);
 
   const getIcon = (type) => {
     switch (type) {
@@ -62,9 +48,10 @@ const PlaylistDropdown = ({ onManageClick }) => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <>
       {/* Dropdown Trigger */}
       <button
+        ref={dropdownButtonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all duration-200 group max-w-full"
       >
@@ -84,17 +71,56 @@ const PlaylistDropdown = ({ onManageClick }) => {
         />
       </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute top-full mt-2 w-72 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden z-50 animate-fadeIn">
-          <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
-            {/* System Contexts */}
+      {/* Dropdown Menu using Portal */}
+      <DropdownPortal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        triggerRef={dropdownButtonRef}
+        minWidth={288}
+        maxHeight={384}
+        placement="bottom-start"
+      >
+        {/* System Contexts */}
+        <div className="px-3 py-2">
+          <p className="text-xs text-white/40 uppercase tracking-wider mb-2">
+            System
+          </p>
+          {contexts
+            .filter((c) => c.type !== "playlist")
+            .map((context) => (
+              <button
+                key={context.id}
+                onClick={() => handleContextSelect(context.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                  activeContext === context.id
+                    ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                    : "hover:bg-white/10 text-white"
+                }`}
+              >
+                <div className="flex-shrink-0">{getIcon(context.type)}</div>
+                <div className="flex-1 text-left">
+                  <p className="font-medium">{context.name}</p>
+                </div>
+                <span className="text-sm text-white/60">
+                  {context.trackCount}
+                </span>
+                {activeContext === context.id && (
+                  <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                )}
+              </button>
+            ))}
+        </div>
+
+        {/* User Playlists */}
+        {contexts.filter((c) => c.type === "playlist").length > 0 && (
+          <>
+            <div className="border-t border-white/10 my-2" />
             <div className="px-3 py-2">
               <p className="text-xs text-white/40 uppercase tracking-wider mb-2">
-                System
+                Your Playlists
               </p>
               {contexts
-                .filter((c) => c.type !== "playlist")
+                .filter((c) => c.type === "playlist")
                 .map((context) => (
                   <button
                     key={context.id}
@@ -118,62 +144,24 @@ const PlaylistDropdown = ({ onManageClick }) => {
                   </button>
                 ))}
             </div>
+          </>
+        )}
 
-            {/* User Playlists */}
-            {contexts.filter((c) => c.type === "playlist").length > 0 && (
-              <>
-                <div className="border-t border-white/10 my-2" />
-                <div className="px-3 py-2">
-                  <p className="text-xs text-white/40 uppercase tracking-wider mb-2">
-                    Your Playlists
-                  </p>
-                  {contexts
-                    .filter((c) => c.type === "playlist")
-                    .map((context) => (
-                      <button
-                        key={context.id}
-                        onClick={() => handleContextSelect(context.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                          activeContext === context.id
-                            ? "bg-[#14b8a6]/20 text-[#14b8a6]"
-                            : "hover:bg-white/10 text-white"
-                        }`}
-                      >
-                        <div className="flex-shrink-0">
-                          {getIcon(context.type)}
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-medium truncate">{context.name}</p>
-                        </div>
-                        <span className="text-sm text-white/60">
-                          {context.trackCount}
-                        </span>
-                        {activeContext === context.id && (
-                          <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                        )}
-                      </button>
-                    ))}
-                </div>
-              </>
-            )}
-
-            {/* Manage Playlists Button */}
-            <div className="border-t border-white/10 p-3">
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  onManageClick();
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0891b2] text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-[#14b8a6]/25"
-              >
-                <HiOutlinePlus className="w-5 h-5" />
-                Manage Playlists
-              </button>
-            </div>
-          </div>
+        {/* Manage Playlists */}
+        <div className="border-t border-white/10 mt-2 p-3">
+          <button
+            onClick={() => {
+              onManageClick?.();
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg transition-all duration-200 text-white/80 hover:text-white"
+          >
+            <HiOutlinePlus className="w-5 h-5" />
+            <span className="font-medium">Manage Playlists</span>
+          </button>
         </div>
-      )}
-    </div>
+      </DropdownPortal>
+    </>
   );
 };
 
