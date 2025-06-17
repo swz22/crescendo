@@ -33,7 +33,7 @@ const Search = () => {
       <AppHeader
         title="Search Results"
         subtitle={`Showing results for "${searchTerm}"`}
-        showSearch={false} // Hide search on search results page
+        showSearch={true} // Enable search on search results page
       />
 
       {songs.length ? (
