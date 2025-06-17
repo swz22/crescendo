@@ -119,7 +119,8 @@ export const spotifyCoreApi = createApi({
     }),
 
     getTopArtists: builder.query({
-      query: () => "/search?q=year:2024&type=artist&limit=20&market=US",
+      query: (region = "US") =>
+        `/search?q=year:2024&type=artist&limit=30&market=${region}`,
       transformResponse: (response) => {
         if (!response?.artists?.items) return [];
         const artists = response.artists.items
@@ -264,16 +265,17 @@ export const spotifyCoreApi = createApi({
           HIP_HOP_RAP: "hip-hop",
           DANCE: "dance",
           ELECTRONIC: "electronic",
-          SOUL_RNB: "r&b",
+          SOUL_RNB: "r-n-b",
           ALTERNATIVE: "alternative",
           ROCK: "rock",
           LATIN: "latin",
           FILM_TV: "soundtrack",
           COUNTRY: "country",
-          WORLDWIDE: "global",
+          WORLDWIDE: "world-music",
           REGGAE: "reggae",
           HOUSE: "house",
           K_POP: "k-pop",
+          FRENCH_POP: "french",
           INDIE: "indie",
           METAL: "metal",
           JAZZ: "jazz",
@@ -283,22 +285,15 @@ export const spotifyCoreApi = createApi({
           FUNK: "funk",
           GOSPEL: "gospel",
           DISCO: "disco",
-          LOFI: "lo-fi",
+          LOFI: "study",
         };
 
-        const genreQuery = genreMap[genre] || "pop";
-        return `/search?q=genre:${encodeURIComponent(
-          genreQuery
-        )}&type=track&limit=50&market=US`;
+        const spotifyGenre = genreMap[genre] || "pop";
+        return `/search?q=genre:"${spotifyGenre}"&type=track&limit=50`;
       },
       transformResponse: (response) => {
         if (!response?.tracks?.items) return [];
-        const tracks = response.tracks.items
-          .map(adaptTrackData)
-          .filter(Boolean);
-        return tracks.sort(
-          (a, b) => (b.track?.popularity || 0) - (a.track?.popularity || 0)
-        );
+        return response.tracks.items.map(adaptTrackData).filter(Boolean);
       },
       transformErrorResponse: (response) => {
         return {
@@ -310,22 +305,35 @@ export const spotifyCoreApi = createApi({
 
     getSongsBySearch: builder.query({
       query: (searchTerm) => {
-        if (!searchTerm?.trim()) throw new Error("Search term is required");
+        if (!searchTerm) throw new Error("Search term is required");
         return `/search?q=${encodeURIComponent(
           searchTerm
-        )}&type=track&limit=50`;
+        )}&type=track,artist,album&limit=20`;
       },
       transformResponse: (response) => {
-        if (!response?.tracks?.items) return { tracks: { hits: [] } };
-        const tracks = response.tracks.items
-          .map(adaptTrackData)
-          .filter(Boolean);
-        return { tracks: { hits: tracks.map((track) => ({ track })) } };
+        return {
+          tracks: response.tracks?.items?.map(adaptTrackData) || [],
+          artists:
+            response.artists?.items?.map((artist) => ({
+              ...adaptArtistData(artist),
+              type: "artist",
+            })) || [],
+          albums:
+            response.albums?.items?.map((album) => ({
+              id: album.id,
+              name: album.name,
+              artists: album.artists,
+              images: album.images,
+              release_date: album.release_date,
+              total_tracks: album.total_tracks,
+              type: "album",
+            })) || [],
+        };
       },
       transformErrorResponse: (response) => {
         return {
           status: response.status,
-          data: response.data || { error: "Failed to search songs" },
+          data: response.data || { error: "Failed to search" },
         };
       },
     }),

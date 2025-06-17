@@ -107,12 +107,23 @@ const DropdownPortal = ({
     if (!isOpen) return;
 
     const handleClickOutside = (event) => {
+      console.log("🔍 DROPDOWN DEBUG: Click detected on:", event.target);
+      console.log(
+        "🔍 DROPDOWN DEBUG: Click is inside dropdown?",
+        dropdownRef.current?.contains(event.target)
+      );
+      console.log(
+        "🔍 DROPDOWN DEBUG: Click is on trigger?",
+        triggerRef.current?.contains(event.target)
+      );
+
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target) &&
         triggerRef.current &&
         !triggerRef.current.contains(event.target)
       ) {
+        console.log("🔍 DROPDOWN DEBUG: Closing dropdown (clicked outside)");
         onClose();
       }
     };
@@ -126,13 +137,13 @@ const DropdownPortal = ({
 
     // Small delay to prevent immediate closing
     const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
       document.addEventListener("keydown", handleEscape);
     }, 0);
 
     return () => {
       clearTimeout(timer);
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen, onClose, triggerRef]);

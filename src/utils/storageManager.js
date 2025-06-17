@@ -57,7 +57,5 @@ export const debugStorage = () => {
       }
     }
   }
-
-  console.log("Crescendo Storage:", storage);
   return storage;
 };

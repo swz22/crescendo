@@ -49,11 +49,6 @@ const AddToPlaylistDropdown = ({
   }, [forceOpen]);
 
   useEffect(() => {
-    console.log("Positioning effect", {
-      isOpen,
-      hasButtonRef: !!buttonRef.current,
-      buttonRect: buttonRef.current?.getBoundingClientRect(),
-    });
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const dropdownWidth = 280;

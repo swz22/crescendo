@@ -135,7 +135,9 @@ const Discover = () => {
               {genres.map((genre) => (
                 <button
                   key={genre.value}
-                  onClick={() => handleGenreChange(genre.value)}
+                  onClick={() => {
+                    handleGenreChange(genre.value);
+                  }}
                   className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center justify-between group ${
                     selectedGenre === genre.value
                       ? "bg-[#14b8a6]/20 text-[#14b8a6]"
