@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useGetTopArtistsQuery } from "../redux/services/spotifyCore";
 import {
   Error,
@@ -45,6 +45,18 @@ const TopArtists = () => {
     { code: "CL", name: "Chile" },
     { code: "ZA", name: "South Africa" },
   ];
+
+  // Sort regions alphabetically
+  const sortedRegions = useMemo(() => {
+    return [...regions].sort((a, b) => a.name.localeCompare(b.name));
+  }, []);
+
+  // Find selected region index
+  const selectedRegionIndex = useMemo(() => {
+    return sortedRegions.findIndex(
+      (region) => region.code === selectedRegion.code
+    );
+  }, [sortedRegions, selectedRegion]);
 
   useEffect(() => {
     const loadArtistImages = async () => {
@@ -94,8 +106,9 @@ const TopArtists = () => {
         minWidth={240}
         maxHeight={400}
         placement="bottom-end"
+        selectedIndex={selectedRegionIndex}
       >
-        {regions.map((region) => (
+        {sortedRegions.map((region) => (
           <button
             key={region.code}
             onClick={() => {

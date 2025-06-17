@@ -31,6 +31,16 @@ const Discover = () => {
 
   const { data, isFetching, error } = useGetSongsByGenreQuery(selectedGenre);
 
+  // Sort genres alphabetically
+  const sortedGenres = useMemo(() => {
+    return [...genres].sort((a, b) => a.title.localeCompare(b.title));
+  }, []);
+
+  // Find selected genre index
+  const selectedGenreIndex = useMemo(() => {
+    return sortedGenres.findIndex((genre) => genre.value === selectedGenre);
+  }, [sortedGenres, selectedGenre]);
+
   const shuffledSongs = useMemo(() => {
     if (!data) return [];
 
@@ -131,8 +141,9 @@ const Discover = () => {
               minWidth={288}
               maxHeight={384}
               placement="bottom-end"
+              selectedIndex={selectedGenreIndex}
             >
-              {genres.map((genre) => (
+              {sortedGenres.map((genre) => (
                 <button
                   key={genre.value}
                   onClick={() => {

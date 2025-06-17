@@ -7,14 +7,49 @@ const DropdownPortal = ({
   triggerRef,
   children,
   className = "",
-  placement = "bottom-end", // bottom-start, bottom-end, top-start, top-end
+  placement = "bottom-end",
   offset = 8,
   maxHeight = 400,
   minWidth = 240,
+  selectedIndex = -1, // Index of selected item for auto-scroll
 }) => {
   const dropdownRef = useRef(null);
+  const contentRef = useRef(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [actualPlacement, setActualPlacement] = useState(placement);
+
+  // Auto-scroll to selected item when dropdown opens
+  useEffect(() => {
+    if (!isOpen || selectedIndex < 0) return;
+
+    // Use requestAnimationFrame to wait for next paint
+    const checkAndScroll = () => {
+      if (contentRef.current) {
+        const content = contentRef.current;
+        const items = content.querySelectorAll("button");
+
+        if (items[selectedIndex]) {
+          const selectedItem = items[selectedIndex];
+          const itemTop = selectedItem.offsetTop;
+          const itemHeight = selectedItem.offsetHeight;
+          const contentHeight = content.clientHeight;
+
+          // Calculate scroll position to center the item
+          const desiredScrollTop = itemTop - contentHeight / 2 + itemHeight / 2;
+
+          content.scrollTo({
+            top: Math.max(0, desiredScrollTop),
+            behavior: "smooth",
+          });
+        }
+      } else {
+        // If content not ready, try again on next frame
+        requestAnimationFrame(checkAndScroll);
+      }
+    };
+
+    requestAnimationFrame(checkAndScroll);
+  }, [isOpen, selectedIndex]);
 
   // Calculate position
   useEffect(() => {
@@ -107,23 +142,12 @@ const DropdownPortal = ({
     if (!isOpen) return;
 
     const handleClickOutside = (event) => {
-      console.log("🔍 DROPDOWN DEBUG: Click detected on:", event.target);
-      console.log(
-        "🔍 DROPDOWN DEBUG: Click is inside dropdown?",
-        dropdownRef.current?.contains(event.target)
-      );
-      console.log(
-        "🔍 DROPDOWN DEBUG: Click is on trigger?",
-        triggerRef.current?.contains(event.target)
-      );
-
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target) &&
         triggerRef.current &&
         !triggerRef.current.contains(event.target)
       ) {
-        console.log("🔍 DROPDOWN DEBUG: Closing dropdown (clicked outside)");
         onClose();
       }
     };
@@ -171,6 +195,7 @@ const DropdownPortal = ({
         }}
       >
         <div
+          ref={contentRef}
           className="py-2 overflow-y-auto custom-scrollbar"
           style={{ maxHeight: `${maxHeight}px` }}
         >
