@@ -7,7 +7,6 @@ import {
   SongCard,
   AppHeader,
   ResponsiveGrid,
-  Portal,
 } from "../components";
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
@@ -81,6 +80,11 @@ const Discover = () => {
     }
   }, [showGenreDropdown]);
 
+  const handleGenreChange = (value) => {
+    dispatch(selectGenreListId(value));
+    setShowGenreDropdown(false);
+  };
+
   const genreColors = {
     POP: "from-pink-500 to-rose-500",
     HIP_HOP_RAP: "from-purple-600 to-blue-600",
@@ -108,97 +112,67 @@ const Discover = () => {
     LOFI: "from-purple-400 to-blue-500",
   };
 
-  const selectedColor = genreColors[selectedGenre] || genreColors.POP;
+  if (isFetching) return <Loader title={`Loading ${genreTitle} music...`} />;
 
-  const genreSelector = (
-    <div className="relative genre-dropdown-container">
-      <button
-        onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-        className={`
-          flex items-center gap-2 px-4 py-2.5
-          bg-gradient-to-r ${selectedColor}
-          text-white font-semibold rounded-full
-          shadow-lg hover:shadow-xl transform hover:scale-105
-          transition-all duration-300 group
-        `}
-      >
-        <HiOutlineSparkles className="w-4 h-4" />
-        <span>{genreTitle}</span>
-        <IoChevronDown
-          className={`w-4 h-4 transition-transform duration-300 ${
-            showGenreDropdown ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {showGenreDropdown && (
-        <Portal>
-          <div className="fixed inset-0 z-40" style={{ pointerEvents: "none" }}>
-            <div
-              className="absolute"
-              style={{
-                top:
-                  document
-                    .querySelector(".genre-dropdown-container")
-                    ?.getBoundingClientRect().bottom +
-                  8 +
-                  "px",
-                left:
-                  document
-                    .querySelector(".genre-dropdown-container")
-                    ?.getBoundingClientRect().left + "px",
-                pointerEvents: "auto",
-              }}
-            >
-              <div className="bg-[#1a1848]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden">
-                <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
-                  {genres.map((genre) => (
-                    <button
-                      key={genre.value}
-                      onClick={() => {
-                        dispatch(selectGenreListId(genre.value));
-                        setShowGenreDropdown(false);
-                      }}
-                      className={`
-                        w-full text-left px-4 py-3 rounded-lg
-                        transition-all duration-200 flex items-center justify-between
-                        ${
-                          selectedGenre === genre.value
-                            ? "bg-white/20 text-white font-semibold"
-                            : "hover:bg-white/10 text-gray-300 hover:text-white"
-                        }
-                      `}
-                    >
-                      <span>{genre.title}</span>
-                      {selectedGenre === genre.value && (
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
-    </div>
-  );
-
-  if (isFetching) return <Loader title="Loading songs..." />;
   if (error) return <Error />;
 
   return (
     <div className="flex flex-col">
       <AppHeader
-        title="Discover"
-        subtitle="Find your next favorite track"
-        action={genreSelector}
+        title={`${genreTitle} Music`}
+        action={
+          <div className="relative genre-dropdown-container">
+            <button
+              onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all duration-200 text-white"
+            >
+              <HiOutlineSparkles className="w-5 h-5 text-[#14b8a6]" />
+              <span className="font-semibold">{genreTitle}</span>
+              <IoChevronDown
+                className={`w-4 h-4 transition-transform ${
+                  showGenreDropdown ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {/* Genre Dropdown - Positioned relative to button */}
+            {showGenreDropdown && (
+              <div className="absolute top-full right-0 mt-2 w-72 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-fadeIn z-50">
+                <div className="py-2 max-h-96 overflow-y-auto custom-scrollbar">
+                  {genres.map((genre) => (
+                    <button
+                      key={genre.value}
+                      onClick={() => handleGenreChange(genre.value)}
+                      className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center justify-between group ${
+                        selectedGenre === genre.value
+                          ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                          : "text-white"
+                      }`}
+                    >
+                      <span className="font-medium">{genre.title}</span>
+                      <div
+                        className={`w-3 h-3 rounded-full bg-gradient-to-r ${
+                          genreColors[genre.value] ||
+                          "from-gray-400 to-gray-600"
+                        } ${
+                          selectedGenre === genre.value
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-50"
+                        } transition-opacity`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        }
       />
 
       <ResponsiveGrid type="songs">
         {shuffledSongs.map((song, i) => (
           <SongCard
-            key={song.key || i}
+            key={song.key || song.id || i}
             song={song}
             isPlaying={isPlaying}
             activeSong={activeSong}

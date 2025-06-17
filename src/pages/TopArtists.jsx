@@ -6,7 +6,6 @@ import {
   ArtistCard,
   AppHeader,
   ResponsiveGrid,
-  Portal,
 } from "../components";
 import { IoChevronDown, IoGlobe } from "react-icons/io5";
 
@@ -100,59 +99,36 @@ const TopArtists = () => {
       </button>
 
       {showRegionDropdown && (
-        <Portal>
-          <div className="fixed inset-0 z-40" style={{ pointerEvents: "none" }}>
-            <div
-              className="absolute"
-              style={{
-                top:
-                  document
-                    .querySelector(".region-dropdown-container")
-                    ?.getBoundingClientRect().bottom +
-                  8 +
-                  "px",
-                right:
-                  window.innerWidth -
-                  document
-                    .querySelector(".region-dropdown-container")
-                    ?.getBoundingClientRect().right +
-                  "px",
-                pointerEvents: "auto",
-              }}
-            >
-              <div className="bg-[#1a1848]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden min-w-[240px]">
-                <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
-                  {regions.map((region) => (
-                    <button
-                      key={region.code}
-                      onClick={() => {
-                        setSelectedRegion(region);
-                        setShowRegionDropdown(false);
-                      }}
-                      className={`
-                        w-full text-left px-4 py-3 rounded-lg
-                        transition-all duration-200 flex items-center gap-3
-                        ${
-                          selectedRegion.code === region.code
-                            ? "bg-[#14b8a6]/20 text-white font-semibold border-l-4 border-[#14b8a6]"
-                            : "hover:bg-white/10 text-gray-300 hover:text-white border-l-4 border-transparent"
-                        }
-                      `}
-                    >
-                      <span className="text-gray-400 text-sm font-medium min-w-[35px]">
-                        {region.code}
-                      </span>
-                      <span className="flex-1">{region.name}</span>
-                      {selectedRegion.code === region.code && (
-                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+        <div className="absolute top-full right-0 mt-2 z-50 min-w-[240px] bg-[#1a1848]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-fadeIn">
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
+            {regions.map((region) => (
+              <button
+                key={region.code}
+                onClick={() => {
+                  setSelectedRegion(region);
+                  setShowRegionDropdown(false);
+                }}
+                className={`
+                  w-full text-left px-4 py-3 rounded-lg
+                  transition-all duration-200 flex items-center gap-3
+                  ${
+                    selectedRegion.code === region.code
+                      ? "bg-[#14b8a6]/20 text-white font-semibold border-l-4 border-[#14b8a6]"
+                      : "hover:bg-white/10 text-gray-300 hover:text-white border-l-4 border-transparent"
+                  }
+                `}
+              >
+                <span className="text-gray-400 text-sm font-medium min-w-[35px]">
+                  {region.code}
+                </span>
+                <span className="flex-1">{region.name}</span>
+                {selectedRegion.code === region.code && (
+                  <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                )}
+              </button>
+            ))}
           </div>
-        </Portal>
+        </div>
       )}
     </div>
   );
