@@ -175,11 +175,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                   : handlePlayClick());
             }}
           >
-            {showCacheIndicator && (
-              <div className="absolute -top-1 -right-1 z-20 bg-black/60 backdrop-blur-sm rounded-full p-0.5">
-                <HiLightningBolt className="w-2.5 h-2.5 text-[#14b8a6]" />
-              </div>
-            )}
             {coverArt ? (
               <img
                 alt="song_img"
@@ -221,9 +216,14 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                   : handlePlayClick());
             }}
           >
-            <p className="font-medium text-base text-white truncate">
-              {songTitle}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-medium text-base text-white truncate">
+                {songTitle}
+              </p>
+              {showCacheIndicator && (
+                <HiLightningBolt className="w-3 h-3 text-[#14b8a6] flex-shrink-0" />
+              )}
+            </div>
             <p className="text-sm text-gray-400 truncate">{artistName}</p>
           </div>
 
@@ -254,19 +254,11 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}`}
         >
           {showCacheIndicator && (
-            <div className="absolute top-2 left-2 z-20 bg-black/60 backdrop-blur-sm rounded-full p-1.5">
+            <div className="absolute top-1.5 right-1.5 z-20">
               <HiLightningBolt
-                className="w-4 h-4 text-[#14b8a6] drop-shadow-[0_0_8px_rgba(20,184,166,0.8)]"
+                className="w-3 h-3 text-[#14b8a6] drop-shadow-[0_0_8px_rgba(20,184,166,0.8)]"
                 title="Instant playback ready"
               />
-            </div>
-          )}
-
-          {isCurrentSong && (
-            <div className="absolute top-3 left-3 z-10 bg-[#14b8a6]/20 backdrop-blur-sm rounded-full px-2 py-1">
-              <span className="text-xs text-[#14b8a6] font-semibold">
-                Now Playing
-              </span>
             </div>
           )}
 
