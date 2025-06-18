@@ -196,7 +196,7 @@ const DropdownPortal = ({
       >
         <div
           ref={contentRef}
-          className="py-2 overflow-y-auto custom-scrollbar"
+          className="overflow-y-auto custom-scrollbar"
           style={{ maxHeight: `${maxHeight}px` }}
         >
           {children}
