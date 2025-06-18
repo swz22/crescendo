@@ -128,10 +128,12 @@ const SidebarPlayer = () => {
             })
           );
         } else {
+          // Pass the track with preview URL to playFromContext
           dispatch(
             playFromContext({
               contextType: activeContext,
               trackIndex: index,
+              trackWithPreview: songWithPreview, // Pass the track with preview
             })
           );
         }

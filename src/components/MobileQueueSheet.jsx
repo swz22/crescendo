@@ -102,6 +102,7 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
             playFromContext({
               contextType: activeContext,
               trackIndex: index,
+              trackWithPreview: songWithPreview, // Pass the track with preview
             })
           );
           dispatch(playPause(true));
@@ -113,7 +114,6 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
       }
     }
   };
-
   const handleNextSong = () => {
     dispatch(navigateInContext({ direction: "next" }));
   };
