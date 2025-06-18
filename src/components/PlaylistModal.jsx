@@ -19,6 +19,7 @@ import {
   BsClock,
   BsCalendar3,
   BsShuffle,
+  BsFillPlayFill,
 } from "react-icons/bs";
 import { IoMdTime } from "react-icons/io";
 import { HiPlus } from "react-icons/hi";
@@ -414,15 +415,9 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 <div className="flex gap-3 mb-6">
                   <button
                     onClick={handlePlayAll}
-                    className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                    className="flex-1 bg-[#14b8a6] hover:bg-[#10a094] text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M5 4v12l10-6z" />
-                    </svg>
+                    <BsFillPlayFill className="w-5 h-5" />
                     Play All
                   </button>
                   <button

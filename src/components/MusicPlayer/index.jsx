@@ -35,6 +35,7 @@ const MusicPlayer = () => {
     activeContext,
     queue,
     recentlyPlayed,
+    albumContext,
     playlists,
     communityPlaylist,
   } = useSelector((state) => state.player);
@@ -48,12 +49,13 @@ const MusicPlayer = () => {
         return queue;
       case "recently_played":
         return recentlyPlayed;
-      case "community":
+      case "album":
+        return albumContext?.tracks || [];
+      case "community_playlist":
         return communityPlaylist?.tracks || [];
       default:
         if (activeContext.startsWith("playlist_")) {
-          const playlistId = activeContext.replace("playlist_", "");
-          const playlist = playlists.find((p) => p.id === playlistId);
+          const playlist = playlists.find((p) => p.id === activeContext);
           return playlist?.tracks || [];
         }
         return [];
