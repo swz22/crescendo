@@ -264,6 +264,7 @@ const MusicPlayer = () => {
             handlePlayPause={handlePlayPause}
             handlePrevSong={handlePrevSong}
             handleNextSong={handleNextSong}
+            isNavigating={isNavigating}
           />
           <Seekbar
             value={currentTime}
@@ -321,13 +322,15 @@ const MusicPlayer = () => {
         <div className="flex items-center gap-1">
           <button
             onClick={handlePrevSong}
-            className="p-1.5 text-white/80 active:scale-95"
+            className="p-1.5 text-white/80 active:scale-95 disabled:opacity-50"
+            disabled={isNavigating}
           >
             <MdSkipPrevious size={20} />
           </button>
           <button
             onClick={handlePlayPause}
-            className="p-2 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95"
+            className="p-2 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95 disabled:opacity-50"
+            disabled={isChangingTrack}
           >
             {isPlaying ? (
               <BsFillPauseFill size={14} />
@@ -337,7 +340,8 @@ const MusicPlayer = () => {
           </button>
           <button
             onClick={handleNextSong}
-            className="p-1.5 text-white/80 active:scale-95"
+            className="p-1.5 text-white/80 active:scale-95 disabled:opacity-50"
+            disabled={isNavigating}
           >
             <MdSkipNext size={20} />
           </button>

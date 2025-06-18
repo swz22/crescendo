@@ -117,7 +117,7 @@ const playerSlice = createSlice({
 
       // Only add to recently played if NOT playing from recently played
       if (state.activeContext !== "recently_played") {
-        addToRecentlyPlayed(state, tracks[newIndex]);
+        addToRecentlyPlayed(state, state.currentTrack);
       }
     },
 
@@ -482,6 +482,13 @@ const playerSlice = createSlice({
       }
     },
 
+    updateAlbumTrack: (state, action) => {
+      const { index, track } = action.payload;
+      if (state.albumContext && state.albumContext.tracks[index]) {
+        state.albumContext.tracks[index] = track;
+      }
+    },
+
     setVolume: (state, action) => {
       state.volume = action.payload;
       saveToStorage(StorageKeys.VOLUME, action.payload);
@@ -562,6 +569,7 @@ export const {
   selectGenreListId,
   setModalOpen,
   updateCurrentTrackPreview,
+  updateAlbumTrack,
   setVolume,
 } = playerSlice.actions;
 

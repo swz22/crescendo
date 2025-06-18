@@ -12,6 +12,7 @@ import {
   addToQueue,
   playPause,
   playTrack,
+  updateAlbumTrack,
 } from "../redux/features/playerSlice";
 import { useToast } from "../context/ToastContext";
 import { BsFillPlayFill } from "react-icons/bs";
@@ -82,9 +83,10 @@ const AlbumDetails = () => {
     }
 
     try {
+      // Get preview URL for the first track to start playing immediately
       const firstTrackWithPreview = await getPreviewUrl(tracksWithAlbumArt[0]);
-
       if (firstTrackWithPreview?.preview_url) {
+        // Create tracks array with just the first track having preview URL
         const updatedTracks = [...tracksWithAlbumArt];
         updatedTracks[0] = firstTrackWithPreview;
 
@@ -97,18 +99,38 @@ const AlbumDetails = () => {
             playlistData: {
               id: albumId,
               name: `${albumData?.name} • ${albumData?.artists?.[0]?.name}`,
-              tracks: updatedTracks,
             },
           })
         );
 
-        showToast(`Playing album: ${albumData?.name}`);
+        // Prefetch preview URLs for the next few tracks in the background
+        // This ensures smooth playback when navigating
+        setTimeout(async () => {
+          for (let i = 1; i < Math.min(5, updatedTracks.length); i++) {
+            if (!updatedTracks[i].preview_url) {
+              try {
+                const trackWithPreview = await getPreviewUrl(updatedTracks[i]);
+                if (trackWithPreview?.preview_url) {
+                  // Update the track in album context with preview URL
+                  dispatch(
+                    updateAlbumTrack({
+                      index: i,
+                      track: trackWithPreview,
+                    })
+                  );
+                }
+              } catch (error) {
+                console.error(`Error fetching preview for track ${i}:`, error);
+              }
+            }
+          }
+        }, 100);
       } else {
-        showToast("No preview available for this album", "error");
+        showToast("No preview available", "error");
       }
     } catch (error) {
-      console.error("Error playing album:", error);
-      showToast("Error loading album", "error");
+      console.error("[AlbumDetails] Error in handlePlayAlbum:", error);
+      showToast("Error playing album", "error");
     }
   };
 
