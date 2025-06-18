@@ -1,43 +1,45 @@
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  playTrack,
-  playPause,
-  addToQueue,
-  replaceContext,
-  toggleShuffle,
-} from "../redux/features/playerSlice";
-import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { Error, Loader, TrackRow } from "../components";
+import DetailsHeader from "../components/DetailsHeader";
 import {
   useGetAlbumDetailsQuery,
   useGetAlbumTracksQuery,
 } from "../redux/services/spotifyCore";
-import { Error, Loader, PlayPause } from "../components";
+import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import {
-  BsFillPlayFill,
-  BsShuffle,
-  BsCalendar3,
-  BsVinyl,
-  BsClock,
-} from "react-icons/bs";
-import { HiOutlineSparkles, HiPlus } from "react-icons/hi";
-import { IoMdTime } from "react-icons/io";
+  replaceContext,
+  addToQueue,
+  playPause,
+  playTrack,
+} from "../redux/features/playerSlice";
 import { useToast } from "../context/ToastContext";
+import { BsFillPlayFill } from "react-icons/bs";
+import { HiPlus } from "react-icons/hi";
+
+// Create a local placeholder to avoid network requests
+const createPlaceholder = (text = "No Image") => {
+  const svg = `
+    <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#4a5568"/>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="20" fill="#a0aec0" text-anchor="middle" dy=".3em">${text}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+};
 
 const AlbumDetails = () => {
-  const { id: albumId } = useParams();
   const dispatch = useDispatch();
-  const { activeSong, isPlaying } = useSelector((state) => state.player);
-  const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached } =
-    usePreviewUrl();
-  const [dominantColor, setDominantColor] = useState("rgb(20, 184, 166)");
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const { id: albumId } = useParams();
+  const { getPreviewUrl } = usePreviewUrl();
   const { showToast } = useToast();
+  const { activeSong, isPlaying } = useSelector((state) => state.player);
+
+  console.log("AlbumDetails render - albumId:", albumId);
 
   const {
     data: albumData,
-    isFetching: isFetchingAlbum,
+    isFetching: isFetchingAlbumDetails,
     error: albumError,
   } = useGetAlbumDetailsQuery({ albumId });
 
@@ -47,64 +49,93 @@ const AlbumDetails = () => {
     error: tracksError,
   } = useGetAlbumTracksQuery({ albumId });
 
-  // Extract dominant color from album art
-  useEffect(() => {
-    if (albumData?.images?.[0]?.url && !isImageLoaded) {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = albumData.images[0].url;
-      img.onload = () => {
-        setIsImageLoaded(true);
-        // Simple color extraction - in production you'd use a library
-        setDominantColor("rgb(20, 184, 166)"); // Teal fallback
-      };
-    }
-  }, [albumData, isImageLoaded]);
+  console.log("Album data:", albumData);
+  console.log("Tracks data:", tracks);
+  console.log("Is fetching:", { isFetchingAlbumDetails, isFetchingTracks });
 
-  // Prefetch tracks
-  useEffect(() => {
-    if (tracks && tracks.length > 0) {
-      // Prefetch first 5 tracks
-      tracks.slice(0, 5).forEach((track, index) => {
-        setTimeout(() => {
-          if (!isPreviewCached(track)) {
-            prefetchPreviewUrl(track, {
-              priority: index === 0 ? "high" : "low",
-            });
-          }
-        }, index * 1000);
-      });
-    }
-  }, [tracks, prefetchPreviewUrl, isPreviewCached]);
-
-  if (isFetchingAlbum || isFetchingTracks) {
+  if (isFetchingAlbumDetails || isFetchingTracks) {
     return <Loader title="Loading album..." />;
   }
 
-  if (albumError || tracksError) return <Error />;
+  if (albumError || tracksError) {
+    console.error("Errors:", { albumError, tracksError });
+    return <Error />;
+  }
 
-  const handlePlayClick = async (track, index) => {
-    const trackWithAlbumArt = {
-      ...track,
-      images: {
-        ...track.images,
-        coverart: track.images?.coverart || albumData?.images?.[0]?.url,
-        background: track.images?.background || albumData?.images?.[0]?.url,
-      },
-      album: {
-        ...track.album,
-        images: albumData?.images || track.album?.images || [],
-      },
-    };
+  // Check what's in the tracks
+  console.log("Track structure example:", tracks?.[0]);
+  console.log("Album images:", albumData?.images);
 
-    const songWithPreview = await getPreviewUrl(trackWithAlbumArt);
-
-    if (songWithPreview.preview_url) {
-      dispatch(
-        playTrack({
-          track: songWithPreview,
-        })
+  // Always add album artwork to tracks since the API doesn't include it
+  const tracksWithAlbumArt =
+    tracks?.map((track) => {
+      const processedTrack = {
+        ...track,
+        images: {
+          coverart: albumData?.images?.[0]?.url || "",
+          background: albumData?.images?.[0]?.url || "",
+        },
+        album: {
+          ...track.album,
+          id: albumId,
+          name: albumData?.name,
+          images: albumData?.images || [],
+        },
+      };
+      console.log(
+        "Processed track:",
+        processedTrack.title,
+        "images:",
+        processedTrack.images
       );
+      return processedTrack;
+    }) || [];
+
+  console.log("Total tracks with art:", tracksWithAlbumArt.length);
+
+  const handlePlayAlbum = async () => {
+    if (!tracksWithAlbumArt || tracksWithAlbumArt.length === 0) {
+      showToast("No tracks available", "error");
+      return;
+    }
+
+    try {
+      const firstTrackWithPreview = await getPreviewUrl(tracksWithAlbumArt[0]);
+
+      if (firstTrackWithPreview?.preview_url) {
+        const updatedTracks = [...tracksWithAlbumArt];
+        updatedTracks[0] = firstTrackWithPreview;
+
+        // Create album context and start playing
+        dispatch(
+          replaceContext({
+            contextType: "album",
+            tracks: updatedTracks,
+            startIndex: 0,
+            playlistData: {
+              id: albumId,
+              name: `${albumData?.name} • ${albumData?.artists?.[0]?.name}`,
+              tracks: updatedTracks,
+            },
+          })
+        );
+
+        showToast(`Playing album: ${albumData?.name}`);
+      } else {
+        showToast("No preview available for this album", "error");
+      }
+    } catch (error) {
+      console.error("Error playing album:", error);
+      showToast("Error loading album", "error");
+    }
+  };
+
+  const handleAddToQueue = () => {
+    if (tracksWithAlbumArt && tracksWithAlbumArt.length > 0) {
+      tracksWithAlbumArt.forEach((track) => {
+        dispatch(addToQueue({ song: track }));
+      });
+      showToast(`Added ${tracksWithAlbumArt.length} tracks to queue`);
     }
   };
 
@@ -112,305 +143,101 @@ const AlbumDetails = () => {
     dispatch(playPause(false));
   };
 
-  const handlePlayAll = async () => {
-    if (tracks && tracks.length > 0) {
-      const tracksWithAlbumArt = tracks.map((t) => ({
-        ...t,
-        images: {
-          ...t.images,
-          coverart: albumData?.images?.[0]?.url || t.images?.coverart,
-        },
-      }));
+  const handlePlayClick = async (track, index) => {
+    try {
+      const songWithPreview = await getPreviewUrl(track);
 
-      try {
-        const firstTrackWithPreview = await getPreviewUrl(
-          tracksWithAlbumArt[0]
+      if (songWithPreview?.preview_url) {
+        dispatch(
+          playTrack({
+            track: songWithPreview,
+          })
         );
-
-        if (firstTrackWithPreview.preview_url) {
-          tracksWithAlbumArt[0] = firstTrackWithPreview;
-
-          dispatch(
-            replaceContext({
-              contextType: "queue",
-              tracks: tracksWithAlbumArt,
-              startIndex: 0,
-            })
-          );
-          setTimeout(() => {
-            dispatch(playPause(true));
-          }, 100);
-
-          showToast("Playing album");
-        } else {
-          showToast("No preview available", "error");
-        }
-      } catch (error) {
-        console.error("Error getting preview URL:", error);
+      } else {
+        showToast("No preview available", "error");
       }
+    } catch (error) {
+      console.error("Error playing track:", error);
+      showToast("Error loading track", "error");
     }
   };
-
-  const handleAddAllToQueue = () => {
-    if (tracks && tracks.length > 0) {
-      const tracksWithAlbumArt = tracks.map((t) => ({
-        ...t,
-        images: {
-          ...t.images,
-          coverart: albumData?.images?.[0]?.url || t.images?.coverart,
-          background: albumData?.images?.[0]?.url || t.images?.background,
-        },
-        album: {
-          ...t.album,
-          id: albumId,
-          name: albumData?.name,
-          images: albumData?.images || [],
-        },
-      }));
-
-      tracksWithAlbumArt.forEach((track) => {
-        dispatch(addToQueue({ song: track }));
-      });
-
-      showToast(`Added ${tracks.length} tracks to queue`);
-    }
-  };
-
-  const handleShuffle = () => {
-    if (tracks && tracks.length > 0) {
-      const tracksWithAlbumArt = tracks.map((t) => ({
-        ...t,
-        images: {
-          ...t.images,
-          coverart: albumData?.images?.[0]?.url || t.images?.coverart,
-        },
-      }));
-
-      const randomIndex = Math.floor(Math.random() * tracks.length);
-
-      dispatch(
-        replaceContext({
-          contextType: "queue",
-          tracks: tracksWithAlbumArt,
-          startIndex: randomIndex,
-        })
-      );
-      dispatch(toggleShuffle());
-      dispatch(playPause(true));
-    }
-  };
-
-  // Calculate total duration
-  const totalDuration =
-    tracks?.reduce((acc, track) => acc + (track.duration_ms || 0), 0) || 0;
-  const formatDuration = (ms) => {
-    const minutes = Math.floor(ms / 60000);
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return hours > 0 ? `${hours} hr ${remainingMinutes} min` : `${minutes} min`;
-  };
-
-  // Format individual track duration
-  const formatTrackDuration = (ms) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  const albumImage =
-    albumData?.images?.[0]?.url ||
-    "https://via.placeholder.com/500x500.png?text=No+Image";
-  const releaseYear = albumData?.release_date
-    ? new Date(albumData.release_date).getFullYear()
-    : "";
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section with gradient background */}
-      <div
-        className="relative h-[400px] w-full bg-gradient-to-b from-transparent via-black/50 to-[#1a1848]"
-        style={{
-          background: `linear-gradient(to bottom, ${dominantColor}20, transparent 50%, #1a1848)`,
-        }}
-      >
-        {/* Blurred background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            src={albumImage}
-            alt="background"
-            className="w-full h-full object-cover opacity-20 blur-3xl scale-110"
-          />
+      <DetailsHeader albumData={albumData} />
+
+      <div className="mb-10">
+        {/* Album Actions */}
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={handlePlayAlbum}
+            className="flex items-center gap-2 px-6 py-3 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-full font-semibold transition-all hover:scale-105 shadow-lg"
+          >
+            <BsFillPlayFill className="w-6 h-6" />
+            Play Album
+          </button>
+          <button
+            onClick={handleAddToQueue}
+            className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-semibold transition-all border border-white/20"
+          >
+            <HiPlus className="w-5 h-5" />
+            Add to Queue
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="relative flex items-end h-full px-6 pb-8">
-          <div className="flex items-end gap-6">
-            {/* Album Cover with vinyl effect */}
-            <div className="relative group">
-              <img
-                src={albumImage}
-                alt={albumData?.name}
-                className="w-60 h-60 rounded-lg shadow-2xl shadow-black/50 group-hover:scale-105 transition-transform duration-300"
-              />
-              {/* Vinyl record behind album */}
-              <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-56 h-56 bg-black rounded-full opacity-0 group-hover:opacity-100 group-hover:translate-x-8 transition-all duration-500">
-                <div className="absolute inset-4 bg-gray-900 rounded-full">
-                  <div className="absolute inset-8 bg-black rounded-full flex items-center justify-center">
-                    <BsVinyl
-                      className="w-12 h-12 text-gray-800 animate-spin"
-                      style={{ animationDuration: "3s" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Track List */}
+        <div className="bg-white/5 p-1 rounded-lg">
+          {tracksWithAlbumArt?.map((song, i) => (
+            <TrackRow
+              key={`${albumId}-${song.id || song.key || i}`}
+              song={song}
+              data={tracksWithAlbumArt}
+              i={i}
+              isPlaying={isPlaying}
+              activeSong={activeSong}
+              albumImage={albumData?.images?.[0]?.url}
+              showAlbumColumn={false}
+              showImage={false}
+              isCompact={true}
+              handlePauseClick={handlePauseClick}
+              handlePlayClick={() => handlePlayClick(song, i)}
+            />
+          ))}
+        </div>
 
-            {/* Album Info */}
-            <div className="flex-1 mb-4">
-              <p className="text-white/80 text-sm font-medium mb-2">
-                {albumData?.album_type?.toUpperCase()}
-              </p>
-              <h1 className="text-5xl font-bold text-white mb-4">
-                {albumData?.name}
-              </h1>
-              <div className="flex items-center gap-4 text-white/90">
-                <Link
-                  to={`/artists/${albumData?.artists?.[0]?.id}`}
-                  className="font-semibold hover:underline"
-                >
-                  {albumData?.artists?.map((artist) => artist.name).join(", ")}
-                </Link>
-                <span className="text-white/60">•</span>
-                <span className="flex items-center gap-1">
-                  <BsCalendar3 className="w-4 h-4" />
-                  {releaseYear}
-                </span>
-                <span className="text-white/60">•</span>
-                <span>{tracks?.length || 0} songs</span>
-                <span className="text-white/60">•</span>
-                <span className="flex items-center gap-1">
-                  <BsClock className="w-4 h-4" />
-                  {formatDuration(totalDuration)}
-                </span>
-              </div>
-            </div>
+        {/* Album Info */}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-white/5 p-4 rounded-lg">
+            <h3 className="text-white/60 text-sm mb-1">Release Date</h3>
+            <p className="text-white font-medium">
+              {albumData?.release_date
+                ? new Date(albumData.release_date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : "Unknown"}
+            </p>
           </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="px-6 py-6 flex items-center gap-4">
-        <button
-          onClick={handlePlayAll}
-          className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-full px-6 py-3 transition-all hover:scale-105 shadow-lg shadow-[#14b8a6]/25 flex items-center gap-2 font-semibold"
-        >
-          <BsFillPlayFill size={24} className="translate-x-0.5" />
-          Play Album
-        </button>
-        <button
-          onClick={handleAddAllToQueue}
-          className="border border-white/20 hover:border-white/40 text-white rounded-full px-6 py-3 transition-all hover:scale-105 flex items-center gap-2"
-        >
-          <HiPlus size={20} />
-          Add to Queue
-        </button>
-        <button
-          onClick={handleShuffle}
-          className="border border-white/20 hover:border-white/40 text-white rounded-full px-6 py-3 transition-all hover:scale-105 flex items-center gap-2"
-        >
-          <BsShuffle size={20} />
-          Shuffle
-        </button>
-      </div>
-
-      {/* Track List */}
-      <div className="px-6">
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-          {tracks?.map((track, index) => {
-            const isCurrentSong =
-              activeSong?.key === track.key ||
-              activeSong?.title === track.title;
-
-            return (
-              <div
-                key={track.key || index}
-                className={`group flex items-center py-3 px-4 rounded-lg hover:bg-white/5 transition-all ${
-                  isCurrentSong ? "bg-white/10" : ""
-                }`}
-                onMouseEnter={() => {
-                  if (!isPreviewCached(track)) {
-                    prefetchPreviewUrl(track, { priority: "high" });
-                  }
-                }}
-              >
-                {/* Track Number / Play Button */}
-                <div className="w-10 mr-4 flex items-center justify-center">
-                  <span
-                    className={`text-sm ${
-                      isCurrentSong ? "text-[#14b8a6]" : "text-white/60"
-                    } group-hover:hidden`}
-                  >
-                    {index + 1}
-                  </span>
-                  <div className="hidden group-hover:block">
-                    <PlayPause
-                      isPlaying={isPlaying}
-                      activeSong={activeSong}
-                      song={track}
-                      handlePause={handlePauseClick}
-                      handlePlay={() => handlePlayClick(track, index)}
-                      size={20}
-                    />
-                  </div>
-                </div>
-
-                {/* Track Info */}
-                <div className="flex-1">
-                  <p
-                    className={`font-medium ${
-                      isCurrentSong ? "text-[#14b8a6]" : "text-white"
-                    }`}
-                  >
-                    {track.title || track.name}
-                  </p>
-                  <p className="text-sm text-white/60">
-                    {track.artists?.map((artist) => artist.name).join(", ")}
-                  </p>
-                </div>
-
-                {/* Popularity indicator */}
-                {track.popularity && (
-                  <div className="flex items-center gap-1 mr-6">
-                    <HiOutlineSparkles className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm text-white/60">
-                      {track.popularity}
-                    </span>
-                  </div>
-                )}
-
-                {/* Duration */}
-                <div className="flex items-center gap-1 text-white/60">
-                  <IoMdTime className="w-4 h-4" />
-                  <span className="text-sm">
-                    {formatTrackDuration(track.duration_ms)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+          <div className="bg-white/5 p-4 rounded-lg">
+            <h3 className="text-white/60 text-sm mb-1">Total Tracks</h3>
+            <p className="text-white font-medium">
+              {albumData?.total_tracks || 0} tracks
+            </p>
+          </div>
+          {albumData?.label && (
+            <div className="bg-white/5 p-4 rounded-lg">
+              <h3 className="text-white/60 text-sm mb-1">Label</h3>
+              <p className="text-white font-medium">{albumData.label}</p>
+            </div>
+          )}
         </div>
 
-        {/* Album Credits */}
-        {albumData?.label && (
-          <div className="mt-8 mb-12">
-            <h3 className="text-white text-lg font-semibold mb-4">
-              Album Credits
-            </h3>
-            <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10">
-              <p className="text-white/80">
-                <span className="text-white/60">Label:</span> {albumData.label}
-              </p>
-              {albumData?.copyrights?.[0] && (
+        {/* Copyright */}
+        {albumData?.copyrights?.length > 0 && (
+          <div className="mt-6">
+            <div className="text-white/40 text-xs">
+              {albumData.copyrights[0] && (
                 <p className="text-white/60 text-sm mt-2">
                   {albumData.copyrights[0].text}
                 </p>

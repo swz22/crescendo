@@ -116,6 +116,12 @@ export const usePlaylistManager = () => {
         name: playlist?.name || "Unknown Playlist",
         type: "playlist",
       };
+    } else if (activeContext === "album") {
+      return {
+        id: "album",
+        name: "Album",
+        type: "album",
+      };
     }
 
     return {
