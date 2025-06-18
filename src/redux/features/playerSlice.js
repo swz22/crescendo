@@ -34,13 +34,18 @@ const initialState = {
   repeat: false,
 
   // Active context
-  activeContext: "queue", // queue | recently_played | community_playlist | playlist_[id]
+  activeContext: "queue", // queue | recently_played | album | community_playlist | playlist_[id]
   currentIndex: -1,
 
   // Track lists (all separate, no nesting)
   queue: loadFromStorage(StorageKeys.QUEUE) || [],
   recentlyPlayed: [],
-  communityPlaylist: null,
+
+  // Temporary contexts (not persisted)
+  albumContext: null, // { id, name, tracks }
+  communityPlaylist: null, // { id, name, tracks }
+
+  // User playlists (persisted)
   playlists: loadFromStorage(StorageKeys.PLAYLISTS) || [],
 
   // UI state
@@ -62,11 +67,31 @@ const playerSlice = createSlice({
       state.isPlaying = action.payload;
     },
 
-    // Context switching
-    setActiveContext: (state, action) => {
-      const { context, index = 0 } = action.payload;
-      state.activeContext = context;
-      state.currentIndex = index;
+    // Context switching - now loads first track if available
+    switchContext: (state, action) => {
+      const { contextType } = action.payload;
+
+      // Always pause playback when switching
+      state.isPlaying = false;
+      state.activeContext = contextType;
+
+      // Get tracks from the new context
+      const tracks = getCurrentContextTracks({
+        ...state,
+        activeContext: contextType,
+      });
+
+      if (tracks && tracks.length > 0) {
+        // Load the first track but keep paused
+        state.currentIndex = 0;
+        state.currentTrack = tracks[0];
+        state.isActive = true; // Keep player visible
+      } else {
+        // No tracks in context, reset everything
+        state.currentIndex = -1;
+        state.currentTrack = null;
+        state.isActive = false;
+      }
     },
 
     // Navigate within current context
@@ -90,66 +115,45 @@ const playerSlice = createSlice({
       state.currentIndex = newIndex;
       state.currentTrack = tracks[newIndex];
 
-      // Only add to recently played if NOT in recently played context
+      // Only add to recently played if NOT playing from recently played
       if (state.activeContext !== "recently_played") {
         addToRecentlyPlayed(state, tracks[newIndex]);
       }
     },
 
-    // Play track (switches to queue)
+    // Play specific track - adds to queue
     playTrack: (state, action) => {
       const { track, fromContext } = action.payload;
 
-      // Check if playing from recently played
       if (fromContext === "recently_played") {
-        // Find the track in recently played
-        const recentIndex = state.recentlyPlayed.findIndex(
+        // Special handling for recently played
+        state.activeContext = "recently_played";
+        const index = state.recentlyPlayed.findIndex(
           (t) => getTrackId(t) === getTrackId(track)
         );
-
-        if (recentIndex !== -1) {
-          // Play from recently played context
-          state.activeContext = "recently_played";
-          state.currentIndex = recentIndex;
-          state.currentTrack = track;
-          state.isPlaying = true;
-          state.isActive = true;
-
-          // Move to top if not already there
-          if (recentIndex !== 0) {
-            const [movedTrack] = state.recentlyPlayed.splice(recentIndex, 1);
-            state.recentlyPlayed.unshift(movedTrack);
-            state.currentIndex = 0;
-          }
-
-          return;
-        }
-      }
-
-      // Default behavior - switch to queue
-      state.activeContext = "queue";
-
-      // Add to queue if not exists
-      const trackId = getTrackId(track);
-      const existingIndex = state.queue.findIndex(
-        (t) => getTrackId(t) === trackId
-      );
-
-      if (existingIndex === -1) {
-        state.queue.push(track);
-        state.currentIndex = state.queue.length - 1;
+        state.currentIndex = index >= 0 ? index : 0;
       } else {
-        state.currentIndex = existingIndex;
+        // Add to queue and switch to queue context
+        const trackId = getTrackId(track);
+        const existingIndex = state.queue.findIndex(
+          (t) => getTrackId(t) === trackId
+        );
+
+        if (existingIndex >= 0) {
+          state.queue.splice(existingIndex, 1);
+        }
+
+        state.queue.unshift(track);
+        state.activeContext = "queue";
+        state.currentIndex = 0;
+
+        // Add to recently played
+        addToRecentlyPlayed(state, track);
       }
 
       state.currentTrack = track;
-      state.isPlaying = true;
       state.isActive = true;
-
-      // Add to recently played only if not playing from recently played
-      if (fromContext !== "recently_played") {
-        addToRecentlyPlayed(state, track);
-      }
+      state.isPlaying = true;
 
       // Save queue
       saveToStorage(StorageKeys.QUEUE, state.queue);
@@ -157,7 +161,17 @@ const playerSlice = createSlice({
 
     // Play from specific context
     playFromContext: (state, action) => {
-      const { contextType, trackIndex, playlistData } = action.payload;
+      const { contextType, trackIndex, playlistData, trackWithPreview } =
+        action.payload;
+
+      // Handle album context
+      if (contextType === "album" && playlistData) {
+        state.albumContext = {
+          id: playlistData.id,
+          name: playlistData.name,
+          tracks: playlistData.tracks || [],
+        };
+      }
 
       // Handle community playlist
       if (contextType === "community_playlist" && playlistData) {
@@ -177,19 +191,36 @@ const playerSlice = createSlice({
         trackIndex >= 0 &&
         trackIndex < tracks.length
       ) {
+        // If we have a track with preview URL, update it in the tracks array
+        if (trackWithPreview && trackWithPreview.preview_url) {
+          tracks[trackIndex] = trackWithPreview;
+
+          // Also update in the actual state arrays
+          if (contextType === "queue") {
+            state.queue[trackIndex] = trackWithPreview;
+            saveToStorage(StorageKeys.QUEUE, state.queue);
+          } else if (contextType.startsWith("playlist_")) {
+            const playlist = state.playlists.find((p) => p.id === contextType);
+            if (playlist) {
+              playlist.tracks[trackIndex] = trackWithPreview;
+              saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
+            }
+          }
+        }
+
         state.currentIndex = trackIndex;
-        state.currentTrack = tracks[trackIndex];
+        state.currentTrack = trackWithPreview || tracks[trackIndex];
         state.isPlaying = true;
         state.isActive = true;
 
         // Only add to recently played if NOT playing from recently played
         if (contextType !== "recently_played") {
-          addToRecentlyPlayed(state, tracks[trackIndex]);
+          addToRecentlyPlayed(state, state.currentTrack);
         }
       }
     },
 
-    // Replace entire context (for Play All)
+    // Replace entire context (for Play All/Play Album)
     replaceContext: (state, action) => {
       const {
         contextType,
@@ -201,6 +232,13 @@ const playerSlice = createSlice({
       if (contextType === "queue") {
         state.queue = tracks;
         saveToStorage(StorageKeys.QUEUE, tracks);
+      } else if (contextType === "album") {
+        // Replace album context
+        state.albumContext = {
+          id: playlistData?.id || "album",
+          name: playlistData?.name || "Album",
+          tracks: tracks,
+        };
       } else if (contextType === "community_playlist") {
         state.communityPlaylist = {
           id: playlistData?.id || "community",
@@ -221,122 +259,157 @@ const playerSlice = createSlice({
       }
     },
 
-    // Add to queue
+    // Queue management
     addToQueue: (state, action) => {
       const { song, playNext = false } = action.payload;
       const trackId = getTrackId(song);
 
-      // Check if already exists
-      const exists = state.queue.some((t) => getTrackId(t) === trackId);
-      if (!exists) {
-        if (
-          playNext &&
-          state.activeContext === "queue" &&
-          state.currentIndex >= 0
-        ) {
-          state.queue.splice(state.currentIndex + 1, 0, song);
-          // Don't adjust currentIndex here - the track was inserted after
-        } else {
-          state.queue.push(song);
-        }
-        saveToStorage(StorageKeys.QUEUE, state.queue);
+      // Remove if already in queue
+      const existingIndex = state.queue.findIndex(
+        (t) => getTrackId(t) === trackId
+      );
+      if (existingIndex >= 0) {
+        state.queue.splice(existingIndex, 1);
       }
-    },
-
-    // Remove from context
-    removeFromContext: (state, action) => {
-      const { trackIndex } = action.payload;
-      const tracks = getCurrentContextTracks(state);
 
       if (
-        !tracks ||
-        state.activeContext === "recently_played" ||
-        state.activeContext === "community_playlist"
+        playNext &&
+        state.activeContext === "queue" &&
+        state.currentIndex >= 0
       ) {
-        return; // Can't remove from these contexts
+        // Insert after current track
+        state.queue.splice(state.currentIndex + 1, 0, song);
+      } else {
+        // Add to end
+        state.queue.push(song);
       }
 
-      if (trackIndex >= 0 && trackIndex < tracks.length) {
-        tracks.splice(trackIndex, 1);
+      saveToStorage(StorageKeys.QUEUE, state.queue);
+    },
 
-        // Adjust current index
-        if (trackIndex < state.currentIndex) {
-          state.currentIndex--;
-        } else if (trackIndex === state.currentIndex) {
-          if (tracks.length === 0) {
-            state.currentIndex = -1;
-            state.currentTrack = null;
-            state.isPlaying = false;
-            state.isActive = false;
-          } else {
-            state.currentIndex = Math.min(
-              state.currentIndex,
-              tracks.length - 1
-            );
-            state.currentTrack = tracks[state.currentIndex];
+    removeFromContext: (state, action) => {
+      const { trackIndex } = action.payload;
+
+      // Determine which context we're removing from
+      const context = state.activeContext;
+
+      // Can't remove from these contexts
+      if (
+        context === "recently_played" ||
+        context === "album" ||
+        context === "community_playlist"
+      ) {
+        return;
+      }
+
+      // Handle queue
+      if (context === "queue") {
+        if (trackIndex >= 0 && trackIndex < state.queue.length) {
+          state.queue.splice(trackIndex, 1);
+
+          // Update current playback if needed
+          if (trackIndex < state.currentIndex) {
+            // Removed track was before current, adjust index
+            state.currentIndex--;
+          } else if (trackIndex === state.currentIndex) {
+            // Removed the currently playing track
+            if (state.queue.length === 0) {
+              // Queue is now empty
+              state.currentIndex = -1;
+              state.currentTrack = null;
+              state.isPlaying = false;
+              state.isActive = false;
+            } else {
+              // Play next track (or loop to first if at end)
+              state.currentIndex = Math.min(
+                state.currentIndex,
+                state.queue.length - 1
+              );
+              state.currentTrack = state.queue[state.currentIndex];
+            }
           }
-        }
 
-        // Save changes
-        if (state.activeContext === "queue") {
           saveToStorage(StorageKeys.QUEUE, state.queue);
-        } else if (state.activeContext.startsWith("playlist_")) {
+        }
+      }
+      // Handle user playlists
+      else if (context.startsWith("playlist_")) {
+        const playlist = state.playlists.find((p) => p.id === context);
+        if (
+          playlist &&
+          trackIndex >= 0 &&
+          trackIndex < playlist.tracks.length
+        ) {
+          playlist.tracks.splice(trackIndex, 1);
+
+          // Update current playback if needed
+          if (trackIndex < state.currentIndex) {
+            // Removed track was before current, adjust index
+            state.currentIndex--;
+          } else if (trackIndex === state.currentIndex) {
+            // Removed the currently playing track
+            if (playlist.tracks.length === 0) {
+              // Playlist is now empty
+              state.currentIndex = -1;
+              state.currentTrack = null;
+              state.isPlaying = false;
+              state.isActive = false;
+            } else {
+              // Play next track (or loop to first if at end)
+              state.currentIndex = Math.min(
+                state.currentIndex,
+                playlist.tracks.length - 1
+              );
+              state.currentTrack = playlist.tracks[state.currentIndex];
+            }
+          }
+
           saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
         }
       }
     },
 
-    // Clear queue
     clearQueue: (state) => {
       state.queue = [];
-      saveToStorage(StorageKeys.QUEUE, []);
-
       if (state.activeContext === "queue") {
-        state.currentIndex = -1;
         state.currentTrack = null;
         state.isPlaying = false;
         state.isActive = false;
+        state.currentIndex = -1;
       }
-    },
-
-    // Volume control
-    setVolume: (state, action) => {
-      const newVolume = Math.max(0, Math.min(1, action.payload));
-      state.volume = newVolume;
-      saveToStorage(StorageKeys.VOLUME, newVolume);
+      saveToStorage(StorageKeys.QUEUE, []);
     },
 
     // Playlist management
     createPlaylist: (state, action) => {
-      const { name, id = `playlist_${Date.now()}` } = action.payload;
-
-      const newPlaylist = {
+      const { name, id } = action.payload;
+      state.playlists.push({
         id,
         name,
         tracks: [],
-        createdAt: new Date().toISOString(),
-      };
-
-      state.playlists.push(newPlaylist);
+        createdAt: Date.now(),
+      });
       saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
     },
 
     deletePlaylist: (state, action) => {
       const { playlistId } = action.payload;
-
       state.playlists = state.playlists.filter((p) => p.id !== playlistId);
-      saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
 
-      // Switch context if deleted playlist was active
+      // If we were playing from this playlist, switch to queue
       if (state.activeContext === playlistId) {
         state.activeContext = "queue";
         state.currentIndex = -1;
+        state.currentTrack = null;
+        state.isPlaying = false;
+        state.isActive = false;
       }
+
+      saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
     },
 
     renamePlaylist: (state, action) => {
       const { playlistId, name } = action.payload;
-
       const playlist = state.playlists.find((p) => p.id === playlistId);
       if (playlist) {
         playlist.name = name;
@@ -346,8 +419,8 @@ const playerSlice = createSlice({
 
     addToPlaylist: (state, action) => {
       const { playlistId, track } = action.payload;
-
       const playlist = state.playlists.find((p) => p.id === playlistId);
+
       if (playlist) {
         const trackId = getTrackId(track);
         const exists = playlist.tracks.some((t) => getTrackId(t) === trackId);
@@ -361,53 +434,25 @@ const playerSlice = createSlice({
 
     removeFromPlaylist: (state, action) => {
       const { playlistId, trackId } = action.payload;
-
       const playlist = state.playlists.find((p) => p.id === playlistId);
+
       if (playlist) {
         const index = playlist.tracks.findIndex(
           (t) => getTrackId(t) === trackId
         );
-        if (index !== -1) {
+        if (index >= 0) {
           playlist.tracks.splice(index, 1);
 
-          // Update current index if this playlist is active
-          if (state.activeContext === playlistId) {
-            if (index < state.currentIndex) {
-              state.currentIndex--;
-            } else if (index === state.currentIndex) {
-              if (playlist.tracks.length === 0) {
-                state.currentIndex = -1;
-                state.currentTrack = null;
-                state.isPlaying = false;
-                state.isActive = false;
-              } else {
-                state.currentIndex = Math.min(
-                  state.currentIndex,
-                  playlist.tracks.length - 1
-                );
-                state.currentTrack = playlist.tracks[state.currentIndex];
-              }
-            }
+          // Adjust current index if we're playing from this playlist
+          if (
+            state.activeContext === playlistId &&
+            index < state.currentIndex
+          ) {
+            state.currentIndex--;
           }
 
           saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
         }
-      }
-    },
-
-    // Switch context
-    switchContext: (state, action) => {
-      const { contextType } = action.payload;
-      state.activeContext = contextType;
-
-      // Find current track in new context if possible
-      const tracks = getCurrentContextTracks(state);
-      if (tracks && state.currentTrack) {
-        const trackId = getTrackId(state.currentTrack);
-        const index = tracks.findIndex((t) => getTrackId(t) === trackId);
-        state.currentIndex = index >= 0 ? index : -1;
-      } else {
-        state.currentIndex = -1;
       }
     },
 
@@ -420,7 +465,7 @@ const playerSlice = createSlice({
       state.repeat = !state.repeat;
     },
 
-    // UI state
+    // Other actions
     selectGenreListId: (state, action) => {
       state.genreListId = action.payload;
     },
@@ -429,32 +474,17 @@ const playerSlice = createSlice({
       state.modalOpen = action.payload;
     },
 
-    // Update track preview URL
     updateCurrentTrackPreview: (state, action) => {
-      const { track } = action.payload;
-      if (
-        state.currentTrack &&
-        getTrackId(state.currentTrack) === getTrackId(track)
-      ) {
-        state.currentTrack = { ...state.currentTrack, ...track };
-
-        // Also update in the current context
-        const tracks = getCurrentContextTracks(state);
-        if (
-          tracks &&
-          state.currentIndex >= 0 &&
-          state.currentIndex < tracks.length
-        ) {
-          tracks[state.currentIndex] = state.currentTrack;
-
-          // Save if needed
-          if (state.activeContext === "queue") {
-            saveToStorage(StorageKeys.QUEUE, state.queue);
-          } else if (state.activeContext.startsWith("playlist_")) {
-            saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
-          }
-        }
+      const { preview_url } = action.payload;
+      if (state.currentTrack) {
+        state.currentTrack.preview_url = preview_url;
+        state.currentTrack.url = preview_url;
       }
+    },
+
+    setVolume: (state, action) => {
+      state.volume = action.payload;
+      saveToStorage(StorageKeys.VOLUME, action.payload);
     },
   },
 });
@@ -470,6 +500,8 @@ function getCurrentContextTracks(state) {
       return state.queue;
     case "recently_played":
       return state.recentlyPlayed;
+    case "album":
+      return state.albumContext?.tracks || [];
     case "community_playlist":
       return state.communityPlaylist?.tracks || [];
     default:
@@ -512,7 +544,7 @@ function addToRecentlyPlayed(state, track) {
 export const {
   setCurrentTrack,
   playPause,
-  setActiveContext,
+  switchContext,
   navigateInContext,
   playTrack,
   playFromContext,
@@ -525,7 +557,6 @@ export const {
   renamePlaylist,
   addToPlaylist,
   removeFromPlaylist,
-  switchContext,
   toggleShuffle,
   toggleRepeat,
   selectGenreListId,

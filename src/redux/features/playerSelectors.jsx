@@ -4,14 +4,22 @@ export const getTrackId = (track) => {
 };
 
 export const selectCurrentContextTracks = (state) => {
-  const { activeContext, queue, recentlyPlayed, communityPlaylist, playlists } =
-    state.player;
+  const {
+    activeContext,
+    queue,
+    recentlyPlayed,
+    albumContext,
+    communityPlaylist,
+    playlists,
+  } = state.player;
 
   switch (activeContext) {
     case "queue":
       return queue;
     case "recently_played":
       return recentlyPlayed;
+    case "album":
+      return albumContext?.tracks || [];
     case "community_playlist":
       return communityPlaylist?.tracks || [];
     default:
@@ -24,13 +32,16 @@ export const selectCurrentContextTracks = (state) => {
 };
 
 export const selectCurrentContextName = (state) => {
-  const { activeContext, communityPlaylist, playlists } = state.player;
+  const { activeContext, albumContext, communityPlaylist, playlists } =
+    state.player;
 
   switch (activeContext) {
     case "queue":
       return "Your Queue";
     case "recently_played":
       return "Recently Played";
+    case "album":
+      return albumContext?.name || "Album";
     case "community_playlist":
       return communityPlaylist?.name || "Community Playlist";
     default:
@@ -44,6 +55,8 @@ export const selectCurrentContextName = (state) => {
 
 export const selectCanModifyContext = (state) => {
   const { activeContext } = state.player;
+  // Can only modify queue and user playlists
+  // Cannot modify: recently_played, album, community_playlist
   return activeContext === "queue" || activeContext.startsWith("playlist_");
 };
 
@@ -57,6 +70,9 @@ export const selectIsTrackInContext = (state, trackId, contextType = null) => {
       break;
     case "recently_played":
       tracks = state.player.recentlyPlayed;
+      break;
+    case "album":
+      tracks = state.player.albumContext?.tracks || [];
       break;
     case "community_playlist":
       tracks = state.player.communityPlaylist?.tracks || [];
@@ -72,7 +88,7 @@ export const selectIsTrackInContext = (state, trackId, contextType = null) => {
 };
 
 export const selectAllContexts = (state) => {
-  const { playlists, communityPlaylist } = state.player;
+  const { playlists, albumContext, communityPlaylist } = state.player;
 
   const contexts = [
     {
@@ -80,30 +96,51 @@ export const selectAllContexts = (state) => {
       name: "Your Queue",
       type: "queue",
       trackCount: state.player.queue.length,
+      icon: "queue",
     },
     {
       id: "recently_played",
       name: "Recently Played",
       type: "recently_played",
       trackCount: state.player.recentlyPlayed.length,
+      icon: "clock",
     },
   ];
 
-  if (communityPlaylist) {
+  // Add album context if it exists
+  if (albumContext && albumContext.tracks && albumContext.tracks.length > 0) {
+    contexts.push({
+      id: "album",
+      name: albumContext.name,
+      type: "album",
+      trackCount: albumContext.tracks.length,
+      icon: "music",
+    });
+  }
+
+  // Add community playlist if it exists
+  if (
+    communityPlaylist &&
+    communityPlaylist.tracks &&
+    communityPlaylist.tracks.length > 0
+  ) {
     contexts.push({
       id: "community_playlist",
       name: communityPlaylist.name,
       type: "community_playlist",
-      trackCount: communityPlaylist.tracks?.length || 0,
+      trackCount: communityPlaylist.tracks.length,
+      icon: "music",
     });
   }
 
+  // Add user playlists
   playlists.forEach((playlist) => {
     contexts.push({
       id: playlist.id,
       name: playlist.name,
       type: "playlist",
       trackCount: playlist.tracks?.length || 0,
+      icon: "music",
     });
   });
 
