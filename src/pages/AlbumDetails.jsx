@@ -35,8 +35,6 @@ const AlbumDetails = () => {
   const { showToast } = useToast();
   const { activeSong, isPlaying } = useSelector((state) => state.player);
 
-  console.log("AlbumDetails render - albumId:", albumId);
-
   const {
     data: albumData,
     isFetching: isFetchingAlbumDetails,
@@ -49,10 +47,6 @@ const AlbumDetails = () => {
     error: tracksError,
   } = useGetAlbumTracksQuery({ albumId });
 
-  console.log("Album data:", albumData);
-  console.log("Tracks data:", tracks);
-  console.log("Is fetching:", { isFetchingAlbumDetails, isFetchingTracks });
-
   if (isFetchingAlbumDetails || isFetchingTracks) {
     return <Loader title="Loading album..." />;
   }
@@ -61,10 +55,6 @@ const AlbumDetails = () => {
     console.error("Errors:", { albumError, tracksError });
     return <Error />;
   }
-
-  // Check what's in the tracks
-  console.log("Track structure example:", tracks?.[0]);
-  console.log("Album images:", albumData?.images);
 
   // Always add album artwork to tracks since the API doesn't include it
   const tracksWithAlbumArt =
@@ -82,16 +72,8 @@ const AlbumDetails = () => {
           images: albumData?.images || [],
         },
       };
-      console.log(
-        "Processed track:",
-        processedTrack.title,
-        "images:",
-        processedTrack.images
-      );
       return processedTrack;
     }) || [];
-
-  console.log("Total tracks with art:", tracksWithAlbumArt.length);
 
   const handlePlayAlbum = async () => {
     if (!tracksWithAlbumArt || tracksWithAlbumArt.length === 0) {
