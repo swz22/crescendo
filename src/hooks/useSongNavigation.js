@@ -2,7 +2,7 @@ import { useCallback, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   navigateInContext,
-  updateCurrentTrackPreview,
+  playFromContext,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "./usePreviewUrl";
 
@@ -11,7 +11,7 @@ export const useSongNavigation = () => {
   const [isNavigating, setIsNavigating] = useState(false);
   const navigationLockRef = useRef(false);
   const { getPreviewUrl } = usePreviewUrl();
-  const { currentTrack } = useSelector((state) => state.player);
+  const { activeContext } = useSelector((state) => state.player);
 
   const handleNextSong = useCallback(async () => {
     // Prevent concurrent navigation
@@ -21,29 +21,37 @@ export const useSongNavigation = () => {
     setIsNavigating(true);
 
     try {
-      // Navigate to next track
+      // First, navigate to get the new index
       dispatch(navigateInContext({ direction: "next" }));
 
       // Small delay to ensure state is updated
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Get updated track from store
+      // Get updated state from store
       const { store } = await import("../redux/store");
       const updatedState = store.getState().player;
       const newTrack = updatedState.currentTrack;
+      const newIndex = updatedState.currentIndex;
 
       if (newTrack && !newTrack.preview_url) {
         // Fetch preview URL
         const trackWithPreview = await getPreviewUrl(newTrack);
         if (trackWithPreview?.preview_url) {
-          dispatch(updateCurrentTrackPreview({ track: trackWithPreview }));
+          // Use playFromContext to update both current track and context
+          dispatch(
+            playFromContext({
+              contextType: activeContext,
+              trackIndex: newIndex,
+              trackWithPreview: trackWithPreview,
+            })
+          );
         }
       }
     } finally {
       navigationLockRef.current = false;
       setIsNavigating(false);
     }
-  }, [dispatch, getPreviewUrl]);
+  }, [dispatch, getPreviewUrl, activeContext]);
 
   const handlePrevSong = useCallback(async () => {
     // Prevent concurrent navigation
@@ -53,29 +61,37 @@ export const useSongNavigation = () => {
     setIsNavigating(true);
 
     try {
-      // Navigate to previous track
+      // First, navigate to get the new index
       dispatch(navigateInContext({ direction: "prev" }));
 
       // Small delay to ensure state is updated
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Get updated track from store
+      // Get updated state from store
       const { store } = await import("../redux/store");
       const updatedState = store.getState().player;
       const newTrack = updatedState.currentTrack;
+      const newIndex = updatedState.currentIndex;
 
       if (newTrack && !newTrack.preview_url) {
         // Fetch preview URL
         const trackWithPreview = await getPreviewUrl(newTrack);
         if (trackWithPreview?.preview_url) {
-          dispatch(updateCurrentTrackPreview({ track: trackWithPreview }));
+          // Use playFromContext to update both current track and context
+          dispatch(
+            playFromContext({
+              contextType: activeContext,
+              trackIndex: newIndex,
+              trackWithPreview: trackWithPreview,
+            })
+          );
         }
       }
     } finally {
       navigationLockRef.current = false;
       setIsNavigating(false);
     }
-  }, [dispatch, getPreviewUrl]);
+  }, [dispatch, getPreviewUrl, activeContext]);
 
   return {
     handleNextSong,

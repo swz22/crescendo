@@ -474,11 +474,56 @@ const playerSlice = createSlice({
       state.modalOpen = action.payload;
     },
 
+    // In src/redux/features/playerSlice.js, replace the updateCurrentTrackPreview reducer:
+
     updateCurrentTrackPreview: (state, action) => {
-      const { preview_url } = action.payload;
-      if (state.currentTrack) {
-        state.currentTrack.preview_url = preview_url;
-        state.currentTrack.url = preview_url;
+      const { track } = action.payload;
+      if (!track) return;
+
+      // Update current track
+      state.currentTrack = track;
+
+      // Update the track in the active context
+      if (state.currentIndex >= 0) {
+        switch (state.activeContext) {
+          case "queue":
+            if (state.queue[state.currentIndex]) {
+              state.queue[state.currentIndex] = track;
+              saveToStorage(StorageKeys.QUEUE, state.queue);
+            }
+            break;
+
+          case "album":
+            if (state.albumContext?.tracks?.[state.currentIndex]) {
+              state.albumContext.tracks[state.currentIndex] = track;
+            }
+            break;
+
+          case "community_playlist":
+            if (state.communityPlaylist?.tracks?.[state.currentIndex]) {
+              state.communityPlaylist.tracks[state.currentIndex] = track;
+            }
+            break;
+
+          case "recently_played":
+            if (state.recentlyPlayed[state.currentIndex]) {
+              state.recentlyPlayed[state.currentIndex] = track;
+            }
+            break;
+
+          default:
+            // Handle user playlists
+            if (state.activeContext.startsWith("playlist_")) {
+              const playlist = state.playlists.find(
+                (p) => p.id === state.activeContext
+              );
+              if (playlist?.tracks?.[state.currentIndex]) {
+                playlist.tracks[state.currentIndex] = track;
+                saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
+              }
+            }
+            break;
+        }
       }
     },
 
