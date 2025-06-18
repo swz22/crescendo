@@ -79,16 +79,18 @@ const SongMenu = ({ song, children, className = "" }) => {
     setIsOpen(false);
   };
 
-  const handleAddToPlaylistClick = (playlistId) => {
-    handleAddToPlaylist(playlistId, song);
+  const handleAddToPlaylistClick = async (playlistId) => {
+    const songWithPreview = await getPreviewUrl(song);
+    handleAddToPlaylist(playlistId, songWithPreview);
     showToast("Added to playlist");
     setIsOpen(false);
   };
 
-  const handleCreateNewPlaylist = () => {
+  const handleCreateNewPlaylist = async () => {
     if (newPlaylistName.trim()) {
       const playlistId = handleCreatePlaylist(newPlaylistName.trim());
-      handleAddToPlaylist(playlistId, song);
+      const songWithPreview = await getPreviewUrl(song);
+      handleAddToPlaylist(playlistId, songWithPreview);
       showToast(`Created "${newPlaylistName}" and added song`);
       setNewPlaylistName("");
       setCreatingPlaylist(false);
