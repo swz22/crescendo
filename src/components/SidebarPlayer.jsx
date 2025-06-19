@@ -49,7 +49,7 @@ const SidebarPlayer = () => {
   const contextName = useSelector(selectCurrentContextName);
   const canModify = useSelector(selectCanModifyContext);
 
-  const { handleNextSong, handlePrevSong } = useSongNavigation();
+  const { handleNextSong, handlePrevSong, isNavigating } = useSongNavigation();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached } =
     usePreviewUrl();
 
@@ -167,15 +167,41 @@ const SidebarPlayer = () => {
         {currentTrack?.title ? (
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <div className="flex items-center gap-3">
-              <img
-                src={currentTrack?.images?.coverart || placeholderImage}
-                alt={currentTrack?.title || "Unknown"}
-                className="w-20 h-20 rounded-lg shadow-lg"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = placeholderImage;
-                }}
-              />
+              <div className="relative w-20 h-20">
+                <img
+                  src={currentTrack?.images?.coverart || placeholderImage}
+                  alt={currentTrack?.title || "Unknown"}
+                  className={`w-full h-full rounded-lg shadow-lg object-cover transition-all duration-300 ${
+                    isNavigating ? "scale-95 opacity-60" : ""
+                  }`}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = placeholderImage;
+                  }}
+                />
+
+                {/* Waveform Loading */}
+                {isNavigating && (
+                  <>
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-lg" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="flex items-center gap-0.5 h-10">
+                        {[0.3, 0.6, 0.8, 0.6, 0.4].map((height, i) => (
+                          <div
+                            key={i}
+                            className="w-0.5 bg-gradient-to-t from-[#0d9488] to-[#14b8a6] rounded-full animate-pulse"
+                            style={{
+                              height: `${height * 100}%`,
+                              animationDelay: `${i * 0.1}s`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <div className="flex-1 min-w-0">
                 <h4 className="text-white font-semibold truncate">
                   {currentTrack?.title || "Unknown Title"}
