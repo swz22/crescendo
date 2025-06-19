@@ -95,8 +95,10 @@ const AppHeader = memo(
 
                 {/* Center Section - Search */}
                 {showSearch && (
-                  <div className="flex-1 max-w-2xl">
-                    <Searchbar />
+                  <div className="flex-1 flex justify-center">
+                    <div className="w-full max-w-lg">
+                      <Searchbar />
+                    </div>
                   </div>
                 )}
 
