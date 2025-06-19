@@ -228,17 +228,13 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           </div>
 
           <div className="ml-3 mr-2">
-            {isLoading ? (
-              <div className="w-6 h-6 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-[#14b8a6] border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : isCurrentSong && isPlaying ? (
+            {isCurrentSong && isPlaying && (
               <div className="flex items-center gap-0.5 pr-1">
                 <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse" />
                 <div className="w-1 h-5 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
                 <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
               </div>
-            ) : null}
+            )}
           </div>
 
           <SongMenu song={song}>
@@ -264,14 +260,35 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
 
           <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
             {isLoading && (
-              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-30">
-                <MusicLoadingSpinner size="md" />
-                <span className="text-white text-xs font-medium mt-2 animate-pulse">
-                  Loading...
-                </span>
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
+                <div className="relative w-16 h-16">
+                  {/* Orbiting container */}
+                  <div className="absolute inset-0 animate-spin">
+                    {/* Pink dot */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3">
+                      <div className="w-full h-full bg-pink-500 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)]" />
+                    </div>
+                    {/* Purple dot */}
+                    <div className="absolute top-1/2 right-0 -translate-y-1/2 w-3 h-3">
+                      <div className="w-full h-full bg-purple-500 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
+                    </div>
+                    {/* Blue dot */}
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3">
+                      <div className="w-full h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                    </div>
+                    {/* Teal dot */}
+                    <div className="absolute top-1/2 left-0 -translate-y-1/2 w-3 h-3">
+                      <div className="w-full h-full bg-[#14b8a6] rounded-full shadow-[0_0_10px_rgba(20,184,166,0.8)]" />
+                    </div>
+                  </div>
+
+                  {/* Center pulse */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" />
+                  </div>
+                </div>
               </div>
             )}
-
             {(isHovered || isCurrentSong) && !isLoading && (
               <div
                 className="absolute inset-0 flex items-center justify-center z-20 cursor-pointer"
@@ -351,14 +368,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
               </div>
             </button>
           </SongMenu>
-
-          {isLoading && (
-            <div className="absolute bottom-2 right-2 z-30">
-              <div className="bg-black/70 backdrop-blur-sm rounded-full p-1.5">
-                <div className="w-3 h-3 border-2 border-[#14b8a6] border-t-transparent rounded-full animate-spin" />
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>
