@@ -165,8 +165,7 @@ const SidebarPlayer = () => {
           <PlaylistDropdown onManageClick={() => setShowManagePanel(true)} />
           <button
             onClick={() => showOnboardingModal()}
-            className="p-2 hover:bg-white/[0.08] rounded-lg transition-all duration-200 group"
-            title=""
+            className="p-2 bg-white/10 hover:bg-amber-400/20 rounded-lg transition-all duration-200 group"
           >
             <HiOutlineLightBulb className="w-5 h-5 text-white/50 group-hover:text-amber-400 transition-colors" />
           </button>
@@ -189,22 +188,39 @@ const SidebarPlayer = () => {
                   }}
                 />
 
-                {/* Waveform Loading */}
+                {/* 4-Dot Loading Animation */}
                 {isNavigating && (
                   <>
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-lg" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="flex items-center gap-0.5 h-10">
-                        {[0.3, 0.6, 0.8, 0.6, 0.4].map((height, i) => (
-                          <div
-                            key={i}
-                            className="w-0.5 bg-gradient-to-t from-[#0d9488] to-[#14b8a6] rounded-full animate-pulse"
-                            style={{
-                              height: `${height * 100}%`,
-                              animationDelay: `${i * 0.1}s`,
-                            }}
-                          />
-                        ))}
+                      <div className="relative w-12 h-12">
+                        {/* Orbiting container */}
+                        <div
+                          className="absolute inset-0 animate-spin"
+                          style={{ animationDuration: "0.9s" }}
+                        >
+                          {/* Pink dot */}
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2">
+                            <div className="w-full h-full bg-pink-500 rounded-full shadow-[0_0_6px_rgba(236,72,153,0.8)]" />
+                          </div>
+                          {/* Purple dot */}
+                          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-2 h-2">
+                            <div className="w-full h-full bg-purple-500 rounded-full shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
+                          </div>
+                          {/* Blue dot */}
+                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2">
+                            <div className="w-full h-full bg-blue-500 rounded-full shadow-[0_0_6px_rgba(59,130,246,0.8)]" />
+                          </div>
+                          {/* Teal dot */}
+                          <div className="absolute top-1/2 left-0 -translate-y-1/2 w-2 h-2">
+                            <div className="w-full h-full bg-[#14b8a6] rounded-full shadow-[0_0_6px_rgba(20,184,166,0.8)]" />
+                          </div>
+                        </div>
+
+                        {/* Center pulse */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 bg-white/80 rounded-full animate-pulse" />
+                        </div>
                       </div>
                     </div>
                   </>
@@ -382,12 +398,37 @@ const SidebarPlayer = () => {
 
       {/* Track List */}
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-        <div className="px-6 py-3 flex items-center justify-between border-b border-white/5">
-          <h4 className="text-white font-semibold flex items-center gap-2">
-            <HiOutlineQueueList size={20} />
+        <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-black/20">
+          <h4 className="text-white/90 font-medium text-base flex items-center gap-2.5">
+            <div className="w-5 h-5 flex items-center justify-center">
+              <div className="w-[3px] h-[3px] bg-[#14b8a6] rounded-full animate-pulse" />
+              <div className="w-[3px] h-[14px] bg-[#14b8a6] rounded-full mx-[2px]" />
+              <div className="w-[3px] h-[10px] bg-[#14b8a6] rounded-full" />
+              <div className="w-[3px] h-[18px] bg-[#14b8a6] rounded-full mx-[2px]" />
+              <div className="w-[3px] h-[8px] bg-[#14b8a6] rounded-full" />
+            </div>
             {contextName}
           </h4>
-          <span className="text-white/60 text-sm">{tracks.length} tracks</span>
+          <div className="flex items-center gap-3">
+            <span className="text-white/40 text-sm tabular-nums">
+              {tracks.length} tracks
+            </span>
+            {activeContext === "queue" && tracks.length > 0 && (
+              <>
+                <div className="w-px h-4 bg-white/10" />
+                <button
+                  onClick={() => {
+                    if (confirm("Clear entire queue?")) {
+                      dispatch(clearQueue());
+                    }
+                  }}
+                  className="text-white/40 hover:text-red-400 text-sm font-medium transition-all duration-200 px-3 py-1 rounded-lg bg-white/10 hover:bg-red-400/20"
+                >
+                  Clear All
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <div
@@ -500,11 +541,10 @@ const SidebarPlayer = () => {
                             e.stopPropagation();
                             dispatch(removeFromContext({ trackIndex: index }));
                           }}
-                          className="opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-white/10 rounded-lg"
-                          title="Remove from context"
+                          className="opacity-70 hover:opacity-100 transition-all duration-200 p-1.5 bg-white/10 hover:bg-red-500/20 rounded-lg group/remove"
                         >
                           <svg
-                            className="w-4 h-4 text-gray-400 hover:text-red-400 transition-colors"
+                            className="w-4 h-4 text-gray-400 group-hover/remove:text-red-400 transition-colors"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -518,7 +558,6 @@ const SidebarPlayer = () => {
                           </svg>
                         </button>
                       )}
-
                       {isCurrentSong && (
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#14b8a6] animate-pulse" />
                       )}
@@ -526,38 +565,32 @@ const SidebarPlayer = () => {
                   );
                 })}
               </div>
-
               {activeContext === "queue" && tracks.length > 0 && (
-                <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#14b8a6]/20 to-[#0d9488]/10 rounded-lg flex items-center justify-center">
-                        <HiOutlineQueueList className="w-5 h-5 text-[#14b8a6]" />
+                <div className="mt-6 mx-3">
+                  <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-4" />
+                  <div className="flex items-center justify-center gap-8 text-center">
+                    <div>
+                      <div className="text-2xl font-light text-white/90">
+                        {tracks.length}
                       </div>
-                      <div>
-                        <p className="text-white font-medium">Queue Summary</p>
-                        <p className="text-gray-400 text-sm">
-                          {tracks.length} tracks •{" "}
-                          {Math.floor(
-                            tracks.reduce(
-                              (acc, t) => acc + (t?.duration_ms || 0),
-                              0
-                            ) / 60000
-                          )}{" "}
-                          minutes
-                        </p>
+                      <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mt-1">
+                        tracks
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        if (confirm("Clear entire queue?")) {
-                          dispatch(clearQueue());
-                        }
-                      }}
-                      className="text-gray-400 hover:text-red-400 text-sm font-medium transition-colors"
-                    >
-                      Clear All
-                    </button>
+                    <div className="h-8 w-px bg-white/10" />
+                    <div>
+                      <div className="text-2xl font-light text-white/90">
+                        {Math.floor(
+                          tracks.reduce(
+                            (acc, t) => acc + (t?.duration_ms || 0),
+                            0
+                          ) / 60000
+                        )}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mt-1">
+                        minutes
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
