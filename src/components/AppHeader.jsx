@@ -79,8 +79,10 @@ const AppHeader = memo(
 
           {/* Tablet/Desktop Layout */}
           <div className="hidden sm:block">
-            <div className="px-6 py-6">
-              <div className="flex items-center justify-between gap-4">
+            <div className="pl-3 pr-6 py-4">
+              {" "}
+              {/* Changed from px-6 to pl-3 pr-6 */}
+              <div className="flex items-center justify-between gap-6">
                 {/* Left Section - Title and Subtitle */}
                 <div className="min-w-0 flex-1">
                   <h1 className="text-2xl lg:text-3xl font-bold text-white truncate">
@@ -94,7 +96,7 @@ const AppHeader = memo(
                 </div>
 
                 {/* Right Section - Actions and Search */}
-                <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="flex items-center gap-5 flex-shrink-0">
                   {action && (
                     <div className="flex items-center gap-2">{action}</div>
                   )}
