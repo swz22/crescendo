@@ -14,7 +14,6 @@ import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { genres } from "../assets/constants";
 import { IoChevronDown } from "react-icons/io5";
-import { HiOutlineSparkles } from "react-icons/hi";
 import { Icon } from "@iconify/react";
 
 const Discover = () => {
@@ -129,7 +128,10 @@ const Discover = () => {
               onClick={() => setShowGenreDropdown(!showGenreDropdown)}
               className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
             >
-              <HiOutlineSparkles className="text-[#14b8a6] group-hover:text-[#2dd4bf] transition-colors" />
+              <Icon
+                icon={genreIcons[selectedGenre] || "mdi:music-note"}
+                className="w-5 h-5 text-[#14b8a6] group-hover:text-[#2dd4bf] transition-colors"
+              />
               <span className="text-white font-medium">{genreTitle}</span>
               <IoChevronDown
                 className={`text-white/60 transition-all duration-200 ${
