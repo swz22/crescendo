@@ -20,6 +20,7 @@ import { useSongNavigation } from "../hooks/useSongNavigation";
 import { useAudioState } from "../hooks/useAudioState";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
+import { showOnboardingModal } from "./OnboardingModal";
 import {
   BsFillPlayFill,
   BsFillPauseFill,
@@ -31,6 +32,7 @@ import {
   BsVolumeMute,
   BsVolumeUp,
 } from "react-icons/bs";
+import { HiOutlineLightBulb } from "react-icons/hi";
 import { HiOutlineQueueList } from "react-icons/hi2";
 
 const SidebarPlayer = () => {
@@ -159,8 +161,15 @@ const SidebarPlayer = () => {
     <div className="w-full h-full bg-gradient-to-b from-[#0f0e2e]/95 to-[#1a1848]/95 backdrop-blur-xl border-l border-white/5 hidden lg:flex lg:flex-col">
       {/* Header with context info */}
       <div className="p-6 border-b border-white/5">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between gap-2">
           <PlaylistDropdown onManageClick={() => setShowManagePanel(true)} />
+          <button
+            onClick={() => showOnboardingModal()}
+            className="p-2 hover:bg-white/[0.08] rounded-lg transition-all duration-200 group"
+            title=""
+          >
+            <HiOutlineLightBulb className="w-5 h-5 text-white/50 group-hover:text-amber-400 transition-colors" />
+          </button>
         </div>
 
         {/* Now Playing Section */}
