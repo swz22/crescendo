@@ -88,12 +88,12 @@ const TopArtists = () => {
       <button
         ref={regionButtonRef}
         onClick={() => setShowRegionDropdown(!showRegionDropdown)}
-        className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-300 border border-white/20"
+        className="flex items-center gap-2 px-3 py-2 bg-white/[0.08] hover:bg-white/[0.12] rounded-full transition-all duration-200 text-white border border-white/20"
       >
-        <IoGlobe className="w-4 h-4" />
-        <span className="font-medium">{selectedRegion.name}</span>
+        <IoGlobe className="w-5 h-5 text-[#14b8a6]" />
+        <span className="font-medium text-sm">{selectedRegion.name}</span>
         <IoChevronDown
-          className={`w-4 h-4 transition-transform duration-300 ${
+          className={`w-4 h-4 transition-transform text-white/60 ${
             showRegionDropdown ? "rotate-180" : ""
           }`}
         />

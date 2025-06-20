@@ -80,9 +80,9 @@ const AppHeader = memo(
           {/* Tablet/Desktop Layout */}
           <div className="hidden sm:block">
             <div className="px-6 py-6">
-              <div className="flex items-center justify-between gap-6">
-                {/* Title Section */}
-                <div className="min-w-0">
+              <div className="flex items-center justify-between gap-4">
+                {/* Left Section - Title and Subtitle */}
+                <div className="min-w-0 flex-1">
                   <h1 className="text-2xl lg:text-3xl font-bold text-white truncate">
                     {title}
                   </h1>
@@ -93,18 +93,16 @@ const AppHeader = memo(
                   )}
                 </div>
 
-                {/* Center Section - Search */}
-                {showSearch && (
-                  <div className="flex-1 flex justify-center">
-                    <div className="w-full max-w-lg">
+                {/* Right Section - Actions and Search */}
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  {action && (
+                    <div className="flex items-center gap-2">{action}</div>
+                  )}
+                  {showSearch && (
+                    <div className="w-64 lg:w-80">
                       <Searchbar />
                     </div>
-                  </div>
-                )}
-
-                {/* Right Section - Actions (NO QUEUE BUTTON ON DESKTOP) */}
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  {action}
+                  )}
                 </div>
               </div>
             </div>
