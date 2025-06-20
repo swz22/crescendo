@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { useGetTopArtistsQuery } from "../redux/services/spotifyCore";
+import { useState, useRef } from "react";
 import {
   Error,
   Loader,
@@ -8,151 +7,158 @@ import {
   ResponsiveGrid,
 } from "../components";
 import DropdownPortal from "../components/DropdownPortal";
-import { IoChevronDown, IoGlobe } from "react-icons/io5";
+import { useGetTopArtistsQuery } from "../redux/services/spotifyCore";
+import { IoChevronDown } from "react-icons/io5";
+import { HiOutlineGlobeAlt } from "react-icons/hi";
+
+const countries = [
+  { code: "US", name: "United States" },
+  { code: "AR", name: "Argentina" },
+  { code: "AU", name: "Australia" },
+  { code: "BE", name: "Belgium" },
+  { code: "BR", name: "Brazil" },
+  { code: "CA", name: "Canada" },
+  { code: "CL", name: "Chile" },
+  { code: "CO", name: "Colombia" },
+  { code: "DE", name: "Germany" },
+  { code: "DK", name: "Denmark" },
+  { code: "ES", name: "Spain" },
+  { code: "FI", name: "Finland" },
+  { code: "FR", name: "France" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "IN", name: "India" },
+  { code: "IT", name: "Italy" },
+  { code: "JP", name: "Japan" },
+  { code: "KR", name: "South Korea" },
+  { code: "MX", name: "Mexico" },
+  { code: "NL", name: "Netherlands" },
+  { code: "PL", name: "Poland" },
+  { code: "SE", name: "Sweden" },
+  { code: "ZA", name: "South Africa" },
+];
 
 const TopArtists = () => {
-  const [selectedRegion, setSelectedRegion] = useState({
-    code: "US",
-    name: "United States",
-  });
-  const [showRegionDropdown, setShowRegionDropdown] = useState(false);
-  const regionButtonRef = useRef(null);
-  const { data, isFetching, error } = useGetTopArtistsQuery(
-    selectedRegion.code
-  );
-  const [artistsWithImages, setArtistsWithImages] = useState([]);
-  const [loadingImages, setLoadingImages] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("US");
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const countryButtonRef = useRef(null);
 
-  const regions = [
-    { code: "US", name: "United States" },
-    { code: "GB", name: "United Kingdom" },
-    { code: "CA", name: "Canada" },
-    { code: "AU", name: "Australia" },
-    { code: "DE", name: "Germany" },
-    { code: "FR", name: "France" },
-    { code: "ES", name: "Spain" },
-    { code: "IT", name: "Italy" },
-    { code: "BR", name: "Brazil" },
-    { code: "MX", name: "Mexico" },
-    { code: "JP", name: "Japan" },
-    { code: "KR", name: "South Korea" },
-    { code: "IN", name: "India" },
-    { code: "SE", name: "Sweden" },
-    { code: "NL", name: "Netherlands" },
-    { code: "PL", name: "Poland" },
-    { code: "AR", name: "Argentina" },
-    { code: "CO", name: "Colombia" },
-    { code: "CL", name: "Chile" },
-    { code: "ZA", name: "South Africa" },
-  ];
+  const selectedCountryName =
+    countries.find((c) => c.code === selectedCountry)?.name || "United States";
 
-  // Sort regions alphabetically
-  const sortedRegions = useMemo(() => {
-    return [...regions].sort((a, b) => a.name.localeCompare(b.name));
-  }, []);
+  const { data, isFetching, error } = useGetTopArtistsQuery(selectedCountry);
 
-  // Find selected region index
-  const selectedRegionIndex = useMemo(() => {
-    return sortedRegions.findIndex(
-      (region) => region.code === selectedRegion.code
-    );
-  }, [sortedRegions, selectedRegion]);
-
-  useEffect(() => {
-    const loadArtistImages = async () => {
-      if (!data || data.length === 0) return;
-
-      setLoadingImages(true);
-      const artistsWithLoadedImages = await Promise.all(
-        data.map(async (artist) => {
-          if (artist.coverart) {
-            const img = new Image();
-            img.src = artist.coverart;
-            await new Promise((resolve) => {
-              img.onload = resolve;
-              img.onerror = resolve;
-            });
-          }
-          return artist;
-        })
-      );
-      setArtistsWithImages(artistsWithLoadedImages);
-      setLoadingImages(false);
-    };
-
-    loadArtistImages();
-  }, [data]);
-
-  const regionSelector = (
-    <>
-      <button
-        ref={regionButtonRef}
-        onClick={() => setShowRegionDropdown(!showRegionDropdown)}
-        className="flex items-center gap-2 px-3 py-2 bg-white/[0.08] hover:bg-white/[0.12] rounded-full transition-all duration-200 text-white border border-white/20"
-      >
-        <IoGlobe className="w-5 h-5 text-[#14b8a6]" />
-        <span className="font-medium text-sm">{selectedRegion.name}</span>
-        <IoChevronDown
-          className={`w-4 h-4 transition-transform text-white/60 ${
-            showRegionDropdown ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      <DropdownPortal
-        isOpen={showRegionDropdown}
-        onClose={() => setShowRegionDropdown(false)}
-        triggerRef={regionButtonRef}
-        minWidth={240}
-        maxHeight={400}
-        placement="bottom-end"
-        selectedIndex={selectedRegionIndex}
-      >
-        {sortedRegions.map((region) => (
-          <button
-            key={region.code}
-            onClick={() => {
-              setSelectedRegion(region);
-              setShowRegionDropdown(false);
-            }}
-            className={`
-              w-full text-left px-4 py-3 rounded-lg
-              transition-all duration-200 flex items-center gap-3
-              ${
-                selectedRegion.code === region.code
-                  ? "bg-[#14b8a6]/20 text-white font-semibold border-l-4 border-[#14b8a6]"
-                  : "hover:bg-white/10 text-gray-300 hover:text-white border-l-4 border-transparent"
-              }
-            `}
-          >
-            <span className="text-gray-400 text-sm font-medium min-w-[35px]">
-              {region.code}
-            </span>
-            <span className="flex-1">{region.name}</span>
-            {selectedRegion.code === region.code && (
-              <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-            )}
-          </button>
-        ))}
-      </DropdownPortal>
-    </>
-  );
-
-  if (isFetching || loadingImages)
-    return <Loader title={`Loading ${selectedRegion.name} artists...`} />;
+  if (isFetching) return <Loader title="Loading top artists..." />;
   if (error) return <Error />;
+
+  const handleCountryChange = (country) => {
+    setSelectedCountry(country.code);
+    setShowCountryDropdown(false);
+  };
+
+  // Sort countries with US first, then alphabetically
+  const sortedCountries = [...countries].sort((a, b) => {
+    if (a.code === "US") return -1;
+    if (b.code === "US") return 1;
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <div className="flex flex-col">
       <AppHeader
         title="Top Artists"
-        subtitle={`Most popular artists in ${selectedRegion.name}`}
-        action={regionSelector}
+        subtitle={`Most popular artists in ${selectedCountryName}`}
+        action={
+          <div className="relative" ref={countryButtonRef}>
+            <button
+              onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
+            >
+              <HiOutlineGlobeAlt className="text-[#14b8a6] group-hover:text-[#2dd4bf] transition-colors" />
+              <span className="text-white font-medium">
+                {selectedCountryName}
+              </span>
+              <IoChevronDown
+                className={`text-white/60 transition-all duration-200 ${
+                  showCountryDropdown ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            <DropdownPortal
+              isOpen={showCountryDropdown}
+              onClose={() => setShowCountryDropdown(false)}
+              triggerRef={countryButtonRef}
+              minWidth={220}
+              maxHeight={400}
+              placement="bottom-end"
+              className="bg-[#1a1848]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl"
+            >
+              <div className="py-2">
+                {sortedCountries.map((country, index) => {
+                  const isSelected = country.code === selectedCountry;
+                  const isUS = country.code === "US";
+
+                  return (
+                    <div key={country.code}>
+                      {isUS && index === 0 && (
+                        <div className="px-4 pb-2">
+                          <div className="text-xs text-white/40 uppercase tracking-wider font-medium">
+                            Popular
+                          </div>
+                        </div>
+                      )}
+                      {!isUS && index === 1 && (
+                        <>
+                          <div className="mx-4 my-2 border-t border-white/10" />
+                          <div className="px-4 pb-2 pt-1">
+                            <div className="text-xs text-white/40 uppercase tracking-wider font-medium">
+                              All Countries
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <button
+                        onClick={() => handleCountryChange(country)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200 group relative overflow-hidden ${
+                          isSelected
+                            ? "text-[#14b8a6]"
+                            : "text-white/80 hover:text-white"
+                        }`}
+                      >
+                        {/* Hover background effect */}
+                        <div
+                          className={`absolute inset-0 transition-all duration-300 ${
+                            isSelected
+                              ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent"
+                              : "bg-gradient-to-r from-white/0 to-white/0 hover:from-white/10 hover:to-transparent"
+                          }`}
+                        />
+
+                        {/* Content */}
+                        <div className="relative flex items-center gap-3 w-full">
+                          <span className="font-medium text-left flex-1">
+                            {country.name}
+                          </span>
+                          {isSelected && (
+                            <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </DropdownPortal>
+          </div>
+        }
       />
 
       <ResponsiveGrid type="artists">
-        {artistsWithImages.map((artist) => (
-          <ArtistCard key={artist.adamid} track={{ artists: [artist] }} />
+        {data?.map((artist) => (
+          <ArtistCard
+            key={artist.adamid || artist.id}
+            track={{ artists: [artist] }}
+          />
         ))}
       </ResponsiveGrid>
     </div>
