@@ -27,7 +27,7 @@ const initialState = {
   currentTrack: null,
   isPlaying: false,
   isActive: false,
-  volume: loadFromStorage(StorageKeys.VOLUME) || 0.7,
+  volume: loadFromStorage(StorageKeys.VOLUME) || 0.5,
 
   // Playback modes
   shuffle: false,
