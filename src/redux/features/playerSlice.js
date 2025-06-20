@@ -49,7 +49,7 @@ const initialState = {
   playlists: loadFromStorage(StorageKeys.PLAYLISTS) || [],
 
   // UI state
-  genreListId: "POP",
+  genreListId: "LOFI",
   modalOpen: false,
 };
 
