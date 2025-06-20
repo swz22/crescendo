@@ -118,12 +118,13 @@ const Discover = () => {
     <div className="flex flex-col">
       <AppHeader
         title={`Discover ${genreTitle}`}
+        subtitle="Find your next favorite song"
         action={
           <>
             <button
               ref={genreButtonRef}
               onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-              className="flex items-center gap-2 px-3 py-2 sm:py-2 bg-white/[0.08] hover:bg-white/[0.12] rounded-full transition-all duration-200 text-white border border-white/20"
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-300 border border-white/20"
             >
               <HiOutlineSparkles className="w-5 h-5 text-[#14b8a6]" />
               <span className="font-medium text-sm">{genreTitle}</span>
