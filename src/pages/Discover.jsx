@@ -98,9 +98,13 @@ const Discover = () => {
   // Update genre when URL changes
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const genre = params.get("genre");
-    if (genre && genres.find((g) => g.value === genre)) {
-      dispatch(selectGenreListId(genre));
+    const genreRoute = params.get("genre");
+    if (genreRoute) {
+      // Find genre by route instead of value
+      const genre = genres.find((g) => g.route === genreRoute);
+      if (genre) {
+        dispatch(selectGenreListId(genre.value));
+      }
     }
   }, [location, dispatch]);
 
@@ -108,12 +112,11 @@ const Discover = () => {
     dispatch(selectGenreListId(genre.value));
     setShowGenreDropdown(false);
 
-    // Update URL
+    // Use route for URL
     const newUrl = new URL(window.location);
-    newUrl.searchParams.set("genre", genre.value);
+    newUrl.searchParams.set("genre", genre.route);
     window.history.pushState({}, "", newUrl);
   };
-
   if (isFetching) return <Loader title="Loading songs..." />;
   if (error) return <Error />;
 
