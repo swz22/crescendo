@@ -43,18 +43,11 @@ const Discover = () => {
     LATIN: "game-icons:maracas",
     FILM_TV: "mdi:movie-open-outline",
     COUNTRY: "mdi:hat-fedora",
-    REGGAE: "mdi:palm-tree",
-    HOUSE: "mdi:city",
     K_POP: "mdi:heart-settings-outline",
     INDIE: "mdi:cassette",
     METAL: "game-icons:anvil-impact",
     JAZZ: "game-icons:saxophone",
     CLASSICAL: "mdi:piano",
-    BLUES: "mdi:music-clef-treble",
-    PUNK: "game-icons:safety-pin",
-    FUNK: "mdi:music-box-multiple-outline",
-    GOSPEL: "mdi:cross",
-    DISCO: "mdi:star-circle-outline",
     LOFI: "mdi:coffee-outline",
   };
 
@@ -117,6 +110,7 @@ const Discover = () => {
     newUrl.searchParams.set("genre", genre.route);
     window.history.pushState({}, "", newUrl);
   };
+
   if (isFetching) return <Loader title="Loading songs..." />;
   if (error) return <Error />;
 

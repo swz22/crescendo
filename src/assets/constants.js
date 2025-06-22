@@ -15,18 +15,11 @@ export const genres = [
   { title: "Latin", value: "LATIN", route: "latin" },
   { title: "Film & TV", value: "FILM_TV", route: "film-tv" },
   { title: "Country", value: "COUNTRY", route: "country" },
-  { title: "Reggae", value: "REGGAE", route: "reggae" },
-  { title: "House", value: "HOUSE", route: "house" },
   { title: "K-Pop", value: "K_POP", route: "k-pop" },
   { title: "Indie", value: "INDIE", route: "indie" },
   { title: "Metal", value: "METAL", route: "metal" },
   { title: "Jazz", value: "JAZZ", route: "jazz" },
   { title: "Classical", value: "CLASSICAL", route: "classical" },
-  { title: "Blues", value: "BLUES", route: "blues" },
-  { title: "Punk", value: "PUNK", route: "punk" },
-  { title: "Funk", value: "FUNK", route: "funk" },
-  { title: "Gospel", value: "GOSPEL", route: "gospel" },
-  { title: "Disco", value: "DISCO", route: "disco" },
   { title: "Lo-Fi", value: "LOFI", route: "lo-fi" },
 ];
 
