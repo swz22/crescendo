@@ -71,7 +71,7 @@ const TopArtists = () => {
           <div className="relative" ref={countryButtonRef}>
             <button
               onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
+              className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
             >
               <HiOutlineGlobeAlt className="text-[#14b8a6] group-hover:text-[#2dd4bf] transition-colors" />
               <span className="text-white font-medium">

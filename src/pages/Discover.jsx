@@ -123,7 +123,7 @@ const Discover = () => {
           <div className="relative" ref={genreButtonRef}>
             <button
               onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
+              className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
             >
               <Icon
                 icon={genreIcons[selectedGenre] || "mdi:music-note"}

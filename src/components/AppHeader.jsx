@@ -96,7 +96,7 @@ const AppHeader = memo(
                 </div>
 
                 {/* Right Section - Actions and Search */}
-                <div className="flex items-center gap-5 flex-shrink-0">
+                <div className="flex items-center gap-6 flex-shrink-0">
                   {action && (
                     <div className="flex items-center gap-2">{action}</div>
                   )}
