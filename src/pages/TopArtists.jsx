@@ -13,17 +13,11 @@ import { HiOutlineGlobeAlt } from "react-icons/hi";
 
 const countries = [
   { code: "US", name: "United States" },
-  { code: "AR", name: "Argentina" },
   { code: "AU", name: "Australia" },
-  { code: "BE", name: "Belgium" },
   { code: "BR", name: "Brazil" },
   { code: "CA", name: "Canada" },
-  { code: "CL", name: "Chile" },
-  { code: "CO", name: "Colombia" },
   { code: "DE", name: "Germany" },
-  { code: "DK", name: "Denmark" },
   { code: "ES", name: "Spain" },
-  { code: "FI", name: "Finland" },
   { code: "FR", name: "France" },
   { code: "GB", name: "United Kingdom" },
   { code: "IN", name: "India" },
@@ -32,9 +26,8 @@ const countries = [
   { code: "KR", name: "South Korea" },
   { code: "MX", name: "Mexico" },
   { code: "NL", name: "Netherlands" },
-  { code: "PL", name: "Poland" },
   { code: "SE", name: "Sweden" },
-  { code: "ZA", name: "South Africa" },
+  { code: "TW", name: "Taiwan" },
 ];
 
 const TopArtists = () => {
