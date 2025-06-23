@@ -336,14 +336,48 @@ export const spotifyCoreApi = createApi({
     }),
 
     getTopArtists: builder.query({
-      query: (country = "US") =>
-        `/search?q=popular&type=artist&market=${country}&limit=50`,
+      query: (country = "US") => {
+        const marketSeeds = {
+          US: ["taylor swift", "drake", "morgan wallen", "sza"],
+          GB: ["ed sheeran", "dua lipa", "harry styles", "sam smith"],
+          CA: ["the weeknd", "drake", "justin bieber", "shawn mendes"],
+          AU: ["the kid laroi", "tame impala", "troye sivan", "flume"],
+          DE: ["apache 207", "robin schulz", "cro", "lea"],
+          FR: ["aya nakamura", "david guetta", "gazo", "niska"],
+          ES: ["rosalía", "c. tangana", "aitana", "bad gyal"],
+          IT: ["maneskin", "mahmood", "blanco", "ultimо"],
+          BR: ["anitta", "luan santana", "jorge & mateus", "marília mendonça"],
+          MX: ["peso pluma", "karol g", "junior h", "natanael cano"],
+          JP: ["yoasobi", "ado", "kenshi yonezu", "lisa"],
+          KR: ["newjeans", "blackpink", "bts", "iu"],
+          IN: ["arijit singh", "shreya ghoshal", "anuv jain", "armaan malik"],
+          NL: ["tiësto", "martin garrix", "flemming", "armin van buuren"],
+          SE: ["zara larsson", "avicii", "håkan hellström", "tove lo"],
+          TW: ["jay chou", "jolin tsai", "mayday", "eric chou"],
+        };
+
+        const seeds = marketSeeds[country];
+        const searchQuery = seeds.join(" OR ");
+
+        return `/search?q=${encodeURIComponent(
+          searchQuery
+        )}&type=artist&market=${country}&limit=50`;
+      },
       transformResponse: (response) => {
         const artists = response?.artists?.items || [];
+
         return artists
-          .filter((artist) => artist && artist.popularity > 50)
+          .filter((artist) => {
+            return (
+              artist && artist.id && artist.name && artist.images?.length > 0
+            );
+          })
+          .filter(
+            (artist, index, self) =>
+              index === self.findIndex((a) => a.id === artist.id)
+          )
           .sort((a, b) => b.popularity - a.popularity)
-          .slice(0, 50)
+          .slice(0, 49)
           .map((artist) => ({
             ...artist,
             alias: artist.name,
@@ -353,8 +387,7 @@ export const spotifyCoreApi = createApi({
               background: artist.images?.[0]?.url || "",
               coverart: artist.images?.[0]?.url || "",
             },
-          }))
-          .filter(Boolean);
+          }));
       },
       transformErrorResponse: (response) => {
         return {
