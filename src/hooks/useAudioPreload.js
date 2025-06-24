@@ -13,14 +13,24 @@ const cleanupOldBuffers = (keepCount = 10) => {
   if (audioBuffers.size <= keepCount) return;
 
   const entriesToRemove = audioBuffers.size - keepCount;
-  const iterator = audioBuffers.entries();
+  const sortedEntries = Array.from(audioBuffers.entries());
 
+  // Remove oldest entries first (FIFO)
   for (let i = 0; i < entriesToRemove; i++) {
-    const [oldSongId] = iterator.next().value;
+    const [oldSongId] = sortedEntries[i];
     const oldBlobUrl = bufferUrls.get(oldSongId);
 
-    if (oldBlobUrl && oldBlobUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(oldBlobUrl);
+    // Ensure blob URL is properly revoked
+    if (
+      oldBlobUrl &&
+      typeof oldBlobUrl === "string" &&
+      oldBlobUrl.startsWith("blob:")
+    ) {
+      try {
+        URL.revokeObjectURL(oldBlobUrl);
+      } catch (error) {
+        console.warn(`Failed to revoke blob URL for ${oldSongId}:`, error);
+      }
     }
 
     audioBuffers.delete(oldSongId);
@@ -175,6 +185,22 @@ export const useAudioPreload = () => {
     bufferUrls.clear();
     loadingBuffers.clear();
   }, []);
+
+  // Add global cleanup on page unload
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeunload", () => {
+      // Cleanup all blob URLs before page unload
+      bufferUrls.forEach((blobUrl, songId) => {
+        if (blobUrl && blobUrl.startsWith("blob:")) {
+          try {
+            URL.revokeObjectURL(blobUrl);
+          } catch (error) {
+            console.warn(`Failed to revoke blob URL on unload:`, error);
+          }
+        }
+      });
+    });
+  }
 
   return {
     preloadAudio,
