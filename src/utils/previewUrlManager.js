@@ -163,10 +163,11 @@ class PreviewUrlManager {
 
   persistCache() {
     try {
+      // Get entries with valid URLs, sorted by most recent first
       const entries = Array.from(this.cache.entries())
         .filter(([_, data]) => data.url !== null)
         .sort((a, b) => b[1].timestamp - a[1].timestamp)
-        .slice(0, 500);
+        .slice(0, 400); // Keep most recent 400 entries
 
       const cacheData = Object.fromEntries(entries);
       localStorage.setItem(
@@ -174,7 +175,33 @@ class PreviewUrlManager {
         JSON.stringify(cacheData)
       );
     } catch (error) {
-      console.warn("Failed to persist cache:", error);
+      // If save failed (likely quota exceeded)
+      console.warn(
+        "Failed to persist cache, clearing and retrying with recent entries only"
+      );
+
+      try {
+        // Clear the localStorage cache
+        localStorage.removeItem(StorageKeys.PREVIEW_CACHE);
+
+        // Try again with just the 50 most recent entries
+        const recentEntries = Array.from(this.cache.entries())
+          .filter(([_, data]) => data.url !== null)
+          .sort((a, b) => b[1].timestamp - a[1].timestamp)
+          .slice(0, 50);
+
+        const minimalCache = Object.fromEntries(recentEntries);
+        localStorage.setItem(
+          StorageKeys.PREVIEW_CACHE,
+          JSON.stringify(minimalCache)
+        );
+      } catch (retryError) {
+        // If it still fails, just log and move on
+        console.error(
+          "Failed to persist cache even with minimal data:",
+          retryError
+        );
+      }
     }
   }
 
