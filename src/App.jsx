@@ -9,6 +9,7 @@ import FloatingQueueButton from "./components/FloatingQueueButton";
 import MobileQueueSheet from "./components/MobileQueueSheet";
 import Loader from "./components/Loader";
 import OnboardingModal from "./components/OnboardingModal";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import {
   AlbumDetails,
   ArtistDetails,
@@ -30,6 +31,8 @@ const PageLoader = () => (
 const App = () => {
   const { currentTrack } = useSelector((state) => state.player);
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
+
+  useKeyboardShortcuts();
 
   return (
     <div className="relative flex h-screen overflow-hidden">
