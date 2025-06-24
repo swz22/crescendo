@@ -1,5 +1,6 @@
 import { useCallback, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { store } from "../redux/store";
 import {
   navigateInContext,
   playFromContext,
@@ -21,14 +22,23 @@ export const useSongNavigation = () => {
     setIsNavigating(true);
 
     try {
-      // First, navigate to get the new index
-      dispatch(navigateInContext({ direction: "next" }));
+      // Use Redux subscription instead of setTimeout hack
+      const waitForStateUpdate = () => {
+        return new Promise((resolve) => {
+          const unsubscribe = store.subscribe(() => {
+            // State has been updated
+            unsubscribe();
+            resolve();
+          });
 
-      // Small delay to ensure state is updated
-      await new Promise((resolve) => setTimeout(resolve, 100));
+          // Dispatch the navigation action
+          dispatch(navigateInContext({ direction: "next" }));
+        });
+      };
 
-      // Get updated state from store
-      const { store } = await import("../redux/store");
+      await waitForStateUpdate();
+
+      // Get the updated state
       const updatedState = store.getState().player;
       const newTrack = updatedState.currentTrack;
       const newIndex = updatedState.currentIndex;
@@ -47,6 +57,8 @@ export const useSongNavigation = () => {
           );
         }
       }
+    } catch (error) {
+      console.error("Navigation error:", error);
     } finally {
       navigationLockRef.current = false;
       setIsNavigating(false);
@@ -61,14 +73,23 @@ export const useSongNavigation = () => {
     setIsNavigating(true);
 
     try {
-      // First, navigate to get the new index
-      dispatch(navigateInContext({ direction: "prev" }));
+      // Use Redux subscription instead of setTimeout hack
+      const waitForStateUpdate = () => {
+        return new Promise((resolve) => {
+          const unsubscribe = store.subscribe(() => {
+            // State has been updated
+            unsubscribe();
+            resolve();
+          });
 
-      // Small delay to ensure state is updated
-      await new Promise((resolve) => setTimeout(resolve, 100));
+          // Dispatch the navigation action
+          dispatch(navigateInContext({ direction: "prev" }));
+        });
+      };
 
-      // Get updated state from store
-      const { store } = await import("../redux/store");
+      await waitForStateUpdate();
+
+      // Get the updated state
       const updatedState = store.getState().player;
       const newTrack = updatedState.currentTrack;
       const newIndex = updatedState.currentIndex;
@@ -87,6 +108,8 @@ export const useSongNavigation = () => {
           );
         }
       }
+    } catch (error) {
+      console.error("Navigation error:", error);
     } finally {
       navigationLockRef.current = false;
       setIsNavigating(false);
