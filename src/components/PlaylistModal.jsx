@@ -12,6 +12,7 @@ import {
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import PlayPause from "./PlayPause";
+import SongMenu from "./SongMenu";
 import { Error, Loader } from "./";
 import { IoClose, IoArrowBack } from "react-icons/io5";
 import {
@@ -211,11 +212,11 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
       {/* Slide-out panel */}
       <div
-        className={`fixed top-0 left-0 bottom-0 w-[calc(100%-420px)] bg-gradient-to-br from-[#1e1b4b]/98 to-[#0f172a]/98 z-40 shadow-2xl transition-all duration-300 ease-out transform ${
+        className={`fixed top-0 left-0 bottom-0 w-[calc(100%-380px)] bg-gradient-to-br from-[#1e1b4b]/98 to-[#0f172a]/98 z-40 shadow-2xl transition-all duration-300 ease-out transform ${
           isAnimating ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{
-          maxWidth: "calc(100% - 420px)",
+          maxWidth: "calc(100% - 380px)",
           boxShadow: isAnimating ? "10px 0 40px rgba(0,0,0,0.5)" : "none",
         }}
       >
@@ -478,33 +479,35 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   </button>
                 </div>
 
-                {/* Track List Header */}
-                <div className="flex items-center px-4 pb-2 border-b border-white/10 mb-2">
-                  <span className="text-gray-400 text-xs uppercase w-8 text-center">
+                {/* Column headers */}
+                <div className="flex items-center gap-4 px-4 pb-2 border-b border-white/10 mb-2">
+                  <span className="w-6 text-center text-xs text-gray-400 uppercase tracking-wider">
                     #
                   </span>
-                  <span className="text-gray-400 text-xs uppercase ml-3 mr-4">
+                  <div className="w-12"></div>
+                  <div className="flex-1 text-xs text-gray-400 uppercase tracking-wider">
                     Title
-                  </span>
-                  <span className="text-gray-400 text-xs uppercase ml-auto mr-4">
+                  </div>
+                  <div className="w-10"></div>
+                  <div className="w-16 text-center text-xs text-gray-400 uppercase tracking-wider">
                     Duration
-                  </span>
+                  </div>
+                  <div className="w-10"></div>
                 </div>
 
+                {/* Track list */}
                 <div className="space-y-1">
                   {tracks.map((track, i) => {
                     const isActive = isTrackActive(track, i);
-                    const isCurrentSong = isActive && isPlaying;
 
                     return (
                       <div
                         key={track.key || track.id || i}
                         ref={isActive ? activeTrackRef : null}
-                        className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200 group relative overflow-hidden ${
-                          isActive
-                            ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent border-l-4 border-[#14b8a6]"
-                            : "hover:bg-white/5"
+                        className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer hover:bg-white/5 transition-all group relative ${
+                          isActive ? "bg-white/10" : ""
                         }`}
+                        onClick={() => handlePlayClick(track, i)}
                         onMouseEnter={() => {
                           if (!isPreviewCached(track)) {
                             prefetchPreviewUrl(track, { priority: "high" });
@@ -512,29 +515,15 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         }}
                       >
                         {/* Track number */}
-                        <span
-                          className={`text-sm w-8 text-center flex-shrink-0 ${
-                            isActive
-                              ? "text-[#14b8a6] font-bold"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          {isCurrentSong ? (
-                            <div className="flex justify-center gap-[2px]">
-                              <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse" />
-                              <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
-                              <div className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
-                            </div>
-                          ) : (
-                            i + 1
-                          )}
+                        <span className="text-gray-400 w-6 text-center">
+                          {i + 1}
                         </span>
 
                         {/* Album art */}
                         <img
                           src={track.images?.coverart || placeholderImage}
                           alt={track.title}
-                          className={`w-12 h-12 rounded-lg ml-3 mr-4 flex-shrink-0 ${
+                          className={`w-12 h-12 rounded object-cover ${
                             isActive ? "ring-2 ring-[#14b8a6]" : ""
                           }`}
                           onError={(e) => {
@@ -557,13 +546,21 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           </p>
                         </div>
 
+                        {/* 3-dot menu */}
+                        <div
+                          className="flex-shrink-0 w-10 flex justify-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SongMenu song={track} />
+                        </div>
+
                         {/* Duration */}
-                        <span className="text-gray-400 text-sm mx-4 font-medium bg-black/20 px-2 py-1 rounded">
+                        <span className="text-gray-400 text-sm w-16 text-center">
                           {formatDuration(track.duration_ms)}
                         </span>
 
-                        {/* Play button */}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Play button - always visible */}
+                        <div className="flex-shrink-0 w-10 flex justify-center">
                           <PlayPause
                             isPlaying={isPlaying}
                             activeSong={currentTrack}
