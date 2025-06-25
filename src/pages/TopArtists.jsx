@@ -112,30 +112,18 @@ const TopArtists = () => {
                       )}
                       <button
                         onClick={() => handleCountryChange(country)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200 group relative overflow-hidden ${
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200 relative overflow-hidden ${
                           isSelected
-                            ? "text-[#14b8a6]"
-                            : "text-white/80 hover:text-white"
+                            ? "text-[#14b8a6] bg-gradient-to-r from-[#14b8a6]/20 to-transparent"
+                            : "text-white/80 hover:text-white bg-gradient-to-r from-transparent to-transparent hover:from-white/10 hover:to-transparent"
                         }`}
                       >
-                        {/* Hover background effect */}
-                        <div
-                          className={`absolute inset-0 transition-all duration-300 ${
-                            isSelected
-                              ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent"
-                              : "bg-gradient-to-r from-white/0 to-white/0 hover:from-white/10 hover:to-transparent"
-                          }`}
-                        />
-
-                        {/* Content */}
-                        <div className="relative flex items-center gap-3 w-full">
-                          <span className="font-medium text-left flex-1">
-                            {country.name}
-                          </span>
-                          {isSelected && (
-                            <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                          )}
-                        </div>
+                        <span className="font-medium text-left flex-1">
+                          {country.name}
+                        </span>
+                        {isSelected && (
+                          <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                        )}
                       </button>
                     </div>
                   );
