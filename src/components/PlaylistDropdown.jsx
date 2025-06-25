@@ -189,9 +189,9 @@ const PlaylistDropdown = ({ onManageClick }) => {
                 onManageClick?.();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-transparent hover:bg-[#14b8a6]/10 border border-[#14b8a6] rounded-lg transition-all duration-200 text-[#14b8a6] hover:text-[#14b8a6] group"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-transparent border border-[#14b8a6]/40 hover:border-[#14b8a6]/60 rounded-lg transition-all duration-200 text-[#14b8a6] hover:text-[#22d3b7] group hover:shadow-[0_0_20px_rgba(20,184,166,0.2)]"
             >
-              <HiOutlinePlus className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
+              <HiOutlinePlus className="w-5 h-5 transition-colors" />
               <span className="font-medium">Manage Playlists</span>
             </button>
           </div>

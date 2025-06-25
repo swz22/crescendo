@@ -923,3 +923,69 @@ a,
   -ms-user-select: none;
   user-select: none;
 }
+
+/* Staggered slide in animation for playlist items */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translate3d(50px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Force GPU acceleration for smooth animations */
+.playlist-manager-panel {
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+}
+
+/* Smooth shadow animation on hover */
+.playlist-item-hover {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center left;
+}
+
+.playlist-item-hover:hover {
+  box-shadow: -4px 0 20px rgba(20, 184, 166, 0.15);
+}
+
+/* Button press effect */
+.playlist-button-press:active {
+  transform: scale(0.95);
+}
+
+/* Ensure smooth scrolling on all devices */
+.playlist-scroll-smooth {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Add a subtle glow to the panel edge */
+.playlist-panel-glow {
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Ensure the create button rotation is smooth */
+.rotate-smooth {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile optimization */
+@media (max-width: 640px) {
+  /* On mobile, take most of the screen but leave some space */
+  .playlist-manager-panel {
+    width: 90vw !important;
+    max-width: 380px !important;
+  }
+}
