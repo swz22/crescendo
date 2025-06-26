@@ -255,7 +255,7 @@ export const spotifyCoreApi = createApi({
             .sort((a, b) => b.popularity - a.popularity)
             .map(adaptTrackData)
             .filter(Boolean)
-            .slice(0, 50);
+            .slice(0, 48);
 
           return { data: sortedTracks };
         } catch (error) {
@@ -487,7 +487,7 @@ export const spotifyCoreApi = createApi({
     getNewReleases: builder.query({
       query: () => {
         // Search for albums from 2025 only, will be sorted by relevance/popularity by default
-        return `/search?q=year:2025&type=album&market=US&limit=50`;
+        return `/search?q=year:2025&type=album&market=US&limit=49`;
       },
       transformResponse: (response) => {
         // Extract albums and sort by release date (newest first)

@@ -54,11 +54,13 @@ const CommunityPlaylists = () => {
   };
 
   // Sort playlists with featured first
-  const sortedPlaylists = [...playlists].sort((a, b) => {
-    if (a?.id === featuredPlaylist?.id) return -1;
-    if (b?.id === featuredPlaylist?.id) return 1;
-    return 0;
-  });
+  const sortedPlaylists = [...playlists]
+    .sort((a, b) => {
+      if (a?.id === featuredPlaylist?.id) return -1;
+      if (b?.id === featuredPlaylist?.id) return 1;
+      return 0;
+    })
+    .slice(0, 45);
 
   return (
     <div className="flex flex-col">
