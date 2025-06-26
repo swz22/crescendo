@@ -81,7 +81,7 @@ const HeroSection = ({ album, onPlayAlbum, onAddToQueue }) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-center md:justify-start gap-3">
+            <div className="flex items-center justify-center md:justify-start gap-5">
               <button
                 onClick={onPlayAlbum}
                 className="flex items-center gap-2 px-6 py-3 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-full font-semibold transition-all hover:scale-105 shadow-lg"
