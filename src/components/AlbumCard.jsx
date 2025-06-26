@@ -34,13 +34,6 @@ const AlbumCard = ({ album, showTrackCount = false }) => {
           src={albumImage}
           className="w-full h-full rounded-lg object-cover"
         />
-        {showTrackCount && (
-          <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm rounded-full px-3 py-1 border border-white/20 group-hover:bg-black/90 transition-all">
-            <p className="text-xs text-white font-medium">
-              {album.total_tracks} tracks
-            </p>
-          </div>
-        )}
       </div>
       <div className="mt-4 flex flex-col">
         <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
