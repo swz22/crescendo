@@ -1,24 +1,11 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import {
-  HiOutlineHome,
-  HiOutlineMenu,
-  HiOutlineUserGroup,
-  HiOutlineSparkles,
-  HiOutlineCollection,
-  HiOutlineCog,
-} from "react-icons/hi";
+import { HiOutlineMenu, HiOutlineCog } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
 import { logo } from "../assets";
+import { links } from "../assets/constants";
 import PerformanceMonitor from "./PerformanceMonitor";
-
-const links = [
-  { name: "Discover", to: "/", icon: HiOutlineHome },
-  { name: "Top Artists", to: "/top-artists", icon: HiOutlineUserGroup },
-  { name: "New Releases", to: "/new-releases", icon: HiOutlineSparkles },
-  { name: "Community Playlists", to: "/playlists", icon: HiOutlineCollection },
-];
 
 const NavLinks = ({ handleClick }) => (
   <div className="mt-10">
@@ -79,8 +66,6 @@ const LeftSidebar = () => {
           </button>
         </div>
       </div>
-
-      {/* Mobile sidebar trigger - Removed, now in AppHeader */}
 
       {/* Mobile sidebar */}
       <div

@@ -1,7 +1,9 @@
 import {
-  HiOutlineHashtag,
   HiOutlineHome,
   HiOutlineUserGroup,
+  HiOutlineSparkles,
+  HiOutlineCollection,
+  HiOutlinePhotograph,
 } from "react-icons/hi";
 
 export const genres = [
@@ -26,4 +28,7 @@ export const genres = [
 export const links = [
   { name: "Discover", to: "/", icon: HiOutlineHome },
   { name: "Top Artists", to: "/top-artists", icon: HiOutlineUserGroup },
+  { name: "Top Albums", to: "/top-albums", icon: HiOutlinePhotograph },
+  { name: "New Releases", to: "/new-releases", icon: HiOutlineSparkles },
+  { name: "Community Playlists", to: "/playlists", icon: HiOutlineCollection },
 ];
