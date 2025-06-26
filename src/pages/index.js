@@ -1,7 +1,7 @@
 import { lazy } from "react";
 
-// Lazy load all page components for better performance
 const Discover = lazy(() => import("./Discover"));
+const TopAlbums = lazy(() => import("./TopAlbums"));
 const TopArtists = lazy(() => import("./TopArtists"));
 const AlbumDetails = lazy(() => import("./AlbumDetails"));
 const ArtistDetails = lazy(() => import("./ArtistDetails"));
@@ -13,6 +13,7 @@ const CommunityPlaylists = lazy(() => import("./CommunityPlaylists"));
 export {
   Discover,
   Search,
+  TopAlbums,
   TopArtists,
   AlbumDetails,
   ArtistDetails,

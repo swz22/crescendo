@@ -335,6 +335,37 @@ export const spotifyCoreApi = createApi({
       },
     }),
 
+    getTopAlbums: builder.query({
+      query: ({ country = "US" }) => {
+        return `/search?q=year:2024-2025&type=album&market=${country}&limit=50`;
+      },
+      transformResponse: (response) => {
+        if (!response?.albums?.items) return [];
+
+        // Sort by popularity and filter out duplicates
+        const uniqueAlbums = response.albums.items
+          .filter(
+            (album, index, self) =>
+              index ===
+              self.findIndex(
+                (a) =>
+                  a.name === album.name &&
+                  a.artists[0]?.name === album.artists[0]?.name
+              )
+          )
+          .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+          .slice(0, 50);
+
+        return uniqueAlbums;
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch top albums" },
+        };
+      },
+    }),
+
     getTopArtists: builder.query({
       query: (country = "US") => {
         const marketSeeds = {
@@ -501,6 +532,7 @@ export const spotifyCoreApi = createApi({
 });
 
 export const {
+  useGetTopAlbumsQuery,
   useGetTopArtistsQuery,
   useGetSongDetailsQuery,
   useGetAlbumDetailsQuery,

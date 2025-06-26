@@ -13,6 +13,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import {
   AlbumDetails,
   ArtistDetails,
+  TopAlbums,
   TopArtists,
   Discover,
   Search,
@@ -43,6 +44,7 @@ const App = () => {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Discover />} />
+              <Route path="/top-albums" element={<TopAlbums />} />
               <Route path="/top-artists" element={<TopArtists />} />
               <Route path="/new-releases" element={<NewReleases />} />
               <Route path="/playlists" element={<CommunityPlaylists />} />
