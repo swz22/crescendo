@@ -172,7 +172,7 @@ export const spotifyCoreApi = createApi({
         try {
           const searchQuery = buildGenrePlaylistQuery(genre);
 
-          // Step 1: Search for playlists
+          // Search for playlists
           const playlistSearch = await baseQuery({
             url: `/search?q=${encodeURIComponent(
               searchQuery
@@ -185,7 +185,7 @@ export const spotifyCoreApi = createApi({
 
           const playlists = playlistSearch.data?.playlists?.items || [];
 
-          // Step 2: Filter for quality playlists
+          // Filter for quality playlists
           const qualityPlaylists = playlists
             .filter(isQualityPlaylist)
             .sort((a, b) => {
@@ -211,11 +211,11 @@ export const spotifyCoreApi = createApi({
 
             const tracks = fallbackSearch.data?.tracks?.items || [];
             return {
-              data: tracks.map(adaptTrackData).filter(Boolean).slice(0, 48),
+              data: tracks.map(adaptTrackData).filter(Boolean).slice(0, 50),
             };
           }
 
-          // Step 3: Fetch tracks from each playlist
+          // Fetch tracks from each playlist
           const allTracks = [];
           const trackIds = new Set();
 
@@ -250,12 +250,12 @@ export const spotifyCoreApi = createApi({
             }
           }
 
-          // Step 4: Sort by popularity and limit to 48
+          // Sort by popularity
           const sortedTracks = allTracks
             .sort((a, b) => b.popularity - a.popularity)
             .map(adaptTrackData)
             .filter(Boolean)
-            .slice(0, 48);
+            .slice(0, 50);
 
           return { data: sortedTracks };
         } catch (error) {
@@ -485,8 +485,19 @@ export const spotifyCoreApi = createApi({
     }),
 
     getNewReleases: builder.query({
-      query: () => "/browse/new-releases?country=US&limit=50",
-      transformResponse: (response) => response?.albums?.items || [],
+      query: () => {
+        // Search for albums from 2025 only, will be sorted by relevance/popularity by default
+        return `/search?q=year:2025&type=album&market=US&limit=50`;
+      },
+      transformResponse: (response) => {
+        // Extract albums and sort by release date (newest first)
+        const albums = response?.albums?.items || [];
+        return albums.sort((a, b) => {
+          const dateA = new Date(a.release_date || "1900-01-01");
+          const dateB = new Date(b.release_date || "1900-01-01");
+          return dateB - dateA; // Newest first
+        });
+      },
       transformErrorResponse: (response) => {
         return {
           status: response.status,

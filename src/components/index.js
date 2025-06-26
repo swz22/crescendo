@@ -41,6 +41,7 @@ import BottomSheet from "./BottomSheet";
 
 // Page Components
 import DetailsHeader from "./DetailsHeader";
+import HeroSection from "./HeroSection";
 import OnboardingModal from "./OnboardingModal";
 import PerformanceMonitor from "./PerformanceMonitor";
 import ErrorBoundary from "./ErrorBoundary";
@@ -89,6 +90,7 @@ export {
 
   // Page Components
   DetailsHeader,
+  HeroSection,
   OnboardingModal,
   PerformanceMonitor,
   ErrorBoundary,
