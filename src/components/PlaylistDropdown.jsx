@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { switchContext } from "../redux/features/playerSlice";
 import {
@@ -6,12 +6,7 @@ import {
   selectCurrentContextName,
 } from "../redux/features/playerSelectors";
 import DropdownPortal from "./DropdownPortal";
-import {
-  HiOutlineQueueList,
-  HiOutlineClock,
-  HiOutlinePlus,
-  HiChevronDown,
-} from "react-icons/hi2";
+import { HiOutlineClock, HiOutlinePlus, HiChevronDown } from "react-icons/hi2";
 import { BsMusicNoteList } from "react-icons/bs";
 import { CgMenuLeft } from "react-icons/cg";
 
@@ -81,7 +76,7 @@ const PlaylistDropdown = ({ onManageClick }) => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         triggerRef={dropdownButtonRef}
-        minWidth={320}
+        minWidth={335}
         maxHeight={500}
         placement="bottom-start"
         className="overflow-visible"
@@ -132,68 +127,70 @@ const PlaylistDropdown = ({ onManageClick }) => {
             </div>
           </div>
 
-          {/* User Playlists */}
-          {userPlaylists.length > 0 && (
-            <>
-              <div className="border-t border-white/10 my-3" />
-              <div className="px-3 pb-2">
-                <p className="text-xs text-white/40 uppercase tracking-wider mb-3 font-medium">
-                  Your Playlists
-                </p>
-                <div className="space-y-1">
-                  {userPlaylists.map((context) => (
-                    <button
-                      key={context.id}
-                      onClick={() => handleContextSelect(context.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
-                        activeContext === context.id
-                          ? "bg-[#14b8a6]/20 text-[#14b8a6]"
-                          : "hover:bg-white/10 text-white"
-                      }`}
-                    >
-                      <div className="flex-shrink-0">
-                        <div
-                          className={
-                            activeContext === context.id ? "text-[#14b8a6]" : ""
-                          }
-                        >
-                          {getIcon(context.icon)}
-                        </div>
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-medium truncate">{context.name}</p>
-                      </div>
-                      <span
-                        className={`text-sm ${
-                          activeContext === context.id
-                            ? "text-[#14b8a6]"
-                            : "text-white/60"
-                        }`}
-                      >
-                        {context.trackCount}
-                      </span>
-                      {activeContext === context.id && (
-                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+          {/* User Playlists Section */}
+          <div className="border-t border-white/10 my-3" />
+          <div className="px-3 pb-2">
+            <p className="text-xs text-white/40 uppercase tracking-wider mb-3 font-medium">
+              Your Playlists
+            </p>
 
-          {/* Manage Playlists */}
-          <div className="border-t border-white/10 mt-3 p-3">
+            {/* Manage Playlists Button */}
             <button
               onClick={() => {
                 onManageClick?.();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-transparent border border-[#14b8a6]/40 hover:border-[#14b8a6]/60 rounded-lg transition-all duration-200 text-[#14b8a6] hover:text-[#22d3b7] group hover:shadow-[0_0_20px_rgba(20,184,166,0.2)]"
+              className="w-full flex items-center gap-3 px-3 py-3 bg-transparent border border-[#14b8a6]/40 hover:border-[#14b8a6]/60 rounded-lg transition-all duration-200 text-[#14b8a6] hover:text-[#22d3b7] group hover:shadow-[0_0_20px_rgba(20,184,166,0.2)] mb-3"
             >
-              <HiOutlinePlus className="w-5 h-5 transition-colors" />
+              <HiOutlinePlus className="w-5 h-5 transition-colors flex-shrink-0" />
               <span className="font-medium">Manage Playlists</span>
             </button>
+
+            {/* Playlist Items */}
+            {userPlaylists.length > 0 ? (
+              <div className="space-y-1">
+                {userPlaylists.map((context) => (
+                  <button
+                    key={context.id}
+                    onClick={() => handleContextSelect(context.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
+                      activeContext === context.id
+                        ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                        : "hover:bg-white/10 text-white"
+                    }`}
+                  >
+                    <div className="flex-shrink-0">
+                      <div
+                        className={
+                          activeContext === context.id ? "text-[#14b8a6]" : ""
+                        }
+                      >
+                        {getIcon(context.icon)}
+                      </div>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-medium truncate">{context.name}</p>
+                    </div>
+                    <span
+                      className={`text-sm ${
+                        activeContext === context.id
+                          ? "text-[#14b8a6]"
+                          : "text-white/60"
+                      }`}
+                    >
+                      {context.trackCount}
+                    </span>
+                    {activeContext === context.id && (
+                      <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-white/40 text-sm text-center py-2">
+                No playlists yet
+              </p>
+            )}
           </div>
         </div>
       </DropdownPortal>
