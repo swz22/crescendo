@@ -58,8 +58,16 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     setIsAnimating(true);
     dispatch(setModalOpen(true));
 
+    // Prevent body scroll on mobile
+    if (window.innerWidth < 640) {
+      document.body.style.overflow = "hidden";
+    }
+
     return () => {
       dispatch(setModalOpen(false));
+      if (window.innerWidth < 640) {
+        document.body.style.overflow = "";
+      }
     };
   }, [dispatch]);
 
@@ -185,6 +193,17 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const getTotalDuration = () => {
+    if (!tracks) return "0 min";
+    const totalMs = tracks.reduce(
+      (acc, track) => acc + (track.duration_ms || 0),
+      0
+    );
+    const hours = Math.floor(totalMs / 3600000);
+    const minutes = Math.floor((totalMs % 3600000) / 60000);
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes} min`;
+  };
+
   const isTrackActive = (track, index) => {
     if (activeContext !== "community_playlist") return false;
     return currentIndex === index;
@@ -192,97 +211,62 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
   return (
     <>
-      {/* Backdrop - only covers main content area */}
+      {/* Mobile Full Screen Modal */}
       <div
-        className={`fixed top-0 left-0 bottom-0 z-40 transition-all duration-300 ${
-          isAnimating ? "bg-black/40" : "bg-transparent pointer-events-none"
+        className={`sm:hidden fixed inset-0 z-50 bg-gradient-to-b from-[#1a1848] to-[#0f0b2d] transition-all duration-500 ${
+          isAnimating
+            ? "translate-y-0 opacity-100"
+            : "translate-y-full opacity-0"
         }`}
-        onClick={handleBackdropClick}
-        style={{
-          right: "420px",
-          backdropFilter: isAnimating ? "blur(8px)" : "blur(0px)",
-          WebkitBackdropFilter: isAnimating ? "blur(8px)" : "blur(0px)",
-        }}
       >
-        <div
-          className={`absolute inset-0 transition-transform duration-300 ${
-            isAnimating ? "scale-95 opacity-50" : "scale-100 opacity-100"
-          }`}
-        />
-      </div>
-
-      {/* Slide-out panel */}
-      <div
-        className={`fixed top-0 left-0 bottom-0 w-[calc(100%-380px)] bg-gradient-to-br from-[#1e1b4b]/98 to-[#0f172a]/98 z-40 shadow-2xl transition-all duration-300 ease-out transform ${
-          isAnimating ? "translate-x-0" : "-translate-x-full"
-        }`}
-        style={{
-          maxWidth: "calc(100% - 380px)",
-          boxShadow: isAnimating ? "10px 0 40px rgba(0,0,0,0.5)" : "none",
-        }}
-      >
-        <div className="h-full flex flex-col">
-          {/* Header */}
-          <div className="relative p-6 bg-gradient-to-b from-white/5 to-transparent border-b border-white/10">
+        <div className="flex flex-col h-full">
+          {/* Mobile Header */}
+          <div className="flex items-center justify-between p-4 relative z-10">
             <button
               onClick={handleClose}
-              className="absolute top-6 left-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all hover:scale-110 group"
+              className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
             >
-              <IoArrowBack
-                size={20}
-                className="text-white group-hover:text-[#14b8a6] transition-colors"
+              <IoArrowBack className="w-6 h-6 text-white" />
+            </button>
+            <span className="text-sm font-medium text-gray-300">
+              Community Playlists
+            </span>
+            <button
+              onClick={handleClose}
+              className="p-2 -mr-2 rounded-full hover:bg-white/10 transition-colors"
+            >
+              <IoClose className="w-6 h-6 text-white" />
+            </button>
+          </div>
+
+          {/* Mobile Hero Section */}
+          <div className="relative px-4 pb-4">
+            {/* Background Blur Effect */}
+            <div className="absolute inset-0 -top-20 opacity-30">
+              <img
+                src={
+                  playlist.images?.[0]?.url ||
+                  mosaicImages[0] ||
+                  placeholderImage
+                }
+                alt=""
+                className="w-full h-full object-cover blur-3xl"
               />
-            </button>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1a1848]/50 to-[#1a1848]" />
+            </div>
 
-            <button
-              onClick={handleClose}
-              className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all hover:scale-110"
-            >
-              <IoClose size={24} className="text-white" />
-            </button>
-
-            <div className="flex items-start gap-6 mt-12">
-              {/* Playlist Image */}
-              <div className="w-40 h-40 rounded-xl shadow-2xl overflow-hidden flex-shrink-0 group relative">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-                {playlist.name.toLowerCase().includes("lonely heart") ? (
-                  // Custom artwork for featured playlist
-                  <div className="w-full h-full relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6] via-[#0891b2] to-[#0e7490] animate-gradient">
-                      <div className="absolute inset-0 bg-black/20"></div>
-                    </div>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                      <div className="relative mb-3">
-                        <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                          <svg
-                            className="w-12 h-12 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="text-white/80 text-[10px] font-medium">
-                        FEATURED
-                      </p>
-                    </div>
-                  </div>
-                ) : mosaicImages.length === 4 &&
-                  !mosaicImages.every((img) => img === mosaicImages[0]) ? (
-                  // Mosaic grid
+            {/* Content */}
+            <div className="relative z-10 flex flex-col items-center text-center">
+              {/* Mosaic */}
+              <div className="w-32 h-32 mb-4 rounded-xl overflow-hidden shadow-2xl">
+                {mosaicImages.length === 4 &&
+                !mosaicImages.every((img) => img === mosaicImages[0]) ? (
                   <div className="grid grid-cols-2 gap-0.5 w-full h-full">
                     {mosaicImages.map((image, index) => (
                       <img
                         key={index}
-                        src={image}
                         alt={`Album ${index + 1}`}
+                        src={image}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
@@ -292,10 +276,13 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     ))}
                   </div>
                 ) : (
-                  // Single image
                   <img
-                    src={playlist.images?.[0]?.url || placeholderImage}
                     alt={playlist.name}
+                    src={
+                      playlist.images?.[0]?.url ||
+                      mosaicImages[0] ||
+                      placeholderImage
+                    }
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.onerror = null;
@@ -303,150 +290,48 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     }}
                   />
                 )}
-                {/* Play button overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                  <div
-                    onClick={handlePlayAll}
-                    className="w-14 h-14 bg-[#14b8a6] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
-                  >
-                    <svg
-                      className="w-6 h-6 text-white translate-x-0.5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M5 4v12l10-6z" />
-                    </svg>
-                  </div>
-                </div>
               </div>
 
-              <div className="flex-1 min-w-0 pt-2">
-                <p className="text-[#14b8a6] text-sm font-medium mb-2 uppercase tracking-wider">
-                  Playlist
-                </p>
-                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
-                  {playlist.name}
-                </h2>
-                <p className="text-gray-300 mb-2">
-                  by {playlist.owner?.display_name || "Spotify"}
-                </p>
-                <div className="flex items-center gap-4 text-gray-400 text-sm">
-                  <span className="flex items-center gap-1">
-                    <BsMusicNoteBeamed />
-                    {playlist.tracks?.total || 0} tracks
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <BsClock />
-                    {tracks
-                      ? `${Math.floor(
-                          tracks.reduce(
-                            (acc, t) => acc + (t.duration_ms || 0),
-                            0
-                          ) / 60000
-                        )} min`
-                      : "-- min"}
-                  </span>
-                </div>
+              {/* Playlist Info */}
+              <h1 className="text-2xl font-bold text-white mb-1">
+                {playlist.name}
+              </h1>
+              <p className="text-sm text-gray-300 mb-2">
+                by {playlist.owner?.display_name || "Spotify"}
+              </p>
+              <div className="flex items-center gap-3 text-xs text-gray-400">
+                <span className="flex items-center gap-1">
+                  <BsMusicNoteBeamed />
+                  {tracks?.length || 0} tracks
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <BsClock />
+                  {getTotalDuration()}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Track List */}
-          <div
-            className="flex-1 overflow-y-auto custom-scrollbar"
-            ref={scrollContainerRef}
-          >
-            {isFetching && (
-              <div className="p-6">
-                <Loader title="Loading tracks..." />
-              </div>
-            )}
-            {error && (
-              <div className="p-6">
-                <Error />
-              </div>
-            )}
-            {tracks && (
-              <div className="p-6 pt-2">
-                {/* Playlist Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 group hover:border-[#14b8a6]/40 transition-all">
-                    <div className="flex items-center gap-2 mb-2">
-                      <BsClock className="text-[#14b8a6] text-lg" />
-                      <p className="text-gray-400 text-sm">Total Duration</p>
-                    </div>
-                    <p className="text-white text-xl font-bold">
-                      {Math.floor(
-                        tracks.reduce(
-                          (acc, t) => acc + (t.duration_ms || 0),
-                          0
-                        ) / 60000
-                      )}{" "}
-                      min
-                    </p>
-                  </div>
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 group hover:border-[#14b8a6]/40 transition-all">
-                    <div className="flex items-center gap-2 mb-2">
-                      <IoMdTime className="text-[#14b8a6] text-lg" />
-                      <p className="text-gray-400 text-sm">Avg Duration</p>
-                    </div>
-                    <p className="text-white text-xl font-bold">
-                      {formatDuration(
-                        tracks.reduce(
-                          (acc, t) => acc + (t.duration_ms || 0),
-                          0
-                        ) / tracks.length
-                      )}
-                    </p>
-                  </div>
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 group hover:border-[#14b8a6]/40 transition-all">
-                    <div className="flex items-center gap-2 mb-2">
-                      <BsCalendar3 className="text-[#14b8a6] text-lg" />
-                      <p className="text-gray-400 text-sm">Last Updated</p>
-                    </div>
-                    <p className="text-white text-xl font-bold">
-                      {new Date().toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Play All / Add to Queue / Shuffle Buttons */}
-                <div className="flex gap-3 mb-6">
-                  <button
-                    onClick={handlePlayAll}
-                    className="flex-1 bg-[#14b8a6] hover:bg-[#10a094] text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
-                  >
-                    <BsFillPlayFill className="w-5 h-5" />
-                    Play All
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (tracks && tracks.length > 0) {
-                        tracks.forEach((track) => {
-                          dispatch(addToQueue({ song: track }));
-                        });
-                        showToast(`Added ${tracks.length} tracks to queue`);
-                      }
-                    }}
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border border-white/10"
-                  >
-                    <HiPlus className="w-5 h-5" />
-                    Add to Queue
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (tracks && tracks.length > 0) {
-                        try {
-                          const randomIndex = Math.floor(
-                            Math.random() * tracks.length
-                          );
-                          const firstTrackWithPreview = await getPreviewUrl(
-                            tracks[randomIndex]
-                          );
-
+          {/* Mobile Action Buttons */}
+          <div className="px-4 pb-2 space-y-2">
+            <button
+              onClick={handlePlayAll}
+              className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white py-3 rounded-full font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <BsFillPlayFill className="w-6 h-6" />
+              Play All
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  if (tracks && tracks.length > 0) {
+                    try {
+                      const randomIndex = Math.floor(
+                        Math.random() * tracks.length
+                      );
+                      getPreviewUrl(tracks[randomIndex]).then(
+                        (firstTrackWithPreview) => {
                           if (firstTrackWithPreview?.preview_url) {
                             const tracksWithFirstPreview = [...tracks];
                             tracksWithFirstPreview[randomIndex] =
@@ -463,77 +348,87 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                 },
                               })
                             );
-                            dispatch(toggleShuffle());
-                            showToast("Shuffling playlist");
+                            dispatch(toggleShuffle(true));
+                            showToast("Shuffle playing playlist");
                           } else {
                             showToast("No preview available", "error");
                           }
-                        } catch (error) {
-                          console.error("Error getting preview URL:", error);
                         }
-                      }
-                    }}
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-lg font-semibold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 border border-white/10"
-                  >
-                    <BsShuffle className="w-5 h-5" />
-                    Shuffle
-                  </button>
-                </div>
+                      );
+                    } catch (error) {
+                      console.error("Error getting preview URL:", error);
+                    }
+                  }
+                }}
+                className="bg-white/10 hover:bg-white/20 text-white py-2.5 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 border border-white/10"
+              >
+                <BsShuffle className="w-4 h-4" />
+                Shuffle
+              </button>
+              <button
+                onClick={() => {
+                  if (tracks && tracks.length > 0) {
+                    tracks.forEach((track) => {
+                      dispatch(addToQueue({ song: track }));
+                    });
+                    showToast(`Added ${tracks.length} tracks to queue`);
+                  }
+                }}
+                className="bg-white/10 hover:bg-white/20 text-white py-2.5 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 border border-white/10"
+              >
+                <HiPlus className="w-4 h-4" />
+                Add to Queue
+              </button>
+            </div>
+          </div>
 
-                {/* Column headers */}
-                <div className="flex items-center gap-4 px-4 pb-2 border-b border-white/10 mb-2">
-                  <span className="w-6 text-center text-xs text-gray-400 uppercase tracking-wider">
-                    #
-                  </span>
-                  <div className="w-12"></div>
-                  <div className="flex-1 text-xs text-gray-400 uppercase tracking-wider">
-                    Title
-                  </div>
-                  <div className="w-10"></div>
-                  <div className="w-16 text-center text-xs text-gray-400 uppercase tracking-wider">
-                    Duration
-                  </div>
-                  <div className="w-10"></div>
-                </div>
-
-                {/* Track list */}
+          {/* Mobile Track List */}
+          <div className="flex-1 overflow-hidden bg-black/20 rounded-t-3xl">
+            <div
+              ref={scrollContainerRef}
+              className="h-full overflow-y-auto custom-scrollbar p-4"
+            >
+              {isFetching ? (
+                <Loader title="Loading tracks..." />
+              ) : error ? (
+                <Error />
+              ) : (
                 <div className="space-y-1">
-                  {tracks.map((track, i) => {
+                  {tracks?.map((track, i) => {
                     const isActive = isTrackActive(track, i);
-
                     return (
                       <div
-                        key={track.key || track.id || i}
+                        key={`${track.key}-${i}`}
                         ref={isActive ? activeTrackRef : null}
-                        className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer hover:bg-white/5 transition-all group relative ${
-                          isActive ? "bg-white/10" : ""
+                        className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                          isActive
+                            ? "bg-white/10 shadow-lg"
+                            : "hover:bg-white/5 active:bg-white/10"
                         }`}
-                        onClick={() => handlePlayClick(track, i)}
-                        onMouseEnter={() => {
-                          if (!isPreviewCached(track)) {
-                            prefetchPreviewUrl(track, { priority: "high" });
-                          }
-                        }}
                       >
-                        {/* Track number */}
-                        <span className="text-gray-400 w-6 text-center">
-                          {i + 1}
-                        </span>
+                        {/* Track Number/Image */}
+                        <div className="flex-shrink-0 w-12 h-12 relative">
+                          <img
+                            alt={track.title}
+                            src={
+                              track.images?.coverart ||
+                              track.album?.images?.[0]?.url ||
+                              placeholderImage
+                            }
+                            className={`w-full h-full rounded-lg object-cover ${
+                              isActive ? "ring-2 ring-[#14b8a6]" : ""
+                            }`}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = placeholderImage;
+                            }}
+                          />
+                          <span className="absolute -top-1 -left-1 bg-black/80 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                            {i + 1}
+                          </span>
+                        </div>
 
-                        {/* Album art */}
-                        <img
-                          src={track.images?.coverart || placeholderImage}
-                          alt={track.title}
-                          className={`w-12 h-12 rounded object-cover ${
-                            isActive ? "ring-2 ring-[#14b8a6]" : ""
-                          }`}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = placeholderImage;
-                          }}
-                        />
-
-                        {/* Track info */}
+                        {/* Track Info */}
                         <div className="flex-1 min-w-0">
                           <p
                             className={`font-medium truncate ${
@@ -547,43 +442,313 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           </p>
                         </div>
 
-                        {/* 3-dot menu */}
-                        <div
-                          className="flex-shrink-0 w-10 flex justify-center"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <SongMenu song={track} />
-                        </div>
-
-                        {/* Duration */}
-                        <span className="text-gray-400 text-sm w-16 text-center">
-                          {formatDuration(track.duration_ms)}
-                        </span>
-
-                        {/* Play button - always visible */}
-                        <div className="flex-shrink-0 w-10 flex justify-center">
+                        {/* Menu & Play */}
+                        <div className="flex items-center gap-1">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <SongMenu song={track} />
+                          </div>
                           <PlayPause
                             isPlaying={isPlaying}
                             activeSong={currentTrack}
                             song={track}
                             handlePause={handlePauseClick}
                             handlePlay={() => handlePlayClick(track, i)}
-                            size={35}
+                            size={40}
                           />
                         </div>
-
-                        {/* Now playing indicator */}
-                        {isActive && (
-                          <div className="absolute top-1 right-4 bg-[#14b8a6] text-white text-xs px-2 py-0.5 rounded-full font-medium">
-                            Now Playing
-                          </div>
-                        )}
                       </div>
                     );
                   })}
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Slide-up Modal */}
+      <div className="hidden sm:block">
+        {/* Backdrop - only covers main content area */}
+        <div
+          className={`fixed top-0 left-0 bottom-0 z-40 transition-all duration-300 ${
+            isAnimating
+              ? "bg-black/60 backdrop-blur-sm"
+              : "bg-transparent pointer-events-none"
+          }`}
+          onClick={handleBackdropClick}
+          style={{
+            right: "380px", // Respect SidebarPlayer width
+          }}
+        />
+
+        {/* Slide-up Modal */}
+        <div
+          className={`fixed left-0 bottom-0 top-0 z-50 bg-gradient-to-br from-[#1a1848] to-[#0f0b2d] transition-all duration-500 overflow-hidden ${
+            isAnimating
+              ? "translate-y-0 opacity-100"
+              : "translate-y-full opacity-0"
+          }`}
+          style={{
+            right: "380px", // Stop at SidebarPlayer boundary
+            boxShadow: isAnimating ? "0 -10px 40px rgba(0,0,0,0.5)" : "none",
+          }}
+        >
+          <div className="h-full flex">
+            {/* Left Panel - Info */}
+            <div className="w-[450px] flex-shrink-0 p-8 flex flex-col">
+              <button
+                onClick={handleClose}
+                className="absolute top-6 left-6 p-2 rounded-full bg-black/20 hover:bg-black/40 transition-all z-20"
+              >
+                <IoArrowBack className="w-5 h-5 text-white" />
+              </button>
+
+              <div className="flex-1 flex flex-col items-center justify-center">
+                <div className="w-72 h-72 rounded-2xl overflow-hidden shadow-2xl mb-6 group relative">
+                  {mosaicImages.length === 4 ? (
+                    mosaicImages.every((img) => img === mosaicImages[0]) &&
+                    mosaicImages[0] !== placeholderImage ? (
+                      <img
+                        alt="playlist_cover"
+                        src={mosaicImages[0]}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = placeholderImage;
+                        }}
+                      />
+                    ) : (
+                      <div className="grid grid-cols-2 gap-1 w-full h-full">
+                        {mosaicImages.map((image, index) => (
+                          <img
+                            key={index}
+                            alt={`Album ${index + 1}`}
+                            src={image}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = placeholderImage;
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )
+                  ) : (
+                    <img
+                      alt={playlist.name}
+                      src={playlist.images?.[0]?.url || placeholderImage}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = placeholderImage;
+                      }}
+                    />
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 z-20">
+                    <div
+                      onClick={handlePlayAll}
+                      className="w-16 h-16 bg-[#14b8a6] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                    >
+                      <svg
+                        className="w-8 h-8 text-white translate-x-0.5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M5 4v12l10-6z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center max-w-sm">
+                  <p className="text-[#14b8a6] text-sm font-medium mb-2 uppercase tracking-wider">
+                    Community Playlist
+                  </p>
+                  <h2 className="text-3xl font-bold text-white mb-3">
+                    {playlist.name}
+                  </h2>
+                  <p className="text-gray-300 mb-2">
+                    by {playlist.owner?.display_name || "Spotify"}
+                  </p>
+                  <div className="flex items-center justify-center gap-4 text-gray-400 text-sm mb-6">
+                    <span className="flex items-center gap-1">
+                      <BsMusicNoteBeamed />
+                      {tracks?.length || 0} tracks
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <BsClock />
+                      {getTotalDuration()}
+                    </span>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={handlePlayAll}
+                      className="bg-[#14b8a6] hover:bg-[#0d9488] text-white px-6 py-2.5 rounded-full font-medium transition-all hover:scale-[1.02] flex items-center gap-2 text-sm"
+                    >
+                      <BsFillPlayFill className="w-5 h-5" />
+                      Play All
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (tracks && tracks.length > 0) {
+                          try {
+                            const randomIndex = Math.floor(
+                              Math.random() * tracks.length
+                            );
+                            const firstTrackWithPreview = await getPreviewUrl(
+                              tracks[randomIndex]
+                            );
+
+                            if (firstTrackWithPreview?.preview_url) {
+                              const tracksWithFirstPreview = [...tracks];
+                              tracksWithFirstPreview[randomIndex] =
+                                firstTrackWithPreview;
+
+                              dispatch(
+                                replaceContext({
+                                  contextType: "community_playlist",
+                                  tracks: tracksWithFirstPreview,
+                                  startIndex: randomIndex,
+                                  playlistData: {
+                                    ...playlist,
+                                    tracks: tracksWithFirstPreview,
+                                  },
+                                })
+                              );
+                              dispatch(toggleShuffle(true));
+                              showToast("Shuffle playing playlist");
+                            } else {
+                              showToast("No preview available", "error");
+                            }
+                          } catch (error) {
+                            console.error("Error getting preview URL:", error);
+                          }
+                        }
+                      }}
+                      className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all hover:scale-[1.02] border border-white/10"
+                      title="Shuffle play"
+                    >
+                      <BsShuffle className="w-5 h-5 text-white" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (tracks && tracks.length > 0) {
+                          tracks.forEach((track) => {
+                            dispatch(addToQueue({ song: track }));
+                          });
+                          showToast(`Added ${tracks.length} tracks to queue`);
+                        }
+                      }}
+                      className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all hover:scale-[1.02] border border-white/10"
+                      title="Add to queue"
+                    >
+                      <HiPlus className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* Right Panel - Tracks */}
+            <div className="flex-1 flex flex-col bg-black/20">
+              <div className="p-6 pb-4 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="text-lg font-semibold text-white/80">
+                    {tracks?.length || 0} tracks
+                  </div>
+                </div>
+              </div>
+
+              {/* Track List */}
+              <div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto custom-scrollbar"
+              >
+                {isFetching ? (
+                  <div className="p-6">
+                    <Loader title="Loading tracks..." />
+                  </div>
+                ) : error ? (
+                  <div className="p-6">
+                    <Error />
+                  </div>
+                ) : (
+                  <div className="px-6 pb-6">
+                    {tracks?.map((track, i) => {
+                      const isActive = isTrackActive(track, i);
+                      return (
+                        <div
+                          key={`${track.key}-${i}`}
+                          ref={isActive ? activeTrackRef : null}
+                          className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all relative ${
+                            isActive
+                              ? "bg-white/10 shadow-lg"
+                              : "hover:bg-white/5"
+                          }`}
+                        >
+                          <span className="text-gray-400 w-8 text-center">
+                            {i + 1}
+                          </span>
+
+                          <img
+                            alt={track.title}
+                            src={
+                              track.images?.coverart ||
+                              track.album?.images?.[0]?.url ||
+                              placeholderImage
+                            }
+                            className={`w-12 h-12 rounded-lg object-cover ${
+                              isActive ? "ring-2 ring-[#14b8a6]" : ""
+                            }`}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = placeholderImage;
+                            }}
+                          />
+
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`font-medium truncate ${
+                                isActive ? "text-[#14b8a6]" : "text-white"
+                              }`}
+                            >
+                              {track.title}
+                            </p>
+                            <p className="text-gray-400 text-sm truncate">
+                              {track.subtitle}
+                            </p>
+                          </div>
+
+                          <div
+                            className="flex-shrink-0 w-10 flex justify-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SongMenu song={track} />
+                          </div>
+
+                          <span className="text-gray-400 text-sm w-16 text-center">
+                            {formatDuration(track.duration_ms)}
+                          </span>
+
+                          <div className="flex-shrink-0 w-10 flex justify-center">
+                            <PlayPause
+                              isPlaying={isPlaying}
+                              activeSong={currentTrack}
+                              song={track}
+                              handlePause={handlePauseClick}
+                              handlePlay={() => handlePlayClick(track, i)}
+                              size={35}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
