@@ -119,6 +119,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
   const handleClose = () => {
     setIsAnimating(false);
+    dispatch(setModalOpen(false));
     setTimeout(onClose, 300);
   };
 
