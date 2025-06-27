@@ -77,7 +77,7 @@ const App = () => {
 
       {/* Music Player - Single instance for all screen sizes */}
       {currentTrack?.title && (
-        <div className="fixed h-20 sm:h-28 bottom-0 left-0 right-0 lg:left-[240px] lg:right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+        <div className="fixed h-20 sm:h-28 bottom-0 left-0 right-0 lg:left-[240px] lg:right-[380px] animate-slideup bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] rounded-t-2xl overflow-hidden">
           <MusicPlayer />
         </div>
       )}
