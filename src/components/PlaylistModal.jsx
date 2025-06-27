@@ -374,16 +374,16 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
           {/* Tablet Modal - Centered, adjusts for SidebarPlayer */}
           <div
-            className={`fixed z-50 bg-gradient-to-br from-[#1a1848] to-[#0f0b2d] rounded-2xl shadow-2xl transition-all duration-500 overflow-hidden
+            className={`fixed z-50 bg-gradient-to-br from-[#1a1848] to-[#0f0b2d] rounded-2xl shadow-2xl transition-all duration-500 flex flex-col
               ${isAnimating ? "opacity-100 scale-100" : "opacity-0 scale-95"}
               ${
                 isLargeScreen
                   ? "left-[calc((100%-380px)/2)] top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(90vw,900px)] max-w-[calc(100vw-400px)]"
                   : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-4xl"
               }`}
-            style={{ maxHeight: "90vh" }}
+            style={{ maxHeight: "90vh", height: "90vh" }}
           >
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full overflow-hidden rounded-2xl">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <button
@@ -392,51 +392,53 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 >
                   <IoArrowBack className="w-5 h-5 text-white" />
                 </button>
-                <h2 className="text-lg font-semibold text-white uppercase tracking-wider">
-                  Community Playlist
-                </h2>
                 <div className="w-9" />
               </div>
 
               {/* Content */}
-              <div className="flex flex-col lg:flex-row h-full overflow-hidden">
-                {/* Left Panel - Info */}
-                <div className="lg:w-80 p-6 border-b lg:border-b-0 lg:border-r border-white/10 flex-shrink-0">
-                  <div className="flex flex-col items-center">
-                    <div className="w-56 h-56 lg:w-64 lg:h-64 rounded-xl overflow-hidden shadow-2xl mb-4">
-                      {mosaicImages.length === 4 ? (
-                        <div className="grid grid-cols-2 gap-1 w-full h-full">
-                          {mosaicImages.map((image, index) => (
-                            <img
-                              key={index}
-                              alt={`Album ${index + 1}`}
-                              src={image}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = placeholderImage;
-                              }}
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <img
-                          alt={playlist.name}
-                          src={
-                            playlist.images?.[0]?.url ||
-                            mosaicImages[0] ||
-                            placeholderImage
-                          }
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = placeholderImage;
-                          }}
-                        />
-                      )}
-                    </div>
+              <div className="flex flex-col h-full overflow-hidden">
+                {/* Horizontal Layout for all Tablet sizes */}
+                <div className="flex gap-6 p-6 border-b border-white/10">
+                  {/* Album Art */}
+                  <div className="w-48 h-48 flex-shrink-0 rounded-xl overflow-hidden shadow-2xl">
+                    {mosaicImages.length === 4 ? (
+                      <div className="grid grid-cols-2 gap-1 w-full h-full">
+                        {mosaicImages.map((image, index) => (
+                          <img
+                            key={index}
+                            alt={`Album ${index + 1}`}
+                            src={image}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = placeholderImage;
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <img
+                        alt={playlist.name}
+                        src={
+                          playlist.images?.[0]?.url ||
+                          mosaicImages[0] ||
+                          placeholderImage
+                        }
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = placeholderImage;
+                        }}
+                      />
+                    )}
+                  </div>
 
-                    <h1 className="text-xl lg:text-2xl font-bold text-white mb-2 text-center">
+                  {/* Info and Controls */}
+                  <div className="flex-1 flex flex-col justify-center">
+                    <p className="text-[#14b8a6] text-xs font-semibold uppercase tracking-wider mb-2">
+                      Community Playlist
+                    </p>
+                    <h1 className="text-2xl font-bold text-white mb-2">
                       {playlist.name}
                     </h1>
                     <p className="text-sm text-gray-300 mb-3">
@@ -454,91 +456,90 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                       </span>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={handlePlayAll}
-                        className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white py-3 rounded-full font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                        className="bg-[#14b8a6] hover:bg-[#0d9488] text-white px-6 py-2.5 rounded-full font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                       >
                         <BsFillPlayFill className="w-5 h-5" />
                         Play All
                       </button>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={async () => {
-                            if (tracks && tracks.length > 0) {
-                              // First, enable shuffle
-                              if (!shuffle) {
-                                dispatch(toggleShuffle());
-                              }
+                      <button
+                        onClick={async () => {
+                          if (tracks && tracks.length > 0) {
+                            // First, enable shuffle
+                            if (!shuffle) {
+                              dispatch(toggleShuffle());
+                            }
 
-                              // Get a random track to start with
-                              const randomIndex = Math.floor(
-                                Math.random() * tracks.length
+                            // Get a random track to start with
+                            const randomIndex = Math.floor(
+                              Math.random() * tracks.length
+                            );
+                            const randomTrack = tracks[randomIndex];
+
+                            try {
+                              const trackWithPreview = await getPreviewUrl(
+                                randomTrack
                               );
-                              const randomTrack = tracks[randomIndex];
+                              if (trackWithPreview?.preview_url) {
+                                const updatedTracks = [...tracks];
+                                updatedTracks[randomIndex] = trackWithPreview;
 
-                              try {
-                                const trackWithPreview = await getPreviewUrl(
-                                  randomTrack
-                                );
-                                if (trackWithPreview?.preview_url) {
-                                  const updatedTracks = [...tracks];
-                                  updatedTracks[randomIndex] = trackWithPreview;
-
-                                  dispatch(
-                                    replaceContext({
-                                      contextType: "community_playlist",
+                                dispatch(
+                                  replaceContext({
+                                    contextType: "community_playlist",
+                                    tracks: updatedTracks,
+                                    startIndex: randomIndex,
+                                    playlistData: {
+                                      ...playlist,
                                       tracks: updatedTracks,
-                                      startIndex: randomIndex,
-                                      playlistData: {
-                                        ...playlist,
-                                        tracks: updatedTracks,
-                                      },
-                                    })
-                                  );
-                                  showToast("Shuffle playing playlist");
-                                } else {
-                                  showToast("No preview available", "error");
-                                }
-                              } catch (error) {
-                                console.error(
-                                  "Error getting preview URL:",
-                                  error
+                                    },
+                                  })
                                 );
+                                showToast("Shuffle playing playlist");
+                              } else {
+                                showToast("No preview available", "error");
                               }
-                            }
-                          }}
-                          className="flex-1 p-2 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-full transition-all flex items-center justify-center gap-2"
-                          title="Shuffle play"
-                        >
-                          <BsShuffle className="w-4 h-4" />
-                          <span className="text-sm">Shuffle</span>
-                        </button>
-
-                        <button
-                          onClick={async () => {
-                            if (tracks && tracks.length > 0) {
-                              for (const track of tracks) {
-                                await dispatch(addToQueue(track));
-                              }
-                              showToast(
-                                `Added ${tracks.length} tracks to queue`
+                            } catch (error) {
+                              console.error(
+                                "Error getting preview URL:",
+                                error
                               );
                             }
-                          }}
-                          className="p-2 px-3 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-full transition-all"
-                          title="Add all to queue"
-                        >
-                          <HiPlus className="w-4 h-4" />
-                        </button>
-                      </div>
+                          }
+                        }}
+                        className="p-2.5 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-full transition-all flex items-center justify-center gap-2"
+                        title="Shuffle play"
+                      >
+                        <BsShuffle className="w-4 h-4" />
+                        <span className="text-sm hidden md:inline">
+                          Shuffle
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={async () => {
+                          if (tracks && tracks.length > 0) {
+                            for (const track of tracks) {
+                              await dispatch(addToQueue(track));
+                            }
+                            showToast(`Added ${tracks.length} tracks to queue`);
+                          }
+                        }}
+                        className="p-2.5 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-full transition-all"
+                        title="Add all to queue"
+                      >
+                        <HiPlus className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Panel - Track List */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                {/* Track List */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
                   {isFetching ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader title="Loading tracks..." />
@@ -546,14 +547,14 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   ) : error ? (
                     <Error />
                   ) : (
-                    <div className="space-y-2">
+                    <div className="p-4 space-y-2">
                       {tracks?.map((track, i) => {
                         const isActive = isTrackActive(track, i);
                         return (
                           <div
                             key={`${track.key}-${i}`}
                             ref={isActive ? activeTrackRef : null}
-                            className={`flex items-center gap-4 p-3 rounded-lg transition-all ${
+                            className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                               isActive
                                 ? "bg-white/10 shadow-lg"
                                 : "hover:bg-white/5"
@@ -592,7 +593,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               </p>
                             </div>
 
-                            <span className="text-gray-400 text-sm hidden lg:block">
+                            <span className="text-gray-400 text-sm hidden md:block">
                               {formatDuration(track.duration_ms)}
                             </span>
 
