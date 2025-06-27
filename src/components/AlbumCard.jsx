@@ -36,7 +36,7 @@ const AlbumCard = ({ album, showTrackCount = false }) => {
         />
       </div>
       <div className="mt-4 flex flex-col">
-        <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
+        <p className="font-semibold text-xs sm:text-sm lg:text-base text-white truncate">
           {album.name}
         </p>
         <div className="text-xs sm:text-sm truncate text-gray-300 mt-1">

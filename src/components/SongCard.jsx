@@ -331,7 +331,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
           </div>
 
           <div className="mt-4 flex flex-col pr-10">
-            <p className="font-semibold text-sm sm:text-base lg:text-lg text-white truncate">
+            <p className="font-semibold text-xs sm:text-sm lg:text-base text-white truncate">
               <Link
                 to={`/songs/${song?.key || song?.id}`}
                 className="hover:text-[#14b8a6] transition-colors duration-200"
