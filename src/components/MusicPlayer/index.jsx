@@ -171,7 +171,6 @@ const MusicPlayer = () => {
   return (
     <>
       <TrackLoadingState isLoading={isChangingTrack} />
-
       {/* Mobile Layout - phones only */}
       <div className="md:hidden flex items-center justify-between w-full h-full px-3 py-1 safe-area-bottom">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -324,16 +323,14 @@ const MusicPlayer = () => {
           <div className="flex flex-col gap-2 max-w-[200px] w-full">
             {/* Volume Bar */}
             <div className="flex items-center gap-2">
-              <div className="w-[32px] flex items-center">
-                <button
-                  onClick={() =>
-                    dispatch(setVolumeAction(volume === 0 ? 0.5 : 0))
-                  }
-                  className="text-gray-400 hover:text-white transition-all p-0.5"
-                >
-                  <VolumeIcon />
-                </button>
-              </div>
+              <button
+                onClick={() =>
+                  dispatch(setVolumeAction(volume === 0 ? 0.5 : 0))
+                }
+                className="text-gray-400 hover:text-white transition-all w-[32px] flex items-center justify-center"
+              >
+                <VolumeIcon />
+              </button>
               <input
                 type="range"
                 min="0"
@@ -344,10 +341,10 @@ const MusicPlayer = () => {
                   dispatch(setVolumeAction(parseFloat(e.target.value)))
                 }
                 className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
-                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
-                         [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
-                         [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                         hover:[&::-webkit-slider-thumb]:bg-[#2dd4bf] [&::-webkit-slider-thumb]:shadow-md"
+                   [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
+                   [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
+                   [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                   hover:[&::-webkit-slider-thumb]:bg-[#2dd4bf] [&::-webkit-slider-thumb]:shadow-md"
                 style={{
                   background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
                     volume * 100
@@ -356,13 +353,12 @@ const MusicPlayer = () => {
                   }%, rgba(255,255,255,0.2) 100%)`,
                 }}
               />
-              <div className="w-[32px]" />{" "}
-              {/* Spacer to align with time text below */}
+              <div className="w-[32px]" />
             </div>
 
             {/* Seekbar with Time */}
             <div className="flex items-center gap-2">
-              <span className="text-gray-400 text-[11px] tabular-nums flex-shrink-0 w-[32px] text-left">
+              <span className="text-gray-400 text-[11px] tabular-nums w-[32px] text-center">
                 {formatTime(currentTime)}
               </span>
               <input
@@ -373,10 +369,10 @@ const MusicPlayer = () => {
                 max={duration || 0}
                 onInput={(e) => seek(e.target.value)}
                 className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
-                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
-                         [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
-                         [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                         hover:[&::-webkit-slider-thumb]:bg-[#2dd4bf] [&::-webkit-slider-thumb]:shadow-md"
+                   [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
+                   [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
+                   [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                   hover:[&::-webkit-slider-thumb]:bg-[#2dd4bf] [&::-webkit-slider-thumb]:shadow-md"
                 style={{
                   background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
                     duration > 0 ? (currentTime / duration) * 100 : 0
@@ -385,14 +381,13 @@ const MusicPlayer = () => {
                   }%, rgba(255,255,255,0.2) 100%)`,
                 }}
               />
-              <span className="text-gray-400 text-[11px] tabular-nums flex-shrink-0 w-[32px]">
+              <span className="text-gray-400 text-[11px] tabular-nums w-[32px] text-center">
                 {formatTime(duration)}
               </span>
             </div>
           </div>
         </div>
       </div>
-
       {/* Desktop Layout - 1480px and up (when sidebar queue is visible) */}
       <div className="hidden desktop:flex relative px-4 sm:px-8 lg:px-12 w-full h-full items-center justify-between">
         <Track
@@ -434,7 +429,6 @@ const MusicPlayer = () => {
           setVolume={(val) => dispatch(setVolumeAction(val))}
         />
       </div>
-
       {/* Single Audio Player for all layouts */}
       <Player
         activeSong={currentTrack}
@@ -449,7 +443,6 @@ const MusicPlayer = () => {
         onCanPlay={handleAudioReady}
         onLoadStart={handleAudioLoading}
       />
-
       {/* Mobile Queue Sheet - also used for tablet */}
       <MobileQueueSheet
         isOpen={mobileQueueOpen}
