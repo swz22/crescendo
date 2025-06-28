@@ -20,7 +20,6 @@ import PlaylistModal from "./PlaylistModal";
 import SidebarPlayer from "./SidebarPlayer";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
-import AddToPlaylistDropdown from "./AddToPlaylistDropdown";
 
 // Queue Components
 import QueueButton from "./QueueButton";
@@ -69,7 +68,6 @@ export {
   SidebarPlayer,
   PlaylistDropdown,
   PlaylistManager,
-  AddToPlaylistDropdown,
 
   // Queue
   QueueButton,

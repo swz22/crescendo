@@ -7,13 +7,16 @@ module.exports = {
       md: "768px",
       lg: "1024px",
       xl: "1280px",
-      "2xl": "1536px",
       desktop: "1480px",
+      "2xl": "1536px",
       "3xl": "1920px",
     },
     extend: {
       colors: {
         black: "#191624",
+      },
+      padding: {
+        safe: "env(safe-area-inset-bottom, 0)",
       },
       animation: {
         slideup: "slideup 1s ease-in-out",

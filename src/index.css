@@ -652,3 +652,24 @@ body.modal-open {
   -ms-user-select: none;
   user-select: none;
 }
+
+/* Safe area padding utilities */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Extended touch targets for mobile seekbar */
+.seekbar-mobile-touch {
+  position: relative;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin-top: -0.5rem;
+  margin-bottom: -0.5rem;
+}
+
+/* Ensure proper safe area handling */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
