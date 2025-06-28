@@ -10,6 +10,7 @@ import MobileQueueSheet from "./components/MobileQueueSheet";
 import Loader from "./components/Loader";
 import OnboardingModal from "./components/OnboardingModal";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useMediaQuery } from "./hooks/useMediaQuery";
 import {
   AlbumDetails,
   ArtistDetails,
@@ -32,6 +33,7 @@ const PageLoader = () => (
 const App = () => {
   const { currentTrack, modalOpen } = useSelector((state) => state.player);
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
+  const isDesktopView = useMediaQuery("(min-width: 1480px)");
 
   useKeyboardShortcuts();
 
@@ -40,7 +42,7 @@ const App = () => {
       <LeftSidebar />
 
       <div className="flex-1 flex flex-col bg-gradient-to-br from-[#1a1848] via-[#2d2467] to-[#1a1848]">
-        <div className="flex-1 overflow-y-auto custom-scrollbar sm:px-6 pb-24 sm:pb-40 lg:pb-32">
+        <div className="flex-1 overflow-y-auto custom-scrollbar sm:px-6 pb-24 sm:pb-40 xl:pb-32">
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Discover />} />
@@ -57,12 +59,14 @@ const App = () => {
         </div>
       </div>
 
-      {/* Desktop Queue - Hidden on mobile */}
-      <div className="w-[380px] h-screen hidden lg:block">
-        <SidebarPlayer />
-      </div>
+      {/* Desktop Queue */}
+      {isDesktopView && (
+        <div className="w-[380px] h-screen">
+          <SidebarPlayer />
+        </div>
+      )}
 
-      {/* Mobile Queue Button - only show on mobile when music is playing */}
+      {/* Mobile Queue Button */}
       <div className="sm:hidden">
         {currentTrack?.title && (
           <FloatingQueueButton onClick={() => setMobileQueueOpen(true)} />
@@ -75,14 +79,14 @@ const App = () => {
         onClose={() => setMobileQueueOpen(false)}
       />
 
-      {/* Music Player - Single instance for all screen sizes */}
+      {/* Music Player */}
       {currentTrack?.title && (
         <div
-          className={`fixed h-20 sm:h-28 bottom-0 left-0 right-0 lg:left-[240px] lg:right-[380px] bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] rounded-t-2xl overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`fixed h-20 sm:h-28 bottom-0 left-0 right-0 sm:left-[240px] bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] rounded-t-2xl overflow-hidden transition-all duration-300 ease-in-out ${
             modalOpen
               ? "translate-y-full opacity-0 pointer-events-none"
               : "translate-y-0 opacity-100 animate-slideup"
-          }`}
+          } ${isDesktopView ? "!right-[380px]" : ""}`}
         >
           <MusicPlayer />
         </div>
