@@ -82,7 +82,7 @@ const App = () => {
       {/* Music Player */}
       {currentTrack?.title && (
         <div
-          className={`fixed h-20 md:h-32 desktop:h-28 bottom-0 left-0 md:left-[240px] right-0 bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] md:rounded-tl-2xl rounded-t-2xl overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`fixed h-20 md:h-24 desktop:h-28 bottom-0 left-0 md:left-[240px] right-0 bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] md:rounded-tl-2xl rounded-t-2xl overflow-hidden transition-all duration-300 ease-in-out ${
             modalOpen
               ? "translate-y-full opacity-0 pointer-events-none"
               : "translate-y-0 opacity-100 animate-slideup"

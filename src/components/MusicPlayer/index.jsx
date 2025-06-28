@@ -6,7 +6,11 @@ import {
   BsFillPauseFill,
   BsFillPlayFill,
   BsShuffle,
+  BsVolumeDown,
+  BsVolumeMute,
+  BsVolumeUp,
 } from "react-icons/bs";
+import { HiOutlineQueueList } from "react-icons/hi2";
 
 import {
   playPause,
@@ -72,158 +76,66 @@ const MusicPlayer = () => {
   };
 
   const currentSongs = getCurrentTracks();
-
-  const { duration, currentTime, seek } = useAudioState();
-  const [seekTime, setSeekTime] = useState(0);
-  const [isChangingTrack, setIsChangingTrack] = useState(false);
-  const [isAudioReady, setIsAudioReady] = useState(false);
-
   const dispatch = useDispatch();
-  const {
-    handleNextSong: originalHandleNextSong,
-    handlePrevSong: originalHandlePrevSong,
-    isNavigating,
-  } = useSongNavigation();
-  const { preloadMultiple } = useAudioPreload();
-  const { getPreviewUrl, isPreviewCached } = usePreviewUrl();
-  const lastSongUrlRef = useRef(null);
+  const [isChangingTrack, setIsChangingTrack] = useState(false);
+
+  const { handleNextSong, handlePrevSong, isNavigating } = useSongNavigation();
+  const { seekTime, currentTime, duration, seek, reset } = useAudioState();
+
+  // Preload audio
+  const { preloadAudio } = useAudioPreload();
+  const { getPreviewUrl } = usePreviewUrl();
+
+  useEffect(() => {
+    if (currentTrack && currentSongs.length > 0) {
+      const currentIndex = currentSongs.findIndex(
+        (song) =>
+          song?.key === currentTrack?.key ||
+          song?.id === currentTrack?.id ||
+          song?.track_id === currentTrack?.track_id
+      );
+
+      const nextIndex = currentIndex + 1;
+      if (nextIndex < currentSongs.length) {
+        const nextSong = currentSongs[nextIndex];
+        getPreviewUrl(nextSong).then((songWithUrl) => {
+          if (songWithUrl?.preview_url) {
+            preloadAudio(songWithUrl.preview_url);
+          }
+        });
+      }
+    }
+  }, [currentTrack, currentSongs, getPreviewUrl, preloadAudio]);
+
+  const handlePlayPause = () => {
+    if (isActive) {
+      dispatch(playPause(!isPlaying));
+    }
+  };
 
   const handleAudioReady = () => {
-    setIsAudioReady(true);
-    setIsChangingTrack(false);
+    if (isChangingTrack) {
+      setIsChangingTrack(false);
+    }
   };
 
   const handleAudioLoading = () => {
-    setIsAudioReady(false);
-  };
-
-  useEffect(() => {
-    const songUrl = currentTrack?.preview_url || currentTrack?.url;
-
-    if (songUrl && songUrl !== lastSongUrlRef.current) {
-      setIsChangingTrack(true);
-      setIsAudioReady(false);
-      setSeekTime(0);
-      lastSongUrlRef.current = songUrl;
-    }
-  }, [currentTrack]);
-
-  const handleNextSong = async () => {
-    if (!currentSongs || currentSongs.length <= 1 || isNavigating) return;
-
     setIsChangingTrack(true);
-    setIsAudioReady(false);
-
-    try {
-      await originalHandleNextSong();
-    } catch (error) {
-      console.error("Error in handleNextSong:", error);
-      setIsChangingTrack(false);
-    }
-  };
-
-  const handlePrevSong = async () => {
-    if (!currentSongs || currentSongs.length <= 1 || isNavigating) return;
-
-    setIsChangingTrack(true);
-    setIsAudioReady(false);
-
-    try {
-      await originalHandlePrevSong();
-    } catch (error) {
-      console.error("Error in handlePrevSong:", error);
-      setIsChangingTrack(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isPlaying && isChangingTrack) {
-      setIsChangingTrack(false);
-    }
-  }, [isPlaying, isChangingTrack]);
-
-  useEffect(() => {
-    if (isAudioReady && isChangingTrack) {
-      setIsChangingTrack(false);
-    }
-  }, [isAudioReady, isChangingTrack]);
-
-  // Preload next tracks
-  useEffect(() => {
-    if (currentSongs.length > 0 && currentTrack) {
-      const currentIndex = currentSongs.findIndex((song) => {
-        const songId = song?.key || song?.id || song?.track_id;
-        const currentId =
-          currentTrack?.key || currentTrack?.id || currentTrack?.track_id;
-        return songId === currentId;
-      });
-
-      if (currentIndex !== -1) {
-        const preloadSongs = async () => {
-          const nextSongs = [];
-
-          for (let i = 1; i <= 3; i++) {
-            const nextIndex = (currentIndex + i) % currentSongs.length;
-            let nextSong = currentSongs[nextIndex];
-
-            if (!nextSong) continue;
-
-            if (nextSong?.track) nextSong = nextSong.track;
-
-            if (!isPreviewCached(nextSong)) {
-              try {
-                const songWithPreview = await getPreviewUrl(nextSong);
-                if (songWithPreview?.preview_url) {
-                  nextSongs.push(songWithPreview);
-                }
-              } catch (err) {
-                console.error("Error getting preview URL for preload:", err);
-              }
-            } else {
-              nextSongs.push(nextSong);
-            }
-          }
-
-          if (nextSongs.length > 0) {
-            preloadMultiple(nextSongs);
-          }
-        };
-
-        preloadSongs();
-      }
-    }
-  }, [
-    currentTrack,
-    currentSongs,
-    preloadMultiple,
-    getPreviewUrl,
-    isPreviewCached,
-  ]);
-
-  const handlePlayPause = () => {
-    if (!isActive) return;
-    dispatch(playPause(!isPlaying));
   };
 
   const getSongImage = () => {
-    if (!currentTrack)
-      return "https://via.placeholder.com/240x240.png?text=No+Song";
-
-    if (currentTrack.images?.coverart) return currentTrack.images.coverart;
-    if (currentTrack.share?.image) return currentTrack.share.image;
-    if (currentTrack.images?.background) return currentTrack.images.background;
-    if (currentTrack.attributes?.artwork?.url) {
-      return currentTrack.attributes.artwork.url
-        .replace("{w}", "240")
-        .replace("{h}", "240");
-    }
-    if (currentTrack.hub?.image) return currentTrack.hub.image;
-
-    return "https://via.placeholder.com/240x240.png?text=No+Image";
+    if (!currentTrack) return "";
+    return (
+      currentTrack?.images?.coverart ||
+      currentTrack?.album?.images?.[0]?.url ||
+      currentTrack?.images?.background ||
+      ""
+    );
   };
 
   const getSongUrl = () => {
     if (!currentTrack) return "";
+
     if (currentTrack.preview_url) return currentTrack.preview_url;
     if (currentTrack.url) return currentTrack.url;
     if (currentTrack.hub?.actions?.[1]?.uri)
@@ -248,6 +160,13 @@ const MusicPlayer = () => {
       setIsChangingTrack(false);
     }
   }, [currentTrack, songUrl, isPlaying, dispatch]);
+
+  // Volume icon component
+  const VolumeIcon = () => {
+    if (volume === 0) return <BsVolumeMute size={18} />;
+    if (volume < 0.5) return <BsVolumeDown size={18} />;
+    return <BsVolumeUp size={18} />;
+  };
 
   return (
     <>
@@ -309,153 +228,167 @@ const MusicPlayer = () => {
         </div>
       </div>
 
-      {/* Tablet Layout - 768px to 1480px (until sidebar queue is visible) */}
-      <div className="hidden md:flex desktop:hidden flex-col justify-center w-full h-full px-6 py-2">
-        {/* Row 1: Track Info and Volume */}
-        <div className="flex items-center justify-between mb-2">
-          {/* Track info - left aligned, no background */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative group flex-shrink-0">
-              <img
-                src={getSongImage()}
-                alt="cover"
-                className="w-12 h-12 rounded-lg shadow-xl transition-all duration-300 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </div>
-            <div className="flex flex-col justify-center min-w-0 max-w-[300px]">
-              <p className="text-white text-[15px] font-semibold truncate">
-                {currentTrack?.title || "No active Song"}
-              </p>
-              <p className="text-gray-300 text-[13px] truncate opacity-90">
-                {currentTrack?.subtitle || "Unknown Artist"}
-              </p>
-            </div>
-          </div>
-
-          {/* Volume control with queue button */}
-          <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm rounded-xl px-3 py-2">
-            <button
-              onClick={() => setMobileQueueOpen(true)}
-              className="p-2 bg-white/10 rounded-lg text-white hover:bg-white/20 active:scale-95 transition-all duration-200 relative group"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h7"
-                />
-              </svg>
-              {queue.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] text-white text-[10px] min-w-[16px] h-[16px] rounded-full flex items-center justify-center font-bold shadow-lg">
-                  {queue.length}
-                </span>
-              )}
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none">
-                Queue
-              </span>
-            </button>
-
-            <div className="w-px h-5 bg-white/20" />
-
-            <div className="flex items-center gap-2">
-              <svg
-                className="w-3.5 h-3.5 text-gray-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <VolumeBar
-                value={volume}
-                min="0"
-                max="1"
-                onChange={(event) =>
-                  dispatch(setVolumeAction(parseFloat(event.target.value)))
-                }
-                setVolume={(val) => dispatch(setVolumeAction(val))}
-              />
-            </div>
+      {/* Tablet Layout - 768px to 1480px (Redesigned) */}
+      <div className="hidden md:flex desktop:hidden items-center w-full h-full px-6 gap-4 py-3">
+        {/* Left Section: Track Info (30% width with min/max constraints) */}
+        <div className="flex items-center gap-3 min-w-0 w-[30%] min-w-[200px] max-w-[300px]">
+          <img
+            src={getSongImage()}
+            alt="cover"
+            className="w-12 h-12 rounded-lg shadow-lg flex-shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-white text-sm font-semibold truncate">
+              {currentTrack?.title || "No active Song"}
+            </p>
+            <p className="text-gray-300 text-xs truncate">
+              {currentTrack?.subtitle || "Unknown Artist"}
+            </p>
           </div>
         </div>
 
-        {/* Row 2: Playback Controls and Seekbar */}
-        <div className="flex items-center justify-center gap-3">
-          {/* Repeat button - moved to left side */}
+        {/* Center Section: Controls (40% width, centered) */}
+        <div className="flex items-center justify-center gap-2 flex-1">
+          {/* Shuffle */}
+          <button
+            onClick={() => dispatch(toggleShuffle())}
+            className={`p-1.5 rounded-lg transition-all ${
+              shuffle
+                ? "text-[#14b8a6] bg-[#14b8a6]/10"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <BsShuffle size={16} />
+          </button>
+
+          {/* Previous */}
+          <button
+            onClick={handlePrevSong}
+            className="p-2 text-white/90 hover:text-white active:scale-95 disabled:opacity-50 transition-all"
+            disabled={isNavigating}
+          >
+            <MdSkipPrevious size={24} />
+          </button>
+
+          {/* Play/Pause */}
+          <button
+            onClick={handlePlayPause}
+            className="p-3 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 transition-all mx-2"
+            disabled={isChangingTrack}
+          >
+            {isPlaying ? (
+              <BsFillPauseFill size={20} />
+            ) : (
+              <BsFillPlayFill size={20} className="translate-x-0.5" />
+            )}
+          </button>
+
+          {/* Next */}
+          <button
+            onClick={handleNextSong}
+            className="p-2 text-white/90 hover:text-white active:scale-95 disabled:opacity-50 transition-all"
+            disabled={isNavigating}
+          >
+            <MdSkipNext size={24} />
+          </button>
+
+          {/* Repeat */}
           <button
             onClick={() => dispatch(toggleRepeat())}
-            className={`p-1.5 rounded-lg transition-all duration-200 ${
+            className={`p-1.5 rounded-lg transition-all ${
               repeat
-                ? "text-[#14b8a6] bg-[#14b8a6]/20"
-                : "text-gray-400 hover:text-white hover:bg-white/10"
+                ? "text-[#14b8a6] bg-[#14b8a6]/10"
+                : "text-gray-400 hover:text-white"
             }`}
           >
             <BsArrowRepeat size={16} />
           </button>
 
-          {/* Main controls with shuffle */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrevSong}
-              className="p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg active:scale-95 disabled:opacity-50 transition-all duration-200"
-              disabled={isNavigating}
-            >
-              <MdSkipPrevious size={20} />
-            </button>
+          {/* Queue Button */}
+          <button
+            onClick={() => setMobileQueueOpen(true)}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all relative ml-2"
+          >
+            <HiOutlineQueueList size={18} />
+            {queue.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] text-white text-[9px] min-w-[16px] h-[16px] rounded-full flex items-center justify-center font-bold shadow-md">
+                {queue.length > 99 ? "99+" : queue.length}
+              </span>
+            )}
+          </button>
+        </div>
 
-            <button
-              onClick={handlePlayPause}
-              className="p-2.5 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-xl text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 transition-all duration-200"
-              disabled={isChangingTrack}
-            >
-              {isPlaying ? (
-                <BsFillPauseFill size={20} />
-              ) : (
-                <BsFillPlayFill size={20} className="translate-x-0.5" />
-              )}
-            </button>
+        {/* Right Section: Stacked Volume and Seek Bars (30% width with min/max constraints) */}
+        <div className="flex items-center justify-end w-[30%] min-w-[200px] max-w-[300px]">
+          {/* Stacked Volume and Seek Bars */}
+          <div className="flex flex-col gap-2 max-w-[200px] w-full">
+            {/* Volume Bar */}
+            <div className="flex items-center gap-2">
+              <div className="w-[32px] flex items-center">
+                <button
+                  onClick={() =>
+                    dispatch(setVolumeAction(volume === 0 ? 0.5 : 0))
+                  }
+                  className="text-gray-400 hover:text-white transition-all p-0.5"
+                >
+                  <VolumeIcon />
+                </button>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={(e) =>
+                  dispatch(setVolumeAction(parseFloat(e.target.value)))
+                }
+                className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
+                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
+                         [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
+                         [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                         hover:[&::-webkit-slider-thumb]:bg-[#2dd4bf] [&::-webkit-slider-thumb]:shadow-md"
+                style={{
+                  background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
+                    volume * 100
+                  }%, rgba(255,255,255,0.2) ${
+                    volume * 100
+                  }%, rgba(255,255,255,0.2) 100%)`,
+                }}
+              />
+              <div className="w-[32px]" />{" "}
+              {/* Spacer to align with time text below */}
+            </div>
 
-            <button
-              onClick={handleNextSong}
-              className="p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg active:scale-95 disabled:opacity-50 transition-all duration-200"
-              disabled={isNavigating}
-            >
-              <MdSkipNext size={20} />
-            </button>
-
-            {/* Shuffle button */}
-            <button
-              onClick={() => dispatch(toggleShuffle())}
-              className={`p-1.5 rounded-lg transition-all duration-200 ${
-                shuffle
-                  ? "text-[#14b8a6] bg-[#14b8a6]/20"
-                  : "text-gray-400 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <BsShuffle size={16} />
-            </button>
-          </div>
-
-          {/* Seekbar */}
-          <div className="flex-1 max-w-md">
-            <Seekbar
-              value={currentTime}
-              min="0"
-              max={duration}
-              onInput={(event) => seek(event.target.value)}
-              setSeekTime={seek}
-              appTime={currentTime}
-            />
+            {/* Seekbar with Time */}
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 text-[11px] tabular-nums flex-shrink-0 w-[32px] text-left">
+                {formatTime(currentTime)}
+              </span>
+              <input
+                type="range"
+                step="any"
+                value={currentTime}
+                min="0"
+                max={duration || 0}
+                onInput={(e) => seek(e.target.value)}
+                className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
+                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
+                         [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
+                         [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                         hover:[&::-webkit-slider-thumb]:bg-[#2dd4bf] [&::-webkit-slider-thumb]:shadow-md"
+                style={{
+                  background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${
+                    duration > 0 ? (currentTime / duration) * 100 : 0
+                  }%, rgba(255,255,255,0.2) ${
+                    duration > 0 ? (currentTime / duration) * 100 : 0
+                  }%, rgba(255,255,255,0.2) 100%)`,
+                }}
+              />
+              <span className="text-gray-400 text-[11px] tabular-nums flex-shrink-0 w-[32px]">
+                {formatTime(duration)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
