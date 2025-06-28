@@ -340,10 +340,10 @@ const MusicPlayer = () => {
           </div>
         </div>
 
-        {/* Right Section - Secondary Controls */}
+        {/* Right Section - Volume only */}
         <div className="flex items-center gap-2 lg:gap-3">
           {/* Mobile-style controls for narrow tablets */}
-          <div className="flex lg:hidden items-center gap-1">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => dispatch(toggleShuffle())}
               className={`p-2 rounded-lg transition-all ${
@@ -366,8 +366,8 @@ const MusicPlayer = () => {
             </button>
           </div>
 
-          {/* Volume Control - Compact on narrow tablets */}
-          <div className="hidden lg:flex items-center gap-2">
+          {/* Volume Control - Always visible in tablet layout */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => dispatch(setVolumeAction(volume === 0 ? 0.5 : 0))}
               className="text-gray-400 hover:text-white transition-all"
@@ -383,7 +383,7 @@ const MusicPlayer = () => {
               onChange={(e) =>
                 dispatch(setVolumeAction(parseFloat(e.target.value)))
               }
-              className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
+              className="w-24 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
                  [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[#14b8a6] 
                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
@@ -397,31 +397,6 @@ const MusicPlayer = () => {
               }}
             />
           </div>
-
-          {/* Volume button for narrow tablets - opens a popover/modal */}
-          <button
-            onClick={() =>
-              dispatch(
-                setVolumeAction(volume === 0 ? 0.5 : volume < 0.5 ? 1 : 0)
-              )
-            }
-            className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all"
-          >
-            <VolumeIcon />
-          </button>
-
-          {/* Queue Button - Always visible */}
-          <button
-            onClick={() => setMobileQueueOpen(true)}
-            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all relative"
-          >
-            <HiOutlineQueueList size={20} />
-            {queue.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] text-white text-[9px] min-w-[16px] h-[16px] rounded-full flex items-center justify-center font-bold shadow-md">
-                {queue.length > 99 ? "99+" : queue.length}
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
@@ -466,6 +441,7 @@ const MusicPlayer = () => {
           setVolume={(val) => dispatch(setVolumeAction(val))}
         />
       </div>
+
       {/* Single Audio Player for all layouts */}
       <Player
         activeSong={currentTrack}
@@ -480,6 +456,7 @@ const MusicPlayer = () => {
         onCanPlay={handleAudioReady}
         onLoadStart={handleAudioLoading}
       />
+
       {/* Mobile Queue Sheet - also used for tablet */}
       <MobileQueueSheet
         isOpen={mobileQueueOpen}

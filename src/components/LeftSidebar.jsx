@@ -45,7 +45,8 @@ const LeftSidebar = () => {
 
   return (
     <>
-      <div className="hidden sm:flex flex-col w-[240px] h-full py-10 px-4 bg-gradient-to-b from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-md border-r border-white/5 transition-all duration-300">
+      {/* Desktop sidebar - fixed width, no shrinking */}
+      <div className="hidden sm:flex flex-col w-[240px] min-w-[240px] flex-shrink-0 h-full py-10 px-4 bg-gradient-to-b from-[#1a1848]/95 to-[#0f0e2e]/95 backdrop-blur-md border-r border-white/5">
         <img
           src={logo}
           alt="logo"
