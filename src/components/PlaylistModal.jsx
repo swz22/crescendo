@@ -8,6 +8,7 @@ import {
   toggleShuffle,
   addToQueue,
   playTrack,
+  switchContext,
 } from "../redux/features/playerSlice";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
@@ -458,6 +459,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             tracks.forEach((track) => {
                               dispatch(addToQueue({ song: track }));
                             });
+                            dispatch(switchContext({ contextType: "queue" }));
                             showToast(`Added ${tracks.length} songs to queue`);
                           }
                         }}
@@ -689,6 +691,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               tracks.forEach((track) => {
                                 dispatch(addToQueue({ song: track }));
                               });
+                              dispatch(switchContext({ contextType: "queue" }));
                               showToast(
                                 `Added ${tracks.length} songs to queue`
                               );

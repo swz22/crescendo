@@ -71,7 +71,12 @@ const playerSlice = createSlice({
     switchContext: (state, action) => {
       const { contextType } = action.payload;
 
-      // Always pause playback when switching
+      // If already in this context, don't change anything
+      if (state.activeContext === contextType) {
+        return;
+      }
+
+      // Always pause playback when switching to a different context
       state.isPlaying = false;
       state.activeContext = contextType;
 
@@ -259,7 +264,7 @@ const playerSlice = createSlice({
       }
     },
 
-    // Queue management
+    // Queue management - FIXED: Play Next now works from any context
     addToQueue: (state, action) => {
       const { song, playNext = false } = action.payload;
       const trackId = getTrackId(song);
@@ -272,15 +277,24 @@ const playerSlice = createSlice({
         state.queue.splice(existingIndex, 1);
       }
 
-      if (
-        playNext &&
-        state.activeContext === "queue" &&
-        state.currentIndex >= 0
-      ) {
-        // Insert after current track
-        state.queue.splice(state.currentIndex + 1, 0, song);
+      // For "Play Next", we need to figure out where to insert
+      if (playNext && state.currentTrack) {
+        // Find the current track in the queue
+        const currentTrackId = getTrackId(state.currentTrack);
+        const currentQueueIndex = state.queue.findIndex(
+          (t) => getTrackId(t) === currentTrackId
+        );
+
+        if (currentQueueIndex >= 0) {
+          // Current track is in queue, insert after it
+          state.queue.splice(currentQueueIndex + 1, 0, song);
+        } else {
+          // Current track is not in queue (playing from another context)
+          // Insert at the beginning of queue
+          state.queue.unshift(song);
+        }
       } else {
-        // Add to end
+        // Add to end for "Add to Queue" or if no track is playing
         state.queue.push(song);
       }
 
@@ -505,14 +519,7 @@ const playerSlice = createSlice({
             }
             break;
 
-          case "recently_played":
-            if (state.recentlyPlayed[state.currentIndex]) {
-              state.recentlyPlayed[state.currentIndex] = track;
-            }
-            break;
-
           default:
-            // Handle user playlists
             if (state.activeContext.startsWith("playlist_")) {
               const playlist = state.playlists.find(
                 (p) => p.id === state.activeContext

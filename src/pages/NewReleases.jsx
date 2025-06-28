@@ -6,7 +6,11 @@ import {
   useGetAlbumTracksQuery,
 } from "../redux/services/spotifyCore";
 import { useDispatch } from "react-redux";
-import { replaceContext, addToQueue } from "../redux/features/playerSlice";
+import {
+  replaceContext,
+  addToQueue,
+  switchContext,
+} from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useToast } from "../context/ToastContext";
 
@@ -117,6 +121,7 @@ const NewReleases = () => {
       dispatch(addToQueue({ song: trackWithAlbumArt }));
     });
 
+    dispatch(switchContext({ contextType: "queue" }));
     showToast(`Added ${heroTracks.length} tracks to queue`);
   };
 

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { addToQueue } from "../redux/features/playerSlice";
+import { addToQueue, switchContext } from "../redux/features/playerSlice";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useToast } from "../context/ToastContext";
@@ -65,6 +65,7 @@ const SongMenu = ({ song, children, className = "" }) => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
       dispatch(addToQueue({ song: songWithPreview, playNext: true }));
+      dispatch(switchContext({ contextType: "queue" }));
       showToast("Will play next");
     }
     setIsOpen(false);
@@ -74,6 +75,7 @@ const SongMenu = ({ song, children, className = "" }) => {
     const songWithPreview = await getPreviewUrl(song);
     if (songWithPreview.preview_url) {
       dispatch(addToQueue({ song: songWithPreview, playNext: false }));
+      dispatch(switchContext({ contextType: "queue" }));
       showToast("Added to queue");
     }
     setIsOpen(false);
@@ -124,27 +126,33 @@ const SongMenu = ({ song, children, className = "" }) => {
 
         {/* Create new playlist */}
         {creatingPlaylist ? (
-          <div className="flex gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-2">
             <input
               ref={inputRef}
               type="text"
               value={newPlaylistName}
               onChange={(e) => setNewPlaylistName(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleCreateNewPlaylist()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateNewPlaylist();
+                if (e.key === "Escape") {
+                  setCreatingPlaylist(false);
+                  setNewPlaylistName("");
+                }
+              }}
               placeholder="Playlist name..."
-              className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-[#14b8a6]"
+              className="flex-1 bg-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/40 outline-none focus:bg-white/20 transition-colors"
             />
             <button
               onClick={handleCreateNewPlaylist}
-              className="px-3 py-2 bg-[#14b8a6] text-white rounded-lg text-sm font-medium hover:bg-[#0d9488] transition-colors"
+              className="p-2 rounded-lg bg-[#14b8a6] hover:bg-[#0d9488] transition-colors"
             >
-              Add
+              <HiCheck className="w-4 h-4 text-white" />
             </button>
           </div>
         ) : (
           <button
             onClick={() => setCreatingPlaylist(true)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 mb-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-all"
+            className="w-full px-3 py-2 text-left text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2 mb-2"
           >
             <HiPlus className="w-4 h-4" />
             <span className="text-sm">Create New Playlist</span>
@@ -152,28 +160,27 @@ const SongMenu = ({ song, children, className = "" }) => {
         )}
 
         {/* Existing playlists */}
-        <div className="space-y-1 max-h-[240px] overflow-y-auto custom-scrollbar">
+        <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-1">
           {playlists.map((playlist) => {
             const isInPlaylist = isTrackInPlaylist(playlist.id, trackId);
-
             return (
               <button
                 key={playlist.id}
                 onClick={() =>
                   !isInPlaylist && handleAddToPlaylistClick(playlist.id)
                 }
-                disabled={isInPlaylist}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-left ${
+                className={`w-full px-3 py-2 text-left text-sm rounded-lg transition-colors flex items-center gap-2 ${
                   isInPlaylist
-                    ? "opacity-50 cursor-not-allowed bg-white/5"
-                    : "hover:bg-white/10"
+                    ? "text-[#14b8a6] bg-[#14b8a6]/10 cursor-default"
+                    : "text-white/80 hover:text-white hover:bg-white/10"
                 }`}
+                disabled={isInPlaylist}
               >
-                <BsMusicNoteList className="w-4 h-4 text-white/60" />
-                <span className="flex-1 text-sm text-white truncate">
-                  {playlist.name}
-                </span>
-                {isInPlaylist && <HiCheck className="w-4 h-4 text-[#14b8a6]" />}
+                <BsMusicNoteList className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{playlist.name}</span>
+                {isInPlaylist && (
+                  <HiCheck className="w-4 h-4 ml-auto text-[#14b8a6]" />
+                )}
               </button>
             );
           })}
@@ -184,47 +191,29 @@ const SongMenu = ({ song, children, className = "" }) => {
 
   return (
     <>
-      <div
-        ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className={className}
-      >
-        {children || (
-          <button className="p-2 rounded-full hover:bg-white/10 transition-colors">
+      <div ref={buttonRef} className={className}>
+        {children ? (
+          <div onClick={() => setIsOpen(!isOpen)}>{children}</div>
+        ) : (
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-full hover:bg-white/10 transition-all"
+          >
             <HiDotsVertical className="w-5 h-5 text-white" />
           </button>
         )}
       </div>
 
-      {/* Mobile Bottom Sheet */}
-      {isMobile && (
-        <BottomSheet
-          isOpen={isOpen}
-          onClose={() => {
-            setIsOpen(false);
-            setCreatingPlaylist(false);
-            setNewPlaylistName("");
-          }}
-          title={song?.title || "Song Options"}
-        >
-          {menuContent}
-        </BottomSheet>
-      )}
-
-      {/* Desktop Dropdown */}
+      {/* Desktop menu */}
       {!isMobile && isOpen && (
         <Portal>
           <div
-            className="fixed inset-0 z-[98]"
-            onClick={() => {
-              setIsOpen(false);
-              setCreatingPlaylist(false);
-              setNewPlaylistName("");
-            }}
+            className="fixed inset-0 z-50"
+            onClick={() => setIsOpen(false)}
           />
           <div
             ref={menuRef}
-            className="fixed z-[99] bg-[#1e1b4b]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-fadeIn"
+            className="fixed z-50 bg-gradient-to-b from-[#2d2467] to-[#1e1b4b] backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-slideDown"
             style={{
               top: `${position.top}px`,
               left: `${position.left}px`,
@@ -234,6 +223,13 @@ const SongMenu = ({ song, children, className = "" }) => {
             {menuContent}
           </div>
         </Portal>
+      )}
+
+      {/* Mobile bottom sheet */}
+      {isMobile && (
+        <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)}>
+          {menuContent}
+        </BottomSheet>
       )}
     </>
   );

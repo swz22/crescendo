@@ -13,6 +13,7 @@ import {
   playPause,
   playTrack,
   updateAlbumTrack,
+  switchContext,
 } from "../redux/features/playerSlice";
 import { useToast } from "../context/ToastContext";
 import { BsFillPlayFill } from "react-icons/bs";
@@ -68,7 +69,7 @@ const AlbumDetails = () => {
         },
         album: {
           ...track.album,
-          id: albumId,
+          id: albumData?.id,
           name: albumData?.name,
           images: albumData?.images || [],
         },
@@ -83,53 +84,28 @@ const AlbumDetails = () => {
     }
 
     try {
-      // Get preview URL for the first track to start playing immediately
       const firstTrackWithPreview = await getPreviewUrl(tracksWithAlbumArt[0]);
+
       if (firstTrackWithPreview?.preview_url) {
-        // Create tracks array with just the first track having preview URL
         const updatedTracks = [...tracksWithAlbumArt];
         updatedTracks[0] = firstTrackWithPreview;
 
-        // Create album context and start playing
         dispatch(
           replaceContext({
             contextType: "album",
             tracks: updatedTracks,
             startIndex: 0,
             playlistData: {
-              id: albumId,
-              name: `${albumData?.name} • ${albumData?.artists?.[0]?.name}`,
+              id: albumData?.id,
+              name: albumData?.name,
             },
           })
         );
-
-        // Prefetch preview URLs for the next few tracks in the background
-        // This ensures smooth playback when navigating
-        setTimeout(async () => {
-          for (let i = 1; i < Math.min(5, updatedTracks.length); i++) {
-            if (!updatedTracks[i].preview_url) {
-              try {
-                const trackWithPreview = await getPreviewUrl(updatedTracks[i]);
-                if (trackWithPreview?.preview_url) {
-                  // Update the track in album context with preview URL
-                  dispatch(
-                    updateAlbumTrack({
-                      index: i,
-                      track: trackWithPreview,
-                    })
-                  );
-                }
-              } catch (error) {
-                console.error(`Error fetching preview for track ${i}:`, error);
-              }
-            }
-          }
-        }, 100);
       } else {
         showToast("No preview available", "error");
       }
     } catch (error) {
-      console.error("[AlbumDetails] Error in handlePlayAlbum:", error);
+      console.error("Error playing album:", error);
       showToast("Error playing album", "error");
     }
   };
@@ -139,6 +115,7 @@ const AlbumDetails = () => {
       tracksWithAlbumArt.forEach((track) => {
         dispatch(addToQueue({ song: track }));
       });
+      dispatch(switchContext({ contextType: "queue" }));
       showToast(`Added ${tracksWithAlbumArt.length} tracks to queue`);
     }
   };
@@ -224,31 +201,18 @@ const AlbumDetails = () => {
             </p>
           </div>
           <div className="bg-white/5 p-4 rounded-lg">
-            <h3 className="text-white/60 text-sm mb-1">Total Tracks</h3>
+            <h3 className="text-white/60 text-sm mb-1">Label</h3>
             <p className="text-white font-medium">
-              {albumData?.total_tracks || 0} tracks
+              {albumData?.label || "Unknown Label"}
             </p>
           </div>
-          {albumData?.label && (
-            <div className="bg-white/5 p-4 rounded-lg">
-              <h3 className="text-white/60 text-sm mb-1">Label</h3>
-              <p className="text-white font-medium">{albumData.label}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Copyright */}
-        {albumData?.copyrights?.length > 0 && (
-          <div className="mt-6">
-            <div className="text-white/40 text-xs">
-              {albumData.copyrights[0] && (
-                <p className="text-white/60 text-sm mt-2">
-                  {albumData.copyrights[0].text}
-                </p>
-              )}
-            </div>
+          <div className="bg-white/5 p-4 rounded-lg">
+            <h3 className="text-white/60 text-sm mb-1">Total Tracks</h3>
+            <p className="text-white font-medium">
+              {albumData?.total_tracks || tracks?.length || 0} tracks
+            </p>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
