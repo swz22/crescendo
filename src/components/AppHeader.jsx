@@ -22,7 +22,6 @@ const AppHeader = memo(
     const currentTracks = useSelector(selectCurrentContextTracks);
     const location = useLocation();
 
-    // Don't show queue button on certain pages
     const hideQueueButton =
       location.pathname.includes("/albums/") ||
       location.pathname.includes("/artists/") ||
@@ -42,7 +41,7 @@ const AppHeader = memo(
       `}
         >
           {/* Mobile Layout */}
-          <div className="sm:hidden">
+          <div className="md:hidden">
             {/* Row 1: Menu, Title, Action */}
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
               <button
@@ -77,13 +76,31 @@ const AppHeader = memo(
             )}
           </div>
 
-          {/* Tablet/Desktop Layout */}
-          <div className="hidden sm:block">
+          {/* Tablet Layout */}
+          <div className="hidden md:block lg:hidden">
+            <div className="px-6 py-4">
+              {/* Title Row */}
+              <div className="text-center mb-4">
+                <h1 className="text-2xl font-light text-white">{title}</h1>
+              </div>
+
+              {/* Search and Action Row */}
+              <div className="flex items-center justify-center gap-4">
+                {showSearch && (
+                  <div className="flex-1 max-w-md">
+                    <Searchbar />
+                  </div>
+                )}
+                {action && <div className="flex-shrink-0">{action}</div>}
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden lg:block">
             <div className="pl-3 pr-6 py-4">
-              {" "}
-              {/* Changed from px-6 to pl-3 pr-6 */}
               <div className="flex items-center justify-between gap-6">
-                {/* Left Section - Title and Subtitle */}
+                {/* Left Section */}
                 <div className="min-w-0 flex-1">
                   <h1 className="text-2xl lg:text-3xl font-bold text-white truncate">
                     {title}
@@ -95,7 +112,7 @@ const AppHeader = memo(
                   )}
                 </div>
 
-                {/* Right Section - Actions and Search */}
+                {/* Right Section */}
                 <div className="flex items-center gap-6 flex-shrink-0">
                   {action && (
                     <div className="flex items-center gap-2">{action}</div>
