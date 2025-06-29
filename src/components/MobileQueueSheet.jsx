@@ -146,7 +146,7 @@ const MobileQueueSheet = ({ isOpen, onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0 bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] z-[100] lg:hidden animate-slideUp pb-safe">
+      <div className="fixed inset-0 bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] z-[100] desktop:hidden animate-slideUp pb-safe">
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <button
