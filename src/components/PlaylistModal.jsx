@@ -2,12 +2,11 @@ import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   playPause,
-  playFromContext,
+  playTrack,
   replaceContext,
   setModalOpen,
   toggleShuffle,
   addToQueue,
-  playTrack,
   switchContext,
 } from "../redux/features/playerSlice";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
@@ -94,52 +93,56 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     setTimeout(onClose, 300);
   };
 
+  // Match AlbumDetails behavior - use playTrack for individual tracks
   const handlePlayClick = async (track, index) => {
     try {
       const trackWithPreview = await getPreviewUrl(track);
       if (trackWithPreview?.preview_url) {
-        // If we're already in the community playlist context at this index, just play/pause
-        if (activeContext === "community_playlist" && currentIndex === index) {
-          dispatch(playPause(true));
-        } else {
-          // Otherwise, play from this context and index
-          dispatch(
-            playFromContext({
-              contextType: "community_playlist",
-              trackIndex: index,
-              trackWithPreview,
-            })
-          );
-        }
+        dispatch(
+          playTrack({
+            track: trackWithPreview,
+          })
+        );
       } else {
         showToast("No preview available", "error");
       }
     } catch (error) {
-      console.error("Error getting preview URL:", error);
+      console.error("Error playing track:", error);
       showToast("Error playing track", "error");
     }
   };
 
-  const handlePlayAll = async () => {
+  const handlePlayAll = async (shufflePlay = false) => {
     if (!tracks || tracks.length === 0) return;
 
-    const firstTrack = tracks[0];
+    const startIndex = shufflePlay
+      ? Math.floor(Math.random() * tracks.length)
+      : 0;
+    const firstTrack = tracks[startIndex];
+
     if (firstTrack) {
       try {
         const trackWithPreview = await getPreviewUrl(firstTrack);
         const updatedTracks = [...tracks];
-        updatedTracks[0] = trackWithPreview || firstTrack;
+        updatedTracks[startIndex] = trackWithPreview || firstTrack;
 
         if (trackWithPreview?.preview_url) {
+          // Enable shuffle if shuffle play
+          if (shufflePlay && !shuffle) {
+            dispatch(toggleShuffle());
+          }
+
           dispatch(
             replaceContext({
               contextType: "community_playlist",
               tracks: updatedTracks,
-              startIndex: 0,
+              startIndex,
               playlistData: { ...playlist, tracks: updatedTracks },
             })
           );
-          showToast("Playing playlist");
+          showToast(
+            shufflePlay ? "Shuffle playing playlist" : "Playing playlist"
+          );
         } else {
           showToast("No preview available", "error");
         }
@@ -253,22 +256,27 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
               <div className="flex items-center gap-3 mb-4">
                 <button
-                  onClick={handlePlayAll}
+                  onClick={() => handlePlayAll(false)}
                   className="flex items-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105"
                 >
                   <BsFillPlayFill size={24} />
                   <span>Play All</span>
                 </button>
-                <button
-                  onClick={() => dispatch(toggleShuffle())}
-                  className={`p-3 rounded-full transition-all ${
-                    shuffle
-                      ? "bg-[#14b8a6] text-white"
-                      : "bg-white/10 text-white hover:bg-white/20"
-                  }`}
-                >
-                  <BsShuffle size={20} />
-                </button>
+                <div className="relative group">
+                  <button
+                    onClick={() => handlePlayAll(true)}
+                    className={`p-3 rounded-full transition-all ${
+                      shuffle
+                        ? "bg-white/10 text-[#14b8a6]"
+                        : "bg-white/10 text-white hover:bg-white/20"
+                    }`}
+                  >
+                    <BsShuffle size={20} />
+                  </button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                    Shuffle Play
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -437,36 +445,48 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={handlePlayAll}
+                        onClick={() => handlePlayAll(false)}
                         className="flex items-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105"
                       >
                         <BsFillPlayFill size={24} />
                         <span>Play All</span>
                       </button>
-                      <button
-                        onClick={() => dispatch(toggleShuffle())}
-                        className={`p-3 rounded-full transition-all ${
-                          shuffle
-                            ? "bg-[#14b8a6] text-white"
-                            : "bg-white/10 text-white hover:bg-white/20"
-                        }`}
-                      >
-                        <BsShuffle size={20} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (tracks && tracks.length > 0) {
-                            tracks.forEach((track) => {
-                              dispatch(addToQueue({ song: track }));
-                            });
-                            dispatch(switchContext({ contextType: "queue" }));
-                            showToast(`Added ${tracks.length} songs to queue`);
-                          }
-                        }}
-                        className="p-3 bg-white/10 text-white hover:bg-white/20 rounded-full transition-all"
-                      >
-                        <HiPlus size={20} />
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={() => handlePlayAll(true)}
+                          className={`p-3 rounded-full transition-all ${
+                            shuffle
+                              ? "bg-white/10 text-[#14b8a6]"
+                              : "bg-white/10 text-white hover:bg-white/20"
+                          }`}
+                        >
+                          <BsShuffle size={20} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          Shuffle Play
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          onClick={() => {
+                            if (tracks && tracks.length > 0) {
+                              tracks.forEach((track) => {
+                                dispatch(addToQueue({ song: track }));
+                              });
+                              dispatch(switchContext({ contextType: "queue" }));
+                              showToast(
+                                `Added ${tracks.length} songs to queue`
+                              );
+                            }
+                          }}
+                          className="p-3 bg-white/10 text-white hover:bg-white/20 rounded-full transition-all"
+                        >
+                          <HiPlus size={20} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          Add All to Queue
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -668,39 +688,51 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
                     <div className="flex flex-col gap-3">
                       <button
-                        onClick={handlePlayAll}
+                        onClick={() => handlePlayAll(false)}
                         className="flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-lg shadow-[#14b8a6]/25"
                       >
                         <BsFillPlayFill size={24} />
                         <span>Play All</span>
                       </button>
                       <div className="flex items-center gap-3 justify-center">
-                        <button
-                          onClick={() => dispatch(toggleShuffle())}
-                          className={`p-3 rounded-full transition-all ${
-                            shuffle
-                              ? "bg-[#14b8a6] text-white"
-                              : "bg-white/10 text-white hover:bg-white/20"
-                          }`}
-                        >
-                          <BsShuffle size={20} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (tracks && tracks.length > 0) {
-                              tracks.forEach((track) => {
-                                dispatch(addToQueue({ song: track }));
-                              });
-                              dispatch(switchContext({ contextType: "queue" }));
-                              showToast(
-                                `Added ${tracks.length} songs to queue`
-                              );
-                            }
-                          }}
-                          className="p-3 bg-white/10 text-white hover:bg-white/20 rounded-full transition-all"
-                        >
-                          <HiPlus size={20} />
-                        </button>
+                        <div className="relative group">
+                          <button
+                            onClick={() => handlePlayAll(true)}
+                            className={`p-3 rounded-full transition-all ${
+                              shuffle
+                                ? "bg-white/10 text-[#14b8a6]"
+                                : "bg-white/10 text-white hover:bg-white/20"
+                            }`}
+                          >
+                            <BsShuffle size={20} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            Shuffle Play
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              if (tracks && tracks.length > 0) {
+                                tracks.forEach((track) => {
+                                  dispatch(addToQueue({ song: track }));
+                                });
+                                dispatch(
+                                  switchContext({ contextType: "queue" })
+                                );
+                                showToast(
+                                  `Added ${tracks.length} songs to queue`
+                                );
+                              }
+                            }}
+                            className="p-3 bg-white/10 text-white hover:bg-white/20 rounded-full transition-all"
+                          >
+                            <HiPlus size={20} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            Add All to Queue
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
