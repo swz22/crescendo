@@ -16,11 +16,11 @@ const HeroSection = ({ album, onPlayAlbum, onAddToQueue }) => {
 
   return (
     <>
-      {/* Mobile Layout */}
-      <div className="sm:hidden mb-6 px-4">
+      {/* Mobile Layout - Matching ResponsiveGrid padding */}
+      <div className="md:hidden mb-6 px-4">
         <div className="bg-gradient-to-r from-white/[0.03] to-white/[0.06] rounded-xl p-3 border border-white/10">
           <div className="flex items-center gap-3">
-            {/* Album Art */}
+            {/* Album Art with glow */}
             <div className="relative">
               <div
                 onClick={() => navigate(`/albums/${album.id}`)}
@@ -86,8 +86,8 @@ const HeroSection = ({ album, onPlayAlbum, onAddToQueue }) => {
         </div>
       </div>
 
-      {/* Tablet Layout - Fixed for 640px to 925px */}
-      <div className="hidden sm:block tablet:hidden mb-8">
+      {/* Tablet Layout - Fixed for 768px to 925px */}
+      <div className="hidden md:block tablet:hidden mb-8 px-4 sm:px-0">
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl">
           <div className="relative flex items-center p-6 gap-6">
             {/* Album Art - Smaller for tablet */}
@@ -140,19 +140,19 @@ const HeroSection = ({ album, onPlayAlbum, onAddToQueue }) => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 flex-wrap">
                 <button
                   onClick={onPlayAlbum}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-full font-medium transition-all hover:scale-105 shadow-lg text-sm"
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-full font-medium transition-all hover:scale-105 shadow-lg text-sm whitespace-nowrap"
                 >
-                  <BsFillPlayFill className="w-5 h-5" />
+                  <BsFillPlayFill className="w-5 h-5 flex-shrink-0" />
                   Play Album
                 </button>
                 <button
                   onClick={onAddToQueue}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-full font-medium transition-all border border-white/20 text-sm"
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-full font-medium transition-all border border-white/20 text-sm whitespace-nowrap min-w-[100px]"
                 >
-                  <HiPlus className="w-4 h-4" />
+                  <HiPlus className="w-4 h-4 flex-shrink-0" />
                   Queue
                 </button>
               </div>
@@ -164,6 +164,7 @@ const HeroSection = ({ album, onPlayAlbum, onAddToQueue }) => {
       {/* Desktop Layout - Original design for 925px+ */}
       <div className="hidden tablet:block mb-8">
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl">
+          {/* Subtle album art accent */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl">
             <img
               src={albumImage}
@@ -229,14 +230,14 @@ const HeroSection = ({ album, onPlayAlbum, onAddToQueue }) => {
               <div className="flex items-center justify-center md:justify-start gap-5">
                 <button
                   onClick={onPlayAlbum}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-full font-semibold transition-all hover:scale-105 shadow-lg"
+                  className="flex items-center gap-2 px-6 py-3 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-full font-semibold transition-all hover:scale-105 shadow-lg whitespace-nowrap"
                 >
                   <BsFillPlayFill className="w-6 h-6" />
                   Play Album
                 </button>
                 <button
                   onClick={onAddToQueue}
-                  className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-full font-semibold transition-all border border-white/20"
+                  className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-full font-semibold transition-all border border-white/20 whitespace-nowrap"
                 >
                   <HiPlus className="w-5 h-5" />
                   Queue
