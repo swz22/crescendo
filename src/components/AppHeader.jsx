@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { selectCurrentContextTracks } from "../redux/features/playerSelectors";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import Searchbar from "./Searchbar";
 import QueueButton from "./QueueButton";
 import MobileQueueSheet from "./MobileQueueSheet";
@@ -21,12 +22,17 @@ const AppHeader = memo(
     const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
     const currentTracks = useSelector(selectCurrentContextTracks);
     const location = useLocation();
+    const isDesktopView = useMediaQuery("(min-width: 1480px)");
 
     // Don't show queue button on certain pages
     const hideQueueButton =
       location.pathname.includes("/albums/") ||
       location.pathname.includes("/artists/") ||
       location.pathname.includes("/songs/");
+
+    // Show queue button only when not in desktop view
+    const showQueueButton =
+      !hideQueueButton && currentTracks.length > 0 && !isDesktopView;
 
     return (
       <>
@@ -67,7 +73,7 @@ const AppHeader = memo(
                   <div className="flex-1 min-w-0">
                     <Searchbar />
                   </div>
-                  {!hideQueueButton && currentTracks.length > 0 && (
+                  {showQueueButton && (
                     <div className="flex-shrink-0">
                       <QueueButton onClick={() => setMobileQueueOpen(true)} />
                     </div>
@@ -77,7 +83,7 @@ const AppHeader = memo(
             )}
           </div>
 
-          {/* Tablet Layout - New Stacked Design for 768px to 1024px */}
+          {/* Tablet Layout - Stacked Design for 768px to 1024px */}
           <div className="hidden md:block lg:hidden">
             <div className="px-6 py-4">
               {/* Title Row - Centered */}
@@ -92,12 +98,15 @@ const AppHeader = memo(
                     <Searchbar />
                   </div>
                 )}
+                {showQueueButton && (
+                  <QueueButton onClick={() => setMobileQueueOpen(true)} />
+                )}
                 {action && <div className="flex-shrink-0">{action}</div>}
               </div>
             </div>
           </div>
 
-          {/* Desktop Layout - Original Side-by-Side (1024px+) */}
+          {/* Desktop Layout (1024px+) */}
           <div className="hidden lg:block">
             <div className="pl-3 pr-6 py-4">
               <div className="flex items-center justify-between gap-6">
@@ -115,6 +124,9 @@ const AppHeader = memo(
 
                 {/* Right Section - Actions and Search */}
                 <div className="flex items-center gap-6 flex-shrink-0">
+                  {showQueueButton && (
+                    <QueueButton onClick={() => setMobileQueueOpen(true)} />
+                  )}
                   {action && (
                     <div className="flex items-center gap-2">{action}</div>
                   )}
