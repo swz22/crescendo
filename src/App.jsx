@@ -5,7 +5,6 @@ import LeftSidebar from "./components/LeftSidebar";
 import MusicPlayer from "./components/MusicPlayer";
 import SidebarPlayer from "./components/SidebarPlayer";
 import QueueIndicator from "./components/QueueIndicator";
-import FloatingQueueButton from "./components/FloatingQueueButton";
 import MobileQueueSheet from "./components/MobileQueueSheet";
 import Loader from "./components/Loader";
 import OnboardingModal from "./components/OnboardingModal";
@@ -63,18 +62,6 @@ const App = () => {
           <SidebarPlayer />
         </div>
       )}
-      {/* Floating Queue Button - shown when sidebar player is hidden */}
-      <div className="hidden tablet:block desktop:hidden">
-        {currentTrack?.title && (
-          <FloatingQueueButton onClick={() => setMobileQueueOpen(true)} />
-        )}
-      </div>
-      {/* Mobile Queue Button */}
-      <div className="tablet:hidden">
-        {currentTrack?.title && (
-          <FloatingQueueButton onClick={() => setMobileQueueOpen(true)} />
-        )}
-      </div>
       {/* Mobile Queue Sheet */}
       <MobileQueueSheet
         isOpen={mobileQueueOpen}
