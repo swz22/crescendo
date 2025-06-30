@@ -355,16 +355,17 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
 
           <SongMenu
             song={song}
-            className="absolute bottom-4 right-3 z-30 opacity-0 group-hover:opacity-90 transition-all duration-300"
+            className="absolute bottom-4 right-3 z-30 opacity-40 hover:opacity-100 transition-all duration-200"
           >
             <button
-              className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm hover:scale-110 flex items-center justify-center ring-1 ring-[#14b8a6]/40 hover:ring-[#14b8a6]/60 shadow-[0_0_8px_rgba(20,184,166,0.4)] hover:shadow-[0_0_12px_rgba(20,184,166,0.6)]"
+              className="relative p-1.5 rounded-lg hover:bg-white/[0.08] transition-all duration-200 group/menu"
               aria-label="More options"
             >
-              <div className="flex items-center gap-0.5">
-                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
-                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
-                <div className="w-[2.5px] h-[2.5px] bg-[#14b8a6] rounded-full"></div>
+              {/* Vertical three dot button */}
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="w-1 h-1 bg-white rounded-full transition-all duration-200 group-hover/menu:bg-[#14b8a6] group-hover/menu:scale-110"></div>
+                <div className="w-1 h-1 bg-white rounded-full transition-all duration-200 group-hover/menu:bg-[#14b8a6] group-hover/menu:scale-110"></div>
+                <div className="w-1 h-1 bg-white rounded-full transition-all duration-200 group-hover/menu:bg-[#14b8a6] group-hover/menu:scale-110"></div>
               </div>
             </button>
           </SongMenu>
