@@ -50,7 +50,7 @@ const AppHeader = memo(
           {/* Mobile Layout - Extended to 768px */}
           <div className="md:hidden">
             {/* Row 1: Menu, Title, Action */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <button
                 onClick={() => setMobileMenuOpen(true)}
                 className="p-2 -ml-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -59,7 +59,7 @@ const AppHeader = memo(
                 <HiOutlineMenu className="w-6 h-6 text-white" />
               </button>
 
-              <h1 className="text-xl font-bold text-white truncate flex-1 mx-3">
+              <h1 className="text-xl font-bold text-white truncate flex-1 mx-4">
                 {title}
               </h1>
 
@@ -68,8 +68,8 @@ const AppHeader = memo(
 
             {/* Row 2: Search and Queue */}
             {showSearch && (
-              <div className="px-4 pb-4">
-                <div className="flex items-center gap-2">
+              <div className="px-5 pb-5">
+                <div className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <Searchbar />
                   </div>
