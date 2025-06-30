@@ -172,65 +172,62 @@ const MusicPlayer = () => {
     <>
       <TrackLoadingState isLoading={isChangingTrack} />
 
-      {/* Mobile Layout - phones and narrow tablets (below 925px) */}
-      <div className="tablet:hidden flex items-center justify-between w-full h-full px-3 py-1 safe-area-bottom">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      {/* Mobile Layout - (below 925px) */}
+      <div className="tablet:hidden flex items-center justify-between w-full h-full px-3 py-2 safe-area-bottom">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <img
             src={getSongImage()}
             alt="cover"
-            className="w-10 h-10 rounded-lg shadow-md"
+            className="w-12 h-12 rounded-lg shadow-md"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-medium truncate">
+            <p className="text-white text-sm font-medium truncate">
               {currentTrack?.title || "No active Song"}
             </p>
-            <p className="text-gray-400 text-[10px] truncate">
+            <p className="text-gray-400 text-xs truncate">
               {currentTrack?.subtitle || "Unknown Artist"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
             onClick={handlePrevSong}
-            className="p-1.5 text-white/80 active:scale-95 disabled:opacity-50"
+            className="p-2 text-white/80 active:scale-95 disabled:opacity-50"
             disabled={isNavigating}
           >
-            <MdSkipPrevious size={20} />
+            <MdSkipPrevious size={24} />
           </button>
           <button
             onClick={handlePlayPause}
-            className="p-2 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95 disabled:opacity-50"
+            className="p-2.5 bg-[#14b8a6] rounded-full text-white shadow-lg active:scale-95 disabled:opacity-50"
             disabled={isChangingTrack}
           >
             {isPlaying ? (
-              <BsFillPauseFill size={14} />
+              <BsFillPauseFill size={20} />
             ) : (
-              <BsFillPlayFill size={14} className="translate-x-0.5" />
+              <BsFillPlayFill size={20} />
             )}
           </button>
           <button
             onClick={handleNextSong}
-            className="p-1.5 text-white/80 active:scale-95 disabled:opacity-50"
+            className="p-2 text-white/80 active:scale-95 disabled:opacity-50"
             disabled={isNavigating}
           >
-            <MdSkipNext size={20} />
+            <MdSkipNext size={24} />
           </button>
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
-          <div
-            className="h-full bg-[#14b8a6] transition-all duration-300"
-            style={{
-              width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-            }}
-          />
+          <button
+            onClick={() => setMobileQueueOpen(true)}
+            className="p-2 text-white/60 hover:text-white transition-colors"
+          >
+            <HiOutlineQueueList size={22} />
+          </button>
         </div>
       </div>
 
-      {/* Tablet Layout - 925px to 1480px (Wide tablets and small laptops) */}
+      {/* Tablet Layout - 925px to 1480px */}
       <div className="hidden tablet:flex desktop:hidden items-center w-full h-full px-4 lg:px-6 py-3">
-        {/* Track Info Section - Responsive width */}
+        {/* Track Info Section */}
         <div className="flex items-center gap-3 min-w-0 flex-shrink-0 w-[180px] lg:w-[240px]">
           <img
             src={getSongImage()}
@@ -251,7 +248,7 @@ const MusicPlayer = () => {
         <div className="flex-1 flex flex-col items-center justify-center px-4">
           {/* Main Controls Row */}
           <div className="flex items-center justify-center gap-1 lg:gap-2 mb-3">
-            {/* Shuffle - Hidden on narrow tablets, visible on lg */}
+            {/* Shuffle */}
             <button
               onClick={() => dispatch(toggleShuffle())}
               className={`p-1.5 rounded-lg transition-all hidden lg:block ${
@@ -294,7 +291,7 @@ const MusicPlayer = () => {
               <MdSkipNext size={24} />
             </button>
 
-            {/* Repeat - Hidden on narrow tablets, visible on lg */}
+            {/* Repeat */}
             <button
               onClick={() => dispatch(toggleRepeat())}
               className={`p-1.5 rounded-lg transition-all hidden lg:block ${
@@ -307,7 +304,7 @@ const MusicPlayer = () => {
             </button>
           </div>
 
-          {/* Seekbar Row - Full width with time */}
+          {/* Seekbar Row */}
           <div className="w-full max-w-md lg:max-w-lg">
             <div className="flex items-center gap-2">
               <span className="text-gray-400 text-xs lg:text-sm tabular-nums w-10 text-right">
@@ -342,7 +339,6 @@ const MusicPlayer = () => {
 
         {/* Right Section - Volume only */}
         <div className="flex items-center gap-2 lg:gap-3">
-          {/* Mobile-style controls for narrow tablets */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => dispatch(toggleShuffle())}
@@ -457,7 +453,7 @@ const MusicPlayer = () => {
         onLoadStart={handleAudioLoading}
       />
 
-      {/* Mobile Queue Sheet - also used for tablet */}
+      {/* Mobile Queue Sheet */}
       <MobileQueueSheet
         isOpen={mobileQueueOpen}
         onClose={() => setMobileQueueOpen(false)}
