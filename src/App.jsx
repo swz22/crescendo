@@ -67,7 +67,7 @@ const App = () => {
         isOpen={mobileQueueOpen}
         onClose={() => setMobileQueueOpen(false)}
       />
-      {/* Music Player - now self-contained with proper positioning */}
+      {/* Music Player */}
       {currentTrack?.title && (
         <div
           className={`fixed h-24 tablet:h-24 desktop:h-28 bottom-0 left-0 sm:left-[240px] right-0 bg-gradient-to-br from-white/[0.08] to-[#2d2467]/90 backdrop-blur-xl z-50 border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] sm:rounded-tl-2xl rounded-t-2xl overflow-hidden transition-all duration-300 ease-in-out ${
@@ -76,7 +76,7 @@ const App = () => {
               : "translate-y-0 opacity-100 animate-slideup"
           } ${isDesktopView ? "!right-[380px]" : ""}`}
         >
-          <MusicPlayer />
+          <MusicPlayer onOpenQueue={() => setMobileQueueOpen(true)} />
         </div>
       )}
       <OnboardingModal />
