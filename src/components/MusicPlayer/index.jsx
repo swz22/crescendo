@@ -48,7 +48,6 @@ const MusicPlayer = ({ onOpenQueue }) => {
   const tracks = useSelector(selectCurrentContextTracks);
   const queueCount = tracks.length;
 
-  // Format time helper
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -152,7 +151,7 @@ const MusicPlayer = ({ onOpenQueue }) => {
 
   return (
     <>
-      {/* Mobile Layout - Simplified */}
+      {/* Mobile Layout */}
       <div className="flex md:hidden items-center w-full h-full px-4 py-2">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <img
@@ -171,7 +170,7 @@ const MusicPlayer = ({ onOpenQueue }) => {
         </div>
 
         {/* Mobile Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pr-1">
           <button
             onClick={handlePrevSong}
             className="p-2 text-white/80 active:scale-95 disabled:opacity-50"
@@ -181,7 +180,7 @@ const MusicPlayer = ({ onOpenQueue }) => {
           </button>
           <button
             onClick={handlePlayPause}
-            className="p-3 bg-white/10 rounded-full text-white active:scale-95"
+            className="p-3 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
           >
             {isPlaying ? (
               <BsFillPauseFill size={20} />
@@ -212,10 +211,10 @@ const MusicPlayer = ({ onOpenQueue }) => {
         </div>
       </div>
 
-      {/* Tablet Layout - 925px to 1480px */}
+      {/* Tablet Layout */}
       <div className="hidden md:flex desktop:hidden items-center w-full h-full px-4 lg:px-6 py-3">
         {/* Track Info Section */}
-        <div className="flex items-center gap-3 min-w-0 flex-shrink-0 w-[180px] lg:w-[240px]">
+        <div className="flex items-center gap-3 min-w-0 w-[160px] lg:w-[180px] xl:w-[220px] flex-shrink-0">
           <img
             src={getSongImage()}
             alt="cover"
@@ -231,68 +230,68 @@ const MusicPlayer = ({ onOpenQueue }) => {
           </div>
         </div>
 
-        {/* Center Section - Controls & Sliders */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
-          {/* Main Controls Row */}
-          <div className="flex items-center justify-center gap-1 lg:gap-2 mb-3">
-            {/* Shuffle */}
-            <button
-              onClick={() => dispatch(toggleShuffle())}
-              className={`p-1.5 rounded-lg transition-all hidden lg:block ${
-                shuffle
-                  ? "text-[#14b8a6] bg-[#14b8a6]/10"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <BsShuffle size={16} />
-            </button>
+        {/* Center Section */}
+        <div className="flex-1 flex items-center justify-center px-3 lg:px-4 min-w-0">
+          <div className="flex flex-col items-center gap-3 w-full max-w-sm lg:max-w-md">
+            {/* Main Controls Row */}
+            <div className="flex items-center justify-center gap-1 lg:gap-2">
+              {/* Shuffle */}
+              <button
+                onClick={() => dispatch(toggleShuffle())}
+                className={`p-1.5 rounded-lg transition-all hidden xl:block ${
+                  shuffle
+                    ? "text-[#14b8a6] bg-[#14b8a6]/10"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <BsShuffle size={16} />
+              </button>
 
-            {/* Previous */}
-            <button
-              onClick={handlePrevSong}
-              className="p-2 text-white/90 hover:text-white active:scale-95 disabled:opacity-50 transition-all"
-              disabled={isNavigating}
-            >
-              <MdSkipPrevious size={24} />
-            </button>
+              {/* Previous */}
+              <button
+                onClick={handlePrevSong}
+                className="p-2 text-white/90 hover:text-white active:scale-95 disabled:opacity-50 transition-all"
+                disabled={isNavigating}
+              >
+                <MdSkipPrevious size={22} />
+              </button>
 
-            {/* Play/Pause - Prominent button */}
-            <button
-              onClick={handlePlayPause}
-              className="p-3 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 transition-all mx-1 lg:mx-2"
-              disabled={isChangingTrack}
-            >
-              {isPlaying ? (
-                <BsFillPauseFill size={20} />
-              ) : (
-                <BsFillPlayFill size={20} />
-              )}
-            </button>
+              {/* Play/Pause */}
+              <button
+                onClick={handlePlayPause}
+                className="p-2.5 lg:p-3 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 transition-all mx-1 lg:mx-2"
+                disabled={isChangingTrack}
+              >
+                {isPlaying ? (
+                  <BsFillPauseFill size={18} className="lg:w-5 lg:h-5" />
+                ) : (
+                  <BsFillPlayFill size={18} className="lg:w-5 lg:h-5" />
+                )}
+              </button>
 
-            {/* Next */}
-            <button
-              onClick={handleNextSong}
-              className="p-2 text-white/90 hover:text-white active:scale-95 disabled:opacity-50 transition-all"
-              disabled={isNavigating}
-            >
-              <MdSkipNext size={24} />
-            </button>
+              {/* Next */}
+              <button
+                onClick={handleNextSong}
+                className="p-2 text-white/90 hover:text-white active:scale-95 disabled:opacity-50 transition-all"
+                disabled={isNavigating}
+              >
+                <MdSkipNext size={22} />
+              </button>
 
-            {/* Repeat */}
-            <button
-              onClick={() => dispatch(toggleRepeat())}
-              className={`p-1.5 rounded-lg transition-all hidden lg:block ${
-                repeat
-                  ? "text-[#14b8a6] bg-[#14b8a6]/10"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <BsArrowRepeat size={16} />
-            </button>
-          </div>
+              {/* Repeat */}
+              <button
+                onClick={() => dispatch(toggleRepeat())}
+                className={`p-1.5 rounded-lg transition-all hidden xl:block ${
+                  repeat
+                    ? "text-[#14b8a6] bg-[#14b8a6]/10"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <BsArrowRepeat size={16} />
+              </button>
+            </div>
 
-          {/* Seekbar */}
-          <div className="w-full max-w-md">
+            {/* Seekbar */}
             <Seekbar
               value={currentTime}
               min={0}
@@ -304,8 +303,8 @@ const MusicPlayer = ({ onOpenQueue }) => {
           </div>
         </div>
 
-        {/* Right Section - Volume & Queue */}
-        <div className="flex items-center gap-2 lg:gap-3">
+        {/* Right Section */}
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 pr-1">
           <VolumeBar
             value={volume}
             min="0"
@@ -319,7 +318,7 @@ const MusicPlayer = ({ onOpenQueue }) => {
             onClick={onOpenQueue}
             className="relative p-2 text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/10"
           >
-            <HiOutlineQueueList size={22} />
+            <HiOutlineQueueList size={20} />
             {queueCount > 0 && (
               <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#14b8a6] rounded-full flex items-center justify-center">
                 <span className="text-[10px] font-bold text-white">
@@ -331,58 +330,64 @@ const MusicPlayer = ({ onOpenQueue }) => {
         </div>
       </div>
 
-      {/* Desktop Layout - 1480px+ */}
+      {/* Desktop Layout */}
       <div className="hidden desktop:flex items-center justify-between w-full h-full px-6 py-4">
-        {/* Track Info Section - Desktop */}
-        <div className="flex items-center gap-4 min-w-0 w-[300px]">
+        {/* Track Info Section - Responsive width */}
+        <div className="flex items-center gap-3 xl:gap-4 min-w-0 w-[260px] xl:w-[280px] 2xl:w-[320px]">
           <img
             src={getSongImage()}
             alt="cover"
-            className="w-16 h-16 rounded-lg shadow-lg flex-shrink-0"
+            className="w-14 xl:w-16 h-14 xl:h-16 rounded-lg shadow-lg flex-shrink-0"
           />
           <div className="min-w-0 flex-1">
-            <p className="text-white text-base font-semibold truncate">
+            <p className="text-white text-sm xl:text-base font-semibold truncate">
               {currentTrack?.title || "No active Song"}
             </p>
-            <p className="text-gray-300 text-sm truncate">
+            <p className="text-gray-300 text-xs xl:text-sm truncate">
               {currentTrack?.subtitle || "Unknown Artist"}
             </p>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 px-12">
-          <Controls
-            isPlaying={isPlaying}
-            isActive={isActive}
-            repeat={repeat}
-            setRepeat={() => dispatch(toggleRepeat())}
-            shuffle={shuffle}
-            setShuffle={() => dispatch(toggleShuffle())}
-            currentSongs={currentSongs}
-            handlePlayPause={handlePlayPause}
-            handlePrevSong={handlePrevSong}
-            handleNextSong={handleNextSong}
-            isLoading={isChangingTrack || isNavigating}
-          />
-          <Seekbar
-            value={currentTime}
-            min={0}
-            max={duration}
-            onInput={(event) => seek(event.target.value)}
-            setSeekTime={seek}
-            appTime={currentTime}
-          />
+        {/* Center Section */}
+        <div className="flex-1 flex items-center justify-center px-4 xl:px-6 2xl:px-8">
+          <div className="flex flex-col items-center gap-3 w-full max-w-md">
+            <Controls
+              isPlaying={isPlaying}
+              isActive={isActive}
+              repeat={repeat}
+              setRepeat={() => dispatch(toggleRepeat())}
+              shuffle={shuffle}
+              setShuffle={() => dispatch(toggleShuffle())}
+              currentSongs={currentSongs}
+              handlePlayPause={handlePlayPause}
+              handlePrevSong={handlePrevSong}
+              handleNextSong={handleNextSong}
+              isLoading={isChangingTrack || isNavigating}
+            />
+            <Seekbar
+              value={currentTime}
+              min={0}
+              max={duration}
+              onInput={(event) => seek(event.target.value)}
+              setSeekTime={seek}
+              appTime={currentTime}
+            />
+          </div>
         </div>
 
-        <VolumeBar
-          value={volume}
-          min="0"
-          max="1"
-          onChange={(event) =>
-            dispatch(setVolumeAction(parseFloat(event.target.value)))
-          }
-          setVolume={(val) => dispatch(setVolumeAction(val))}
-        />
+        {/* Right Section */}
+        <div className="flex items-center justify-end gap-3 xl:gap-4 w-[260px] xl:w-[280px] 2xl:w-[320px] pr-8">
+          <VolumeBar
+            value={volume}
+            min="0"
+            max="1"
+            onChange={(event) =>
+              dispatch(setVolumeAction(parseFloat(event.target.value)))
+            }
+            setVolume={(val) => dispatch(setVolumeAction(val))}
+          />
+        </div>
       </div>
 
       {/* Single Audio Player for all layouts */}
