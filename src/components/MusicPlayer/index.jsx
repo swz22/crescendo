@@ -291,11 +291,8 @@ const MusicPlayer = ({ onOpenQueue }) => {
             </button>
           </div>
 
-          {/* Seekbar with time */}
-          <div className="w-full max-w-md flex items-center gap-2">
-            <span className="text-xs text-gray-400 w-10 text-right">
-              {formatTime(currentTime)}
-            </span>
+          {/* Seekbar */}
+          <div className="w-full max-w-md">
             <Seekbar
               value={currentTime}
               min={0}
@@ -304,9 +301,6 @@ const MusicPlayer = ({ onOpenQueue }) => {
               setSeekTime={seek}
               appTime={currentTime}
             />
-            <span className="text-xs text-gray-400 w-10">
-              {formatTime(duration)}
-            </span>
           </div>
         </div>
 
