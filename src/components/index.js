@@ -14,6 +14,7 @@ import MusicPlayer from "./MusicPlayer";
 import PlayPause from "./PlayPause";
 import TrackRow from "./TrackRow";
 import RelatedSongs from "./RelatedSongs";
+import ModalPlayer from "./ModalPlayer";
 
 // Playlist Components
 import PlaylistModal from "./PlaylistModal";
@@ -61,6 +62,7 @@ export {
   PlayPause,
   TrackRow,
   RelatedSongs,
+  ModalPlayer,
 
   // Playlists
   PlaylistModal,
