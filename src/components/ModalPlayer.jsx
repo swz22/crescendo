@@ -17,6 +17,7 @@ import {
   toggleRepeat,
   setVolume as setVolumeAction,
 } from "../redux/features/playerSlice";
+import { selectCurrentContextTracks } from "../redux/features/playerSelectors";
 import { useSongNavigation } from "../hooks/useSongNavigation";
 import { useAudioState } from "../hooks/useAudioState";
 
@@ -25,6 +26,8 @@ const ModalPlayer = ({ onOpenNowPlaying }) => {
   const { currentTrack, isPlaying, shuffle, repeat, volume } = useSelector(
     (state) => state.player
   );
+  const tracks = useSelector(selectCurrentContextTracks);
+  const queueCount = tracks.length;
   const { handleNextSong, handlePrevSong, isNavigating } = useSongNavigation();
   const { currentTime, duration, seek } = useAudioState();
 
@@ -53,6 +56,32 @@ const ModalPlayer = ({ onOpenNowPlaying }) => {
   return (
     <div className="sticky bottom-0 bg-gradient-to-r from-[#1e1b4b]/98 to-[#2d2467]/98 backdrop-blur-xl border-t border-white/10 p-3">
       <div className="flex items-center gap-3">
+        {/* Track Info - Only show when playing */}
+        {currentTrack && (
+          <div className="flex items-center gap-3 min-w-0 flex-shrink-0 w-[200px]">
+            <img
+              src={
+                currentTrack?.images?.coverart ||
+                currentTrack?.album?.images?.[0]?.url ||
+                ""
+              }
+              alt="cover"
+              className="w-10 h-10 rounded shadow-lg flex-shrink-0"
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-white text-sm font-medium truncate">
+                {currentTrack?.title || "Unknown"}
+              </p>
+              <p className="text-gray-400 text-xs truncate">
+                {currentTrack?.subtitle || "Unknown Artist"}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Playback Controls */}
         <div className="flex items-center gap-1">
           <button
@@ -153,10 +182,17 @@ const ModalPlayer = ({ onOpenNowPlaying }) => {
         {/* Now Playing Button */}
         <button
           onClick={onOpenNowPlaying}
-          className="p-2 text-gray-400 hover:text-white transition-all rounded-lg hover:bg-white/10"
+          className="relative p-2 text-gray-400 hover:text-white transition-all rounded-lg hover:bg-white/10"
           title="Open Now Playing"
         >
           <HiOutlineQueueList size={20} />
+          {queueCount > 0 && (
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#14b8a6] rounded-full flex items-center justify-center">
+              <span className="text-[9px] font-bold text-white">
+                {queueCount > 99 ? "99+" : queueCount}
+              </span>
+            </div>
+          )}
         </button>
       </div>
     </div>
