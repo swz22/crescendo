@@ -25,7 +25,6 @@ import { usePreviewUrl } from "../../hooks/usePreviewUrl";
 import Controls from "./Controls";
 import Player from "./Player";
 import Seekbar from "./Seekbar";
-import Track from "./Track";
 import VolumeBar from "./VolumeBar";
 import TrackLoadingState from "../TrackLoadingState";
 import { useAudioState } from "../../hooks/useAudioState";
@@ -340,7 +339,23 @@ const MusicPlayer = ({ onOpenQueue }) => {
 
       {/* Desktop Layout - 1480px+ */}
       <div className="hidden desktop:flex items-center justify-between w-full h-full px-6 py-4">
-        <Track isPlaying={isPlaying} isActive={isActive} />
+        {/* Track Info Section - Desktop */}
+        <div className="flex items-center gap-4 min-w-0 w-[300px]">
+          <img
+            src={getSongImage()}
+            alt="cover"
+            className="w-16 h-16 rounded-lg shadow-lg flex-shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-white text-base font-semibold truncate">
+              {currentTrack?.title || "No active Song"}
+            </p>
+            <p className="text-gray-300 text-sm truncate">
+              {currentTrack?.subtitle || "Unknown Artist"}
+            </p>
+          </div>
+        </div>
+
         <div className="flex-1 flex flex-col items-center justify-center gap-3 px-12">
           <Controls
             isPlaying={isPlaying}
@@ -364,6 +379,7 @@ const MusicPlayer = ({ onOpenQueue }) => {
             appTime={currentTime}
           />
         </div>
+
         <VolumeBar
           value={volume}
           min="0"
