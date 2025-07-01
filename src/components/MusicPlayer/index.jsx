@@ -18,6 +18,7 @@ import {
   toggleRepeat,
   setVolume as setVolumeAction,
 } from "../../redux/features/playerSlice";
+import { selectCurrentContextTracks } from "../../redux/features/playerSelectors";
 import { useSongNavigation } from "../../hooks/useSongNavigation";
 import { useAudioPreload } from "../../hooks/useAudioPreload";
 import { usePreviewUrl } from "../../hooks/usePreviewUrl";
@@ -45,6 +46,8 @@ const MusicPlayer = ({ onOpenQueue }) => {
   } = useSelector((state) => state.player);
 
   const volume = useSelector((state) => state.player.volume);
+  const tracks = useSelector(selectCurrentContextTracks);
+  const queueCount = tracks.length;
 
   // Format time helper
   const formatTime = (time) => {
@@ -196,9 +199,16 @@ const MusicPlayer = ({ onOpenQueue }) => {
           </button>
           <button
             onClick={onOpenQueue}
-            className="p-2 text-white/60 hover:text-white transition-colors"
+            className="relative p-2 text-white/60 hover:text-white transition-colors"
           >
             <HiOutlineQueueList size={22} />
+            {queueCount > 0 && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#14b8a6] rounded-full flex items-center justify-center">
+                <span className="text-[10px] font-bold text-white">
+                  {queueCount}
+                </span>
+              </div>
+            )}
           </button>
         </div>
       </div>
@@ -314,9 +324,16 @@ const MusicPlayer = ({ onOpenQueue }) => {
           />
           <button
             onClick={onOpenQueue}
-            className="p-2 text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+            className="relative p-2 text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/10"
           >
             <HiOutlineQueueList size={22} />
+            {queueCount > 0 && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#14b8a6] rounded-full flex items-center justify-center">
+                <span className="text-[10px] font-bold text-white">
+                  {queueCount}
+                </span>
+              </div>
+            )}
           </button>
         </div>
       </div>
