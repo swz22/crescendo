@@ -83,7 +83,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
             block: "center",
           });
         }
-      }, 900);
+      }, 300);
     } else {
       document.body.style.overflow = "";
       document.body.style.overscrollBehavior = "";
@@ -190,11 +190,11 @@ const NowPlaying = ({ isOpen, onClose }) => {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60]"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] will-change-opacity"
         style={{
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? "auto" : "none",
-          transition: "opacity 0.8s cubic-bezier(0.32, 0.72, 0, 1)",
+          transition: "opacity 0.4s ease-out",
         }}
         onClick={onClose}
       />
@@ -202,14 +202,14 @@ const NowPlaying = ({ isOpen, onClose }) => {
       {/* Full Screen Sheet */}
       <div
         ref={sheetRef}
-        className="fixed inset-0 z-[70] bg-gradient-to-b from-[#1e1b4b] via-[#2d2467]/95 to-[#0f172a]"
+        className="fixed inset-0 z-[70] bg-gradient-to-b from-[#1e1b4b] via-[#2d2467]/95 to-[#0f172a] will-change-transform"
         style={{
           transform: `translateY(${
             isOpen && isMounted ? dragY : window.innerHeight || 1000
           }px)`,
           transition: isDragging
             ? "none"
-            : "transform 0.8s cubic-bezier(0.32, 0.72, 0, 1)",
+            : "transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
           touchAction: "pan-x pan-down",
         }}
       >
@@ -217,12 +217,9 @@ const NowPlaying = ({ isOpen, onClose }) => {
         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
 
         {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full">
-            <div className="absolute top-20 left-10 w-32 h-32 bg-[#14b8a6] rounded-full filter blur-3xl animate-pulse" />
-            <div className="absolute bottom-40 right-10 w-40 h-40 bg-[#0891b2] rounded-full filter blur-3xl animate-pulse animation-delay-2000" />
-            <div className="absolute top-1/2 left-1/3 w-36 h-36 bg-[#7c3aed] rounded-full filter blur-3xl animate-pulse animation-delay-4000" />
-          </div>
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-[#14b8a6] rounded-full filter blur-3xl" />
+          <div className="absolute bottom-40 right-10 w-40 h-40 bg-[#0891b2] rounded-full filter blur-3xl" />
         </div>
 
         {/* Header */}
