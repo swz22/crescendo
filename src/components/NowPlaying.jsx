@@ -146,7 +146,6 @@ const NowPlaying = ({ isOpen, onClose }) => {
   };
 
   const handleContextSwitch = (contextId) => {
-    console.log("Switching to context:", contextId); // Debug log
     dispatch(switchContext({ contextType: contextId }));
     setShowContextMenu(false);
   };
@@ -402,13 +401,11 @@ const NowPlaying = ({ isOpen, onClose }) => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log("Context clicked:", context.id);
                     handleContextSwitch(context.id);
                   }}
                   onTouchEnd={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log("Context touched:", context.id);
                     handleContextSwitch(context.id);
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 active:bg-white/20 transition-all cursor-pointer ${
