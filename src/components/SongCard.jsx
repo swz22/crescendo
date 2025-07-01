@@ -39,8 +39,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
     setShowCacheIndicator(isCached);
   }, [song, isPreviewCached, isPrefetched]);
 
-  // Replace the useEffect cleanup and hover handlers section (around line 35-90):
-
   useEffect(() => {
     // Cleanup timeout on unmount
     return () => {
@@ -229,10 +227,31 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
 
           <div className="ml-3 mr-2">
             {isCurrentSong && isPlaying && (
-              <div className="flex items-center gap-0.5 pr-1">
-                <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse" />
-                <div className="w-1 h-5 bg-[#14b8a6] rounded-full animate-pulse delay-75" />
-                <div className="w-1 h-4 bg-[#14b8a6] rounded-full animate-pulse delay-150" />
+              <div className="flex items-center gap-[3px] pr-1">
+                <div
+                  className="w-[3px] bg-[#14b8a6] rounded-full"
+                  style={{
+                    height: "12px",
+                    animation: "scale-y 1.2s ease-in-out infinite",
+                    animationDelay: "0s",
+                  }}
+                />
+                <div
+                  className="w-[3px] bg-[#14b8a6] rounded-full"
+                  style={{
+                    height: "18px",
+                    animation: "scale-y 1.2s ease-in-out infinite",
+                    animationDelay: "0.2s",
+                  }}
+                />
+                <div
+                  className="w-[3px] bg-[#14b8a6] rounded-full"
+                  style={{
+                    height: "14px",
+                    animation: "scale-y 1.2s ease-in-out infinite",
+                    animationDelay: "0.4s",
+                  }}
+                />
               </div>
             )}
           </div>
