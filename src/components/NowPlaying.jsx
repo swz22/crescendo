@@ -146,7 +146,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
   };
 
   const handleContextSwitch = (contextId) => {
-    console.log("Switching to context:", contextId);
+    console.log("Switching to context:", contextId); // Debug log
     dispatch(switchContext({ contextType: contextId }));
     setShowContextMenu(false);
   };
@@ -205,7 +205,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
             : "transform 0.8s cubic-bezier(0.32, 0.72, 0, 1)",
         }}
       >
-        {/* Glass overlay */}
+        {/* Glass overlay for depth */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
 
         {/* Animated background pattern */}
@@ -254,15 +254,25 @@ const NowPlaying = ({ isOpen, onClose }) => {
                 />
               </button>
 
-              {activeContext === "queue" && tracks.length > 0 && (
+              <div className="flex items-center gap-2">
+                {activeContext === "queue" && tracks.length > 0 && (
+                  <button
+                    onClick={handleClearQueue}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-white/[0.08] to-white/[0.05] hover:from-red-500/20 hover:to-red-600/20 hover:text-red-400 backdrop-blur-xl rounded-full text-white font-medium transition-all border border-white/10 hover:border-red-500/30 text-sm shadow-lg shadow-black/20"
+                  >
+                    <HiOutlineTrash className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Clear All</span>
+                  </button>
+                )}
+
+                {/* Close button - visible on non-mobile screens */}
                 <button
-                  onClick={handleClearQueue}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-white/[0.08] to-white/[0.05] hover:from-red-500/20 hover:to-red-600/20 hover:text-red-400 backdrop-blur-xl rounded-full text-white font-medium transition-all border border-white/10 hover:border-red-500/30 text-sm shadow-lg shadow-black/20"
+                  onClick={onClose}
+                  className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-white/[0.08] hover:bg-white/[0.15] transition-all border border-white/10"
                 >
-                  <HiOutlineTrash className="w-3.5 h-3.5" />
-                  Clear All
+                  <HiX className="w-5 h-5 text-white/70 hover:text-white" />
                 </button>
-              )}
+              </div>
             </div>
           </div>
 
