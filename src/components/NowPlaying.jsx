@@ -71,6 +71,10 @@ const NowPlaying = ({ isOpen, onClose }) => {
     if (isOpen) {
       setIsMounted(true);
       document.body.style.overflow = "hidden";
+
+      // Disable pull-to-refresh
+      document.body.style.overscrollBehavior = "contain";
+
       // Auto-scroll to active track after animation
       setTimeout(() => {
         if (activeTrackRef.current && scrollRef.current) {
@@ -82,12 +86,15 @@ const NowPlaying = ({ isOpen, onClose }) => {
       }, 900);
     } else {
       document.body.style.overflow = "";
+      document.body.style.overscrollBehavior = "";
+
       // Reset mounted state after close animation
       setTimeout(() => setIsMounted(false), 800);
     }
 
     return () => {
       document.body.style.overflow = "";
+      document.body.style.overscrollBehavior = "";
     };
   }, [isOpen, currentIndex]);
 
@@ -104,7 +111,8 @@ const NowPlaying = ({ isOpen, onClose }) => {
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    if (dragY > 100) {
+    if (dragY > 50) {
+      // Reduced from 100 to 50 for easier dismissal
       onClose();
     }
     setDragY(0);
@@ -202,6 +210,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
           transition: isDragging
             ? "none"
             : "transform 0.8s cubic-bezier(0.32, 0.72, 0, 1)",
+          touchAction: "pan-x pan-down",
         }}
       >
         {/* Glass overlay for depth */}
