@@ -266,7 +266,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-white/[0.08] to-white/[0.05] hover:from-red-500/20 hover:to-red-600/20 hover:text-red-400 backdrop-blur-xl rounded-full text-white font-medium transition-all border border-white/10 hover:border-red-500/30 text-sm shadow-lg shadow-black/20"
                   >
                     <HiOutlineTrash className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Clear All</span>
+                    Clear All
                   </button>
                 )}
 
@@ -574,7 +574,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
                     {canModify && (
                       <button
                         onClick={(e) => handleRemoveTrack(index, e)}
-                        className="p-2 rounded-full opacity-0 group-hover:opacity-100 hover:bg-white/10 transition-all"
+                        className="p-2 rounded-full hover:bg-white/10 transition-all"
                       >
                         <HiX className="w-5 h-5 text-white/40 hover:text-white/60" />
                       </button>
