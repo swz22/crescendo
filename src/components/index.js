@@ -24,7 +24,7 @@ import PlaylistManager from "./PlaylistManager";
 // Queue Components
 import QueueButton from "./QueueButton";
 import QueueIndicator from "./QueueIndicator";
-import MobileQueueSheet from "./MobileQueueSheet";
+import NowPlaying from "./NowPlaying";
 
 // UI Components
 import Searchbar from "./Searchbar";
@@ -71,7 +71,7 @@ export {
   // Queue
   QueueButton,
   QueueIndicator,
-  MobileQueueSheet,
+  NowPlaying,
 
   // UI Components
   Searchbar,

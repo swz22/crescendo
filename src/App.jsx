@@ -5,7 +5,7 @@ import LeftSidebar from "./components/LeftSidebar";
 import MusicPlayer from "./components/MusicPlayer";
 import SidebarPlayer from "./components/SidebarPlayer";
 import QueueIndicator from "./components/QueueIndicator";
-import MobileQueueSheet from "./components/MobileQueueSheet";
+import NowPlaying from "./components/NowPlaying";
 import Loader from "./components/Loader";
 import OnboardingModal from "./components/OnboardingModal";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
@@ -63,7 +63,7 @@ const App = () => {
         </div>
       )}
       {/* Mobile Queue Sheet */}
-      <MobileQueueSheet
+      <NowPlaying
         isOpen={mobileQueueOpen}
         onClose={() => setMobileQueueOpen(false)}
       />
