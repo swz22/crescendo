@@ -62,11 +62,9 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
   useEffect(() => {
     const timer = setTimeout(() => setIsAnimating(true), 50);
-    if (isTabletView) {
-      dispatch(setModalOpen(true));
-    }
+    dispatch(setModalOpen(true));
     return () => clearTimeout(timer);
-  }, [dispatch, isTabletView]);
+  }, [dispatch]);
 
   useEffect(() => {
     if (tracks && tracks.length > 0) {
@@ -97,9 +95,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
   const handleClose = () => {
     setIsAnimating(false);
-    if (isTabletView) {
-      dispatch(setModalOpen(false));
-    }
+    dispatch(setModalOpen(false));
     setTimeout(onClose, 300);
   };
 
@@ -204,7 +200,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         }`}
       >
         <div className="flex flex-col h-full pb-24">
-          {/* Mobile Header */}
+          {/* Mobile Header*/}
           <div className="flex items-center justify-between p-3 flex-shrink-0">
             <button
               onClick={handleClose}
