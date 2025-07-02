@@ -1,16 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-// Create a simple placeholder as data URI to avoid network requests
-const createPlaceholder = (text = "Artist") => {
-  const svg = `
-    <svg width="240" height="240" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="#4a5568"/>
-      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="20" fill="#a0aec0" text-anchor="middle" dy=".3em">${text}</text>
-    </svg>
-  `;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-};
+const placeholderImage =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE1NTY4Ii8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iI2EwYWVjMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkFydGlzdDwvdGV4dD4KPC9zdmc+";
 
 const ArtistCard = ({ track }) => {
   const navigate = useNavigate();
@@ -25,7 +17,7 @@ const ArtistCard = ({ track }) => {
   // Get artist image with fallbacks
   const getArtistImage = () => {
     if (imageError) {
-      return createPlaceholder("Artist");
+      return placeholderImage;
     }
 
     if (artist.avatar) return artist.avatar;
@@ -33,13 +25,13 @@ const ArtistCard = ({ track }) => {
     if (track?.images?.background) return track.images.background;
     if (track?.images?.coverart) return track.images.coverart;
     if (track?.share?.avatar) return track.share.avatar;
-    return createPlaceholder("Artist");
+    return placeholderImage;
   };
 
   const handleImageError = (e) => {
     if (!imageError) {
       setImageError(true);
-      e.target.src = createPlaceholder("No Image");
+      e.target.src = placeholderImage;
     }
   };
 
