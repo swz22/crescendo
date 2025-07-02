@@ -12,6 +12,7 @@ import DropdownPortal from "../components/DropdownPortal";
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { usePersistentScroll } from "../hooks/usePersistentScroll";
 import { genres } from "../assets/constants";
 import { IoChevronDown } from "react-icons/io5";
 import { Icon } from "@iconify/react";
@@ -24,13 +25,14 @@ const Discover = () => {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const genreButtonRef = useRef(null);
 
+  usePersistentScroll();
+
   const selectedGenre = genreListId || "POP";
   const genreTitle =
     genres.find(({ value }) => value === selectedGenre)?.title || "Pop";
 
   const { data, isFetching, error } = useGetSongsByGenreQuery(selectedGenre);
 
-  // Genre icons mapping
   const genreIcons = {
     POP: "mdi:star-four-points-outline",
     HIP_HOP_RAP: "mdi:microphone-variant",

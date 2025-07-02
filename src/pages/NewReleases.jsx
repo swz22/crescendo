@@ -11,6 +11,7 @@ import {
   addToQueue,
   switchContext,
 } from "../redux/features/playerSlice";
+import { usePersistentScroll } from "../hooks/usePersistentScroll";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useToast } from "../context/ToastContext";
 
@@ -20,10 +21,10 @@ const NewReleases = () => {
   const { getPreviewUrl } = usePreviewUrl();
   const { showToast } = useToast();
 
-  // Include all album types and limit to 50
+  usePersistentScroll();
+
   const allReleases = data?.slice(0, 50) || [];
 
-  // Find Sabrina Carpenter's "Short n' Sweet" album specifically
   const heroAlbum =
     allReleases.find(
       (album) =>

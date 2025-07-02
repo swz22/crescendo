@@ -7,6 +7,7 @@ import {
   ResponsiveGrid,
 } from "../components";
 import DropdownPortal from "../components/DropdownPortal";
+import { usePersistentScroll } from "../hooks/usePersistentScroll";
 import { useGetTopAlbumsQuery } from "../redux/services/spotifyCore";
 import { IoChevronDown } from "react-icons/io5";
 import { HiOutlineGlobeAlt } from "react-icons/hi";
@@ -34,6 +35,8 @@ const TopAlbums = () => {
   const [selectedCountry, setSelectedCountry] = useState("US");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const countryButtonRef = useRef(null);
+
+  usePersistentScroll();
 
   const selectedCountryName =
     countries.find((c) => c.code === selectedCountry)?.name || "United States";

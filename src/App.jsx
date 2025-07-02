@@ -10,6 +10,7 @@ import Loader from "./components/Loader";
 import OnboardingModal from "./components/OnboardingModal";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useMediaQuery } from "./hooks/useMediaQuery";
+import { ScrollProvider, useScrollContainer } from "./context/ScrollContext";
 import {
   AlbumDetails,
   ArtistDetails,
@@ -22,14 +23,14 @@ import {
   CommunityPlaylists,
 } from "./pages";
 
-// Loading component for lazy loaded routes
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[400px]">
     <Loader title="Loading..." />
   </div>
 );
 
-const App = () => {
+const MainContent = () => {
+  const scrollContainerRef = useScrollContainer();
   const { currentTrack, modalOpen } = useSelector((state) => state.player);
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
   const isDesktopView = useMediaQuery("(min-width: 1480px)");
@@ -37,13 +38,14 @@ const App = () => {
     "(min-width: 640px) and (max-width: 1479px)"
   );
 
-  useKeyboardShortcuts();
-
   return (
-    <div className="relative flex h-screen overflow-hidden">
+    <>
       <LeftSidebar />
       <div className="flex-1 flex flex-col bg-gradient-to-br from-[#1a1848] via-[#2d2467] to-[#1a1848] min-w-0">
-        <div className="flex-1 overflow-y-auto custom-scrollbar sm:px-6 pb-24 tablet:pb-36 desktop:pb-40">
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto custom-scrollbar sm:px-6 pb-24 tablet:pb-36 desktop:pb-40"
+        >
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Discover />} />
@@ -84,7 +86,19 @@ const App = () => {
       )}
       <OnboardingModal />
       <QueueIndicator />
-    </div>
+    </>
+  );
+};
+
+const App = () => {
+  useKeyboardShortcuts();
+
+  return (
+    <ScrollProvider>
+      <div className="relative flex h-screen overflow-hidden">
+        <MainContent />
+      </div>
+    </ScrollProvider>
   );
 };
 
