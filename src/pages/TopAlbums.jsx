@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useSelector } from "react-redux";
 import {
   Error,
   Loader,
@@ -32,7 +33,7 @@ const countries = [
 ];
 
 const TopAlbums = () => {
-  const [selectedCountry, setSelectedCountry] = useState("US");
+  const { selectedCountry } = useSelector((state) => state.player);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const countryButtonRef = useRef(null);
 
@@ -42,7 +43,7 @@ const TopAlbums = () => {
     countries.find((c) => c.code === selectedCountry)?.name || "United States";
 
   const { data, isFetching, error } = useGetTopAlbumsQuery({
-    country: selectedCountry,
+    country: selectedCountry || "US",
   });
 
   if (isFetching) return <Loader title="Loading top albums..." />;

@@ -35,6 +35,7 @@ const initialState = {
   playlists: loadFromStorage(StorageKeys.PLAYLISTS) || [],
   genreListId: "POP",
   modalOpen: false,
+  selectedCountry: "US",
 };
 
 const playerSlice = createSlice({
@@ -488,6 +489,10 @@ const playerSlice = createSlice({
       state.volume = action.payload;
       saveToStorage(StorageKeys.VOLUME, action.payload);
     },
+
+    setSelectedCountry: (state, action) => {
+      state.selectedCountry = action.payload;
+    },
   },
 });
 
@@ -576,6 +581,7 @@ export const {
   updateCurrentTrackPreview,
   updateAlbumTrack,
   setVolume,
+  setSelectedCountry,
 } = playerSlice.actions;
 
 export default playerSlice.reducer;
