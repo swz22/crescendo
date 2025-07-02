@@ -149,12 +149,18 @@ export const usePersistentScroll = () => {
         const container = scrollContainerRef.current;
         const scrollHeight = container.scrollHeight;
         const clientHeight = container.clientHeight;
+        const maxScrollTop = scrollHeight - clientHeight;
 
-        if (
-          scrollHeight > clientHeight &&
-          scrollHeight >= scrollTop + clientHeight
-        ) {
+        if (scrollHeight > clientHeight && scrollTop <= maxScrollTop) {
           container.scrollTop = scrollTop;
+          hasRestoredRef.current = true;
+
+          if (resizeObserver) {
+            resizeObserver.disconnect();
+          }
+        } else if (scrollTop > maxScrollTop && maxScrollTop > 0) {
+          // If saved position is beyond max, scroll to bottom
+          container.scrollTop = maxScrollTop;
           hasRestoredRef.current = true;
 
           if (resizeObserver) {
