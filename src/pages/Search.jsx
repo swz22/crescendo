@@ -13,10 +13,9 @@ import { useGetSongsBySearchQuery } from "../redux/services/spotifyCore";
 const Search = () => {
   const { searchTerm } = useParams();
   const navigate = useNavigate();
-  const { activeSong, isPlaying } = useSelector((state) => state.player);
+  const { isPlaying } = useSelector((state) => state.player);
   const { data, isFetching, error } = useGetSongsBySearchQuery(searchTerm);
 
-  // Extract songs from search results
   const songs =
     data?.tracks?.hits?.map((hit) => hit.track) ||
     data?.tracks ||
@@ -33,7 +32,7 @@ const Search = () => {
       <AppHeader
         title="Search Results"
         subtitle={`Showing results for "${searchTerm}"`}
-        showSearch={true} // Enable search on search results page
+        showSearch={true}
       />
 
       {songs.length ? (
@@ -43,7 +42,6 @@ const Search = () => {
               key={song.key || song.id || i}
               song={song}
               isPlaying={isPlaying}
-              activeSong={activeSong}
               data={songs}
               i={i}
             />

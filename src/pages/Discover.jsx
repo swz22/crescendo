@@ -19,8 +19,7 @@ import { Icon } from "@iconify/react";
 const Discover = () => {
   const dispatch = useDispatch();
   const location = useLocation();
-  const { genreListId } = useSelector((state) => state.player);
-  const { activeSong, isPlaying } = useSelector((state) => state.player);
+  const { genreListId, isPlaying } = useSelector((state) => state.player);
   const { prefetchPreviewUrl, getPagePrefetchStrategy } = usePreviewUrl();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const genreButtonRef = useRef(null);
@@ -31,7 +30,7 @@ const Discover = () => {
 
   const { data, isFetching, error } = useGetSongsByGenreQuery(selectedGenre);
 
-  // Genre icons mapping with Iconify
+  // Genre icons mapping
   const genreIcons = {
     POP: "mdi:star-four-points-outline",
     HIP_HOP_RAP: "mdi:microphone-variant",
@@ -76,7 +75,7 @@ const Discover = () => {
             prefetchPreviewUrl(song, { priority: strategy.priority });
           }, index * strategy.delay);
         });
-      }, 2000); // Initial delay before starting prefetch
+      }, 2000);
 
       return () => clearTimeout(timeoutId);
     }
@@ -190,7 +189,6 @@ const Discover = () => {
             key={song.key}
             song={song}
             isPlaying={isPlaying}
-            activeSong={activeSong}
             data={data}
             i={i}
           />

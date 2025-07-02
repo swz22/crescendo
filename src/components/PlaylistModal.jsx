@@ -28,6 +28,7 @@ import {
 import { IoMdTime } from "react-icons/io";
 import { HiPlus } from "react-icons/hi";
 import { useToast } from "../context/ToastContext";
+import { isSameTrack } from "../utils/trackUtils";
 
 const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
@@ -312,7 +313,10 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
             ) : (
               <div className="px-4">
                 {tracks?.map((track, i) => {
-                  const isActive = isTrackActive(track, i);
+                  const isActive =
+                    isSameTrack(track, currentTrack) &&
+                    activeContext === "community_playlist" &&
+                    currentIndex === i;
                   return (
                     <div
                       key={`${track.key || track.id}-${i}`}
@@ -356,14 +360,14 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         <div onClick={(e) => e.stopPropagation()}>
                           <SongMenu song={track} />
                         </div>
-                        <PlayPause
-                          isPlaying={isPlaying}
-                          activeSong={currentTrack}
-                          song={track}
-                          handlePause={handlePauseClick}
-                          handlePlay={() => handlePlayClick(track, i)}
-                          size={40}
-                        />
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <PlayPause
+                            song={track}
+                            handlePause={handlePauseClick}
+                            handlePlay={() => handlePlayClick(track, i)}
+                            size={35}
+                          />
+                        </div>
                       </div>
                     </div>
                   );
@@ -510,7 +514,10 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   ) : (
                     <div className="space-y-1">
                       {tracks?.map((track, i) => {
-                        const isActive = isTrackActive(track, i);
+                        const isActive =
+                          isSameTrack(track, currentTrack) &&
+                          activeContext === "community_playlist" &&
+                          currentIndex === i;
                         return (
                           <div
                             key={`${track.key || track.id}-${i}`}
@@ -557,14 +564,14 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               <div onClick={(e) => e.stopPropagation()}>
                                 <SongMenu song={track} />
                               </div>
-                              <PlayPause
-                                isPlaying={isPlaying}
-                                activeSong={currentTrack}
-                                song={track}
-                                handlePause={handlePauseClick}
-                                handlePlay={() => handlePlayClick(track, i)}
-                                size={35}
-                              />
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <PlayPause
+                                  song={track}
+                                  handlePause={handlePauseClick}
+                                  handlePlay={() => handlePlayClick(track, i)}
+                                  size={35}
+                                />
+                              </div>
                             </div>
                           </div>
                         );
@@ -743,7 +750,10 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   ) : (
                     <div className="space-y-1">
                       {tracks?.map((track, i) => {
-                        const isActive = isTrackActive(track, i);
+                        const isActive =
+                          isSameTrack(track, currentTrack) &&
+                          activeContext === "community_playlist" &&
+                          currentIndex === i;
                         return (
                           <div
                             key={`${track.key || track.id}-${i}`}
@@ -794,14 +804,14 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             </span>
 
                             <div className="flex-shrink-0 w-10 flex justify-center">
-                              <PlayPause
-                                isPlaying={isPlaying}
-                                activeSong={currentTrack}
-                                song={track}
-                                handlePause={handlePauseClick}
-                                handlePlay={() => handlePlayClick(track, i)}
-                                size={35}
-                              />
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <PlayPause
+                                  song={track}
+                                  handlePause={handlePauseClick}
+                                  handlePlay={() => handlePlayClick(track, i)}
+                                  size={35}
+                                />
+                              </div>
                             </div>
                           </div>
                         );

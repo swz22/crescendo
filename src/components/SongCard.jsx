@@ -10,8 +10,9 @@ import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import { HiLightningBolt, HiDotsVertical } from "react-icons/hi";
 import { BsFillPlayFill, BsFillPauseFill } from "react-icons/bs";
 import { useToast } from "../context/ToastContext";
+import { isSameTrack } from "../utils/trackUtils";
 
-const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
+const SongCard = ({ song, isPlaying, data, i }) => {
   const dispatch = useDispatch();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached, hasNoPreview } =
     usePreviewUrl();
@@ -29,10 +30,7 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
   const currentTrack = useSelector((state) => state.player.currentTrack);
   const { queue } = useSelector((state) => state.player);
 
-  const isCurrentSong =
-    currentTrack?.key === song?.key ||
-    currentTrack?.title === song?.title ||
-    (currentTrack?.key && song?.key && currentTrack.key === song.key);
+  const isCurrentSong = isSameTrack(song, currentTrack);
 
   useEffect(() => {
     const isCached = isPreviewCached(song) || isPrefetched;
@@ -326,8 +324,6 @@ const SongCard = ({ song, isPlaying, activeSong, data, i }) => {
                   }}
                 />
                 <PlayPause
-                  isPlaying={isPlaying}
-                  activeSong={currentTrack}
                   song={song}
                   handlePause={handlePauseClick}
                   handlePlay={handlePlayClick}

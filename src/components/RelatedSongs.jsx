@@ -4,11 +4,9 @@ const RelatedSongs = ({
   data,
   artistId,
   isPlaying,
-  activeSong,
   handlePauseClick,
   handlePlayClick,
 }) => {
-  // Handle the case where data might be undefined or empty
   const songs = data || [];
 
   return (
@@ -25,7 +23,6 @@ const RelatedSongs = ({
               i={i}
               artistId={artistId}
               isPlaying={isPlaying}
-              activeSong={activeSong}
               handlePauseClick={handlePauseClick}
               handlePlayClick={() => handlePlayClick(song, i)}
             />

@@ -1,22 +1,23 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import PlayPause from "./PlayPause";
 import SongMenu from "./SongMenu";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { isSameTrack } from "../utils/trackUtils";
 
 const TrackRow = ({
   song,
   i,
   artistId,
   isPlaying,
-  activeSong,
   handlePauseClick,
   handlePlayClick,
-  showMenu = true, // Optional prop to show menu
+  showMenu = true,
 }) => {
   const { hasNoPreview } = usePreviewUrl();
-  const isCurrentSong =
-    activeSong?.key === song?.key || activeSong?.id === song?.id;
+  const { currentTrack } = useSelector((state) => state.player);
+  const isCurrentSong = isSameTrack(song, currentTrack);
 
   // Check if preview is unavailable
   const isUnavailable = hasNoPreview(song);
@@ -58,10 +59,8 @@ const TrackRow = ({
             </div>
           )}
 
-          <div onClick={handleClick}>
+          <div>
             <PlayPause
-              isPlaying={isPlaying}
-              activeSong={activeSong}
               song={song}
               handlePause={handlePauseClick}
               handlePlay={handlePlayClick}
@@ -79,7 +78,6 @@ export default React.memo(TrackRow, (prevProps, nextProps) => {
     prevProps.song?.key === nextProps.song?.key &&
     prevProps.i === nextProps.i &&
     prevProps.isPlaying === nextProps.isPlaying &&
-    prevProps.activeSong?.key === nextProps.activeSong?.key &&
     prevProps.showMenu === nextProps.showMenu
   );
 });

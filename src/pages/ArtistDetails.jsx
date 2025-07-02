@@ -12,7 +12,7 @@ import { useToast } from "../context/ToastContext";
 const ArtistDetails = () => {
   const { id: artistId } = useParams();
   const dispatch = useDispatch();
-  const { activeSong, isPlaying } = useSelector((state) => state.player);
+  const { isPlaying } = useSelector((state) => state.player);
   const { getPreviewUrl } = usePreviewUrl();
   const { showToast } = useToast();
 
@@ -60,7 +60,6 @@ const ArtistDetails = () => {
         data={topTracks || []}
         artistId={artistId}
         isPlaying={isPlaying}
-        activeSong={activeSong}
         handlePauseClick={handlePauseClick}
         handlePlayClick={handlePlayClick}
       />
