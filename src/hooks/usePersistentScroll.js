@@ -13,7 +13,6 @@ export const usePersistentScroll = () => {
   const hasRestoredRef = useRef(false);
   const lastPathRef = useRef(location.pathname);
 
-  // Clean up old scroll positions
   const cleanupOldPositions = useCallback(() => {
     const now = Date.now();
     const keysToRemove = [];
@@ -39,12 +38,11 @@ export const usePersistentScroll = () => {
     keysToRemove.forEach((key) => sessionStorage.removeItem(key));
   }, []);
 
-  // Save scroll position
   const saveScrollPosition = useCallback(() => {
     if (!scrollContainerRef.current) return;
 
     const scrollTop = scrollContainerRef.current.scrollTop;
-    const storageKey = `${STORAGE_PREFIX}${location.pathname}`;
+    const storageKey = `${STORAGE_PREFIX}${lastPathRef.current}`;
 
     try {
       sessionStorage.setItem(
@@ -52,7 +50,7 @@ export const usePersistentScroll = () => {
         JSON.stringify({
           scrollTop,
           timestamp: Date.now(),
-          pathname: location.pathname,
+          pathname: lastPathRef.current,
         })
       );
     } catch (e) {
@@ -63,16 +61,15 @@ export const usePersistentScroll = () => {
           JSON.stringify({
             scrollTop,
             timestamp: Date.now(),
-            pathname: location.pathname,
+            pathname: lastPathRef.current,
           })
         );
       } catch (err) {
         console.warn("Failed to save scroll position:", err);
       }
     }
-  }, [location.pathname, scrollContainerRef, cleanupOldPositions]);
+  }, [scrollContainerRef, cleanupOldPositions]);
 
-  // Debounced save function
   const debouncedSaveScrollPosition = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -83,7 +80,6 @@ export const usePersistentScroll = () => {
     }, DEBOUNCE_DELAY);
   }, [saveScrollPosition]);
 
-  // Restore scroll position
   const restoreScrollPosition = useCallback(() => {
     if (!scrollContainerRef.current || hasRestoredRef.current) return;
 
@@ -94,7 +90,6 @@ export const usePersistentScroll = () => {
       if (savedData) {
         const { scrollTop } = JSON.parse(savedData);
 
-        // Ensure DOM is ready
         requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTop = scrollTop;
@@ -128,29 +123,74 @@ export const usePersistentScroll = () => {
 
   // Handle route changes
   useEffect(() => {
-    // Save scroll position when leaving the page
     if (lastPathRef.current !== location.pathname) {
       saveScrollPosition();
       lastPathRef.current = location.pathname;
       hasRestoredRef.current = false;
     }
 
-    // Restore scroll position after a short delay
-    const restoreTimer = setTimeout(() => {
-      restoreScrollPosition();
-    }, 50);
+    // For lazy-loaded components, wait for content
+    let resizeObserver;
+    let restoreAttempts = 0;
+    const maxAttempts = 20;
+
+    const attemptRestore = () => {
+      if (!scrollContainerRef.current || hasRestoredRef.current) return;
+
+      const storageKey = `${STORAGE_PREFIX}${location.pathname}`;
+      const savedData = sessionStorage.getItem(storageKey);
+
+      if (!savedData) return;
+
+      try {
+        const { scrollTop } = JSON.parse(savedData);
+        if (!scrollTop) return;
+
+        const container = scrollContainerRef.current;
+        const scrollHeight = container.scrollHeight;
+        const clientHeight = container.clientHeight;
+
+        if (
+          scrollHeight > clientHeight &&
+          scrollHeight >= scrollTop + clientHeight
+        ) {
+          container.scrollTop = scrollTop;
+          hasRestoredRef.current = true;
+
+          if (resizeObserver) {
+            resizeObserver.disconnect();
+          }
+        } else if (restoreAttempts < maxAttempts) {
+          restoreAttempts++;
+          setTimeout(attemptRestore, 100);
+        }
+      } catch (e) {
+        console.warn("Failed to restore scroll position:", e);
+      }
+    };
+
+    // Detect when content size changes
+    if (scrollContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        if (!hasRestoredRef.current) {
+          attemptRestore();
+        }
+      });
+
+      resizeObserver.observe(scrollContainerRef.current);
+    }
+
+    const restoreTimer = setTimeout(attemptRestore, 100);
 
     cleanupOldPositions();
 
     return () => {
       clearTimeout(restoreTimer);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
     };
-  }, [
-    location.pathname,
-    saveScrollPosition,
-    restoreScrollPosition,
-    cleanupOldPositions,
-  ]);
+  }, [location.pathname, saveScrollPosition, cleanupOldPositions]);
 
   const scrollToTop = useCallback(() => {
     if (scrollContainerRef.current) {
