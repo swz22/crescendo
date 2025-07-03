@@ -11,7 +11,7 @@ import {
 import DropdownPortal from "../components/DropdownPortal";
 import { usePersistentScroll } from "../hooks/usePersistentScroll";
 import { useGetTopAlbumsQuery } from "../redux/services/spotifyCore";
-import { IoChevronDown } from "react-icons/io5";
+import { IoChevronDown, IoCloseCircle } from "react-icons/io5";
 import { Icon } from "@iconify/react";
 
 const countries = [
@@ -98,57 +98,70 @@ const TopAlbums = () => {
               isOpen={showCountryDropdown}
               onClose={() => setShowCountryDropdown(false)}
               triggerRef={countryButtonRef}
-              minWidth={220}
-              maxHeight={400}
+              minWidth={200}
+              maxHeight={262}
               placement="bottom-end"
-              className="bg-[#1a1848]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl"
+              className="bg-[#1a1848] border border-white/20 rounded-xl"
             >
               <div className="py-2">
-                {sortedCountries.map((country, index) => {
-                  const isSelected = country.code === selectedCountry;
-                  const isUS = country.code === "US";
+                <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
+                  <span className="text-white/60 text-xs uppercase tracking-wider">
+                    Select Region
+                  </span>
+                  <button
+                    onClick={() => setShowCountryDropdown(false)}
+                    className="text-white/40 hover:text-white transition-colors"
+                  >
+                    <IoCloseCircle className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="py-1">
+                  {sortedCountries.map((country, index) => {
+                    const isSelected = country.code === selectedCountry;
+                    const isUS = country.code === "US";
 
-                  return (
-                    <div key={country.code}>
-                      {isUS && index === 0 && (
-                        <div className="px-4 pb-2">
-                          <div className="text-xs text-white/40 uppercase tracking-wider font-medium">
-                            Popular
-                          </div>
-                        </div>
-                      )}
-                      {!isUS && index === 1 && (
-                        <>
-                          <div className="mx-4 my-2 border-t border-white/10" />
-                          <div className="px-4 pb-2 pt-1">
-                            <div className="text-xs text-white/40 uppercase tracking-wider font-medium">
-                              All Countries
+                    return (
+                      <div key={country.code}>
+                        {isUS && index === 0 && (
+                          <div className="px-4 pb-1">
+                            <div className="text-[10px] text-white/40 uppercase tracking-wider font-medium">
+                              Popular
                             </div>
                           </div>
-                        </>
-                      )}
-                      <button
-                        onClick={() => handleCountryChange(country)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200 relative overflow-hidden ${
-                          isSelected
-                            ? "text-[#14b8a6] bg-gradient-to-r from-[#14b8a6]/20 to-transparent"
-                            : "text-white/80 hover:text-white bg-gradient-to-r from-transparent to-transparent hover:from-white/10 hover:to-transparent"
-                        }`}
-                      >
-                        <Icon
-                          icon={`circle-flags:${country.flag}`}
-                          className="w-4 h-4 flex-shrink-0"
-                        />
-                        <span className="font-medium text-left flex-1">
-                          {country.name}
-                        </span>
-                        {isSelected && (
-                          <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
                         )}
-                      </button>
-                    </div>
-                  );
-                })}
+                        {!isUS && index === 1 && (
+                          <>
+                            <div className="mx-4 my-1 border-t border-white/10" />
+                            <div className="px-4 pb-1 pt-1">
+                              <div className="text-[10px] text-white/40 uppercase tracking-wider font-medium">
+                                All Countries
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleCountryChange(country)}
+                          className={`w-full flex items-center gap-3 px-4 py-2 transition-all duration-200 ${
+                            isSelected
+                              ? "text-[#14b8a6] bg-[#14b8a6]/20"
+                              : "text-white/80 hover:text-white hover:bg-white/10"
+                          }`}
+                        >
+                          <Icon
+                            icon={`circle-flags:${country.flag}`}
+                            className="w-4 h-4 flex-shrink-0"
+                          />
+                          <span className="text-sm text-left flex-1">
+                            {country.name}
+                          </span>
+                          {isSelected && (
+                            <div className="w-1.5 h-1.5 bg-[#14b8a6] rounded-full" />
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </DropdownPortal>
           </div>
