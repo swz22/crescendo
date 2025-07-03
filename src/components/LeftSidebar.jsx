@@ -21,6 +21,19 @@ import Dropdown from "./Dropdown";
 
 const NavLinks = () => {
   const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
+  const location = useLocation();
+  const scrollContainerRef = useScrollContainer();
+
+  const handleNavClick = (to) => {
+    // Clear saved scroll position
+    const storageKey = `crescendo_scroll_${to}`;
+    sessionStorage.removeItem(storageKey);
+
+    // Instantly jump to top
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  };
 
   return (
     <>
@@ -29,6 +42,7 @@ const NavLinks = () => {
           <NavLink
             key={item.name}
             to={item.to}
+            onClick={() => handleNavClick(item.to)}
             className={({ isActive }) =>
               `flex flex-row justify-start items-center my-4 sm:my-6 text-base font-medium 
               ${

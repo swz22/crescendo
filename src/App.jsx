@@ -1,6 +1,6 @@
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import LeftSidebar from "./components/LeftSidebar";
 import MusicPlayer from "./components/MusicPlayer";
 import SidebarPlayer from "./components/SidebarPlayer";
@@ -29,14 +29,34 @@ const PageLoader = () => (
   </div>
 );
 
+// Routes that should always start at top
+const detailRoutes = ["/artists/", "/albums/", "/songs/"];
+
 const MainContent = () => {
   const scrollContainerRef = useScrollContainer();
+  const location = useLocation();
   const { currentTrack, modalOpen } = useSelector((state) => state.player);
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
   const isDesktopView = useMediaQuery("(min-width: 1480px)");
   const isTabletView = useMediaQuery(
     "(min-width: 640px) and (max-width: 1479px)"
   );
+
+  // Force scroll to top for detail pages
+  useEffect(() => {
+    const isDetailPage = detailRoutes.some((route) =>
+      location.pathname.includes(route)
+    );
+
+    if (isDetailPage && scrollContainerRef.current) {
+      // Ensure DOM is ready
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
+        }
+      }, 0);
+    }
+  }, [location.pathname, scrollContainerRef]);
 
   return (
     <>
