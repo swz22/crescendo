@@ -8,13 +8,12 @@ import {
   AppHeader,
   ResponsiveGrid,
 } from "../components";
-import DropdownPortal from "../components/DropdownPortal";
+import Dropdown from "../components/Dropdown";
 import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { usePersistentScroll } from "../hooks/usePersistentScroll";
 import { genres, genreIcons } from "../assets/constants";
-import { IoChevronDown } from "react-icons/io5";
 import { Icon } from "@iconify/react";
 
 const Discover = () => {
@@ -22,8 +21,6 @@ const Discover = () => {
   const location = useLocation();
   const { genreListId, isPlaying } = useSelector((state) => state.player);
   const { prefetchPreviewUrl, getPagePrefetchStrategy } = usePreviewUrl();
-  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
-  const genreButtonRef = useRef(null);
 
   usePersistentScroll();
 
@@ -37,11 +34,6 @@ const Discover = () => {
   const sortedGenres = useMemo(() => {
     return [...genres].sort((a, b) => a.title.localeCompare(b.title));
   }, []);
-
-  // Find selected genre index
-  const selectedGenreIndex = useMemo(() => {
-    return sortedGenres.findIndex((genre) => genre.value === selectedGenre);
-  }, [sortedGenres, selectedGenre]);
 
   // Prefetch strategy
   useEffect(() => {
@@ -85,7 +77,6 @@ const Discover = () => {
 
   const handleGenreChange = (genre) => {
     dispatch(selectGenreListId(genre.value));
-    setShowGenreDropdown(false);
 
     // Use route for URL
     const newUrl = new URL(window.location);
@@ -102,66 +93,21 @@ const Discover = () => {
         title={`Discover ${genreTitle}`}
         subtitle="Find your next favorite song"
         action={
-          <div className="relative" ref={genreButtonRef}>
-            <button
-              onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-              className="flex items-center gap-2 px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
-            >
+          <Dropdown
+            items={sortedGenres}
+            value={selectedGenre}
+            onChange={handleGenreChange}
+            placeholder="Select Genre"
+            renderIcon={(genre) => (
               <Icon
-                icon={genreIcons[selectedGenre] || "mdi:music-note"}
+                icon={genreIcons[genre.value] || "mdi:music-note"}
                 className="w-4 h-4 text-[#14b8a6]"
               />
-              <span className="text-white font-medium text-sm">
-                {genreTitle}
-              </span>
-              <IoChevronDown
-                className={`text-white/60 transition-all duration-200 w-3 h-3 ${
-                  showGenreDropdown ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            <DropdownPortal
-              isOpen={showGenreDropdown}
-              onClose={() => setShowGenreDropdown(false)}
-              triggerRef={genreButtonRef}
-              minWidth={160}
-              maxHeight={262}
-              placement="bottom-end"
-              className="bg-[#1a1848] border border-white/20 rounded-xl"
-            >
-              <div className="py-2">
-                <div className="py-1">
-                  {sortedGenres.map((genre, index) => {
-                    const isSelected = genre.value === selectedGenre;
-
-                    return (
-                      <button
-                        key={genre.value}
-                        onClick={() => handleGenreChange(genre)}
-                        className={`w-full flex items-center gap-3 px-4 py-2 transition-all duration-200 ${
-                          isSelected
-                            ? "text-[#14b8a6] bg-[#14b8a6]/20"
-                            : "text-white/80 hover:text-white hover:bg-white/10"
-                        }`}
-                      >
-                        <Icon
-                          icon={genreIcons[genre.value] || "mdi:music-note"}
-                          className="w-4 h-4 flex-shrink-0"
-                        />
-                        <span className="text-sm text-left flex-1">
-                          {genre.title}
-                        </span>
-                        {isSelected && (
-                          <div className="w-1.5 h-1.5 bg-[#14b8a6] rounded-full" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </DropdownPortal>
-          </div>
+            )}
+            renderLabel={(genre) => genre.title}
+            width={160}
+            className="min-w-[160px]"
+          />
         }
       />
 
