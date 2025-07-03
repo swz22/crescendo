@@ -1,57 +1,34 @@
-import { useState, useEffect } from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { useApp } from "../context/AppContext";
-import { useScrollContainer } from "../context/ScrollContext";
-import { HiOutlineMenu, HiOutlineCog } from "react-icons/hi";
+import { useState, useEffect, useRef } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { HiOutlineHome, HiOutlineCog } from "react-icons/hi";
+import { HiOutlineGlobeAlt } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
 import { FiSearch } from "react-icons/fi";
-import { IoChevronDown } from "react-icons/io5";
-import { HiOutlineGlobeAlt } from "react-icons/hi";
+import { MdHomeFilled } from "react-icons/md";
+import { IoChevronDown, IoCloseCircle } from "react-icons/io5";
 import { Icon } from "@iconify/react";
-import { logo } from "../assets";
-import { links, genres } from "../assets/constants";
-import PerformanceMonitor from "./PerformanceMonitor";
-import DropdownPortal from "./DropdownPortal";
-import Searchbar from "./Searchbar";
+import { useSelector, useDispatch } from "react-redux";
 import {
   selectGenreListId,
   setSelectedCountry as setSelectedCountryAction,
 } from "../redux/features/playerSlice";
+import { links, genres } from "../assets/constants";
+import { logo } from "../assets";
+import { useScrollContainer } from "../context/ScrollContext";
+import { useApp } from "../context/AppContext";
+import PerformanceMonitor from "./PerformanceMonitor";
+import DropdownPortal from "./DropdownPortal";
 
-const NavLinks = ({ handleClick }) => {
-  const scrollContainerRef = useScrollContainer();
-  const location = useLocation();
+const NavLinks = () => {
   const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
-
-  const handleNavClick = (e, path) => {
-    if (location.pathname === path) {
-      e.preventDefault();
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = 0;
-      }
-    } else {
-      // Scroll to top after navigation
-      setTimeout(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = 0;
-        }
-      }, 50);
-    }
-
-    if (handleClick) {
-      handleClick();
-    }
-  };
 
   return (
     <>
-      <div className="mt-10">
+      <div className="mt-8 sm:mt-10">
         {links.map((item) => (
           <NavLink
             key={item.name}
             to={item.to}
-            onClick={(e) => handleNavClick(e, item.to)}
             className={({ isActive }) =>
               `flex flex-row justify-start items-center my-4 sm:my-6 text-base font-medium 
               ${
@@ -106,6 +83,9 @@ const SidebarControls = () => {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+
+  const genreButtonRef = useRef(null);
+  const regionButtonRef = useRef(null);
 
   // Detect scroll to show/hide controls
   useEffect(() => {
@@ -203,52 +183,52 @@ const SidebarControls = () => {
     setShowRegionDropdown(false);
   };
 
-  const getControlsHeight = () => {
-    if (showGenreDropdown || showRegionDropdown) {
-      return "h-auto"; // Allow natural height when expanded
-    }
-    if (!currentTrack) return "h-24"; // Default height when no player
-    return "h-24 desktop:h-28";
-  };
-
   return (
     <div
-      className={`absolute bottom-0 left-0 right-0 transition-all duration-500 ease-out ${
+      className={`absolute bottom-0 left-0 right-0 transition-transform duration-500 ease-out ${
         shouldShowControls
-          ? "translate-y-0 opacity-100"
-          : "translate-y-full opacity-0 pointer-events-none"
+          ? "translate-y-0"
+          : "translate-y-full pointer-events-none"
       }`}
     >
-      <div
-        className={`${getControlsHeight()} bg-gradient-to-t from-[#0f0e2e] via-[#1a1848]/80 to-transparent p-4 flex flex-col justify-center relative`}
-      >
-        {(showGenreDropdown || showRegionDropdown) && (
-          <div className="absolute inset-0 bg-[#1a1848] z-10" />
-        )}
-
-        <div className="space-y-2 relative z-20">
-          {/* Genre/Region Selector */}
+      <div className="p-4 flex flex-col justify-center">
+        <div className="space-y-2">
+          {/* Genre Selector */}
           {showGenreSelector && (
             <div className="relative">
-              {!showGenreDropdown ? (
-                <button
-                  onClick={() => setShowGenreDropdown(true)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 bg-white/[0.08] hover:bg-white/[0.12] 
-                    backdrop-blur-md rounded-xl transition-all duration-200 border border-white/20 
-                    hover:border-white/30 group"
-                >
-                  <Icon
-                    icon={genreIcons[selectedGenre] || "mdi:music-note"}
-                    className="w-4 h-4 text-[#14b8a6]"
-                  />
-                  <span className="text-white font-medium text-sm flex-1 text-left">
-                    {genreTitle}
-                  </span>
-                  <IoChevronDown className="text-white/60 transition-all duration-200 w-3 h-3" />
-                </button>
-              ) : (
-                <div className="bg-[#1a1848] rounded-xl border border-white/20 overflow-hidden relative z-20">
-                  <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between bg-[#1a1848]">
+              <button
+                ref={genreButtonRef}
+                onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 bg-white/[0.08] hover:bg-white/[0.12] 
+                  backdrop-blur-md rounded-xl transition-all duration-200 border border-white/20 
+                  hover:border-white/30 group pointer-events-auto"
+              >
+                <Icon
+                  icon={genreIcons[selectedGenre] || "mdi:music-note"}
+                  className="w-4 h-4 text-[#14b8a6]"
+                />
+                <span className="text-white font-medium text-sm flex-1 text-left">
+                  {genreTitle}
+                </span>
+                <IoChevronDown
+                  className={`text-white/60 transition-all duration-200 w-3 h-3 ${
+                    showGenreDropdown ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <DropdownPortal
+                isOpen={showGenreDropdown}
+                onClose={() => setShowGenreDropdown(false)}
+                triggerRef={genreButtonRef}
+                minWidth={200}
+                maxHeight={262}
+                placement="bottom-start"
+                offset={-312}
+                className="bg-[#1a1848] border border-white/20 rounded-xl translate-x-1"
+              >
+                <div className="py-2">
+                  <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
                     <span className="text-white/60 text-xs uppercase tracking-wider">
                       Select Genre
                     </span>
@@ -259,7 +239,7 @@ const SidebarControls = () => {
                       <RiCloseLine className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="max-h-[240px] overflow-y-auto custom-scrollbar bg-[#1a1848]">
+                  <div className="py-1">
                     {genres
                       .sort((a, b) => a.title.localeCompare(b.title))
                       .map((genre) => {
@@ -289,28 +269,42 @@ const SidebarControls = () => {
                       })}
                   </div>
                 </div>
-              )}
+              </DropdownPortal>
             </div>
           )}
 
           {/* Region Selector */}
           {showRegionSelector && (
             <div className="relative">
-              {!showRegionDropdown ? (
-                <button
-                  onClick={() => setShowRegionDropdown(true)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 bg-white/[0.08] hover:bg-white/[0.12] 
-                    backdrop-blur-md rounded-xl transition-all duration-200 border border-white/20 
-                    hover:border-white/30 group"
-                >
-                  <HiOutlineGlobeAlt className="w-4 h-4 text-[#14b8a6]" />
-                  <span className="text-white font-medium text-sm flex-1 text-left">
-                    {selectedCountryName}
-                  </span>
-                  <IoChevronDown className="text-white/60 transition-all duration-200 w-3 h-3" />
-                </button>
-              ) : (
-                <div className="bg-white/[0.08] backdrop-blur-md rounded-xl border border-white/20 overflow-hidden">
+              <button
+                ref={regionButtonRef}
+                onClick={() => setShowRegionDropdown(!showRegionDropdown)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 bg-white/[0.08] hover:bg-white/[0.12] 
+                  backdrop-blur-md rounded-xl transition-all duration-200 border border-white/20 
+                  hover:border-white/30 group pointer-events-auto"
+              >
+                <HiOutlineGlobeAlt className="w-4 h-4 text-[#14b8a6]" />
+                <span className="text-white font-medium text-sm flex-1 text-left">
+                  {selectedCountryName}
+                </span>
+                <IoChevronDown
+                  className={`text-white/60 transition-all duration-200 w-3 h-3 ${
+                    showRegionDropdown ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <DropdownPortal
+                isOpen={showRegionDropdown}
+                onClose={() => setShowRegionDropdown(false)}
+                triggerRef={regionButtonRef}
+                minWidth={200}
+                maxHeight={262}
+                placement="bottom-start"
+                offset={-312}
+                className="bg-[#1a1848] border border-white/20 rounded-xl translate-x-1"
+              >
+                <div className="py-2">
                   <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
                     <span className="text-white/60 text-xs uppercase tracking-wider">
                       Select Region
@@ -322,7 +316,7 @@ const SidebarControls = () => {
                       <RiCloseLine className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                  <div className="py-1">
                     {countries.map((country) => {
                       const isSelected = country.code === selectedCountry;
                       return (
@@ -331,7 +325,7 @@ const SidebarControls = () => {
                           onClick={() => handleCountryChange(country)}
                           className={`w-full flex items-center gap-3 px-4 py-2 transition-all duration-200 ${
                             isSelected
-                              ? "text-[#14b8a6] bg-gradient-to-r from-[#14b8a6]/20 to-transparent"
+                              ? "text-[#14b8a6] bg-[#14b8a6]/20"
                               : "text-white/80 hover:text-white hover:bg-white/10"
                           }`}
                         >
@@ -346,7 +340,7 @@ const SidebarControls = () => {
                     })}
                   </div>
                 </div>
-              )}
+              </DropdownPortal>
             </div>
           )}
 
@@ -369,7 +363,7 @@ const SidebarControls = () => {
                 onClick={() => setIsSearchExpanded(true)}
                 className="w-full flex items-center gap-3 px-4 py-2.5 bg-white/[0.08] hover:bg-white/[0.12] 
                   backdrop-blur-md rounded-xl transition-all duration-200 border border-white/20 
-                  hover:border-white/30 group"
+                  hover:border-white/30 group pointer-events-auto"
               >
                 <FiSearch className="w-4 h-4 text-gray-400 group-hover:text-[#14b8a6] transition-colors" />
                 <span className="text-white/80 group-hover:text-white text-sm">
@@ -427,28 +421,28 @@ const LeftSidebar = () => {
       <div
         className={`fixed top-0 h-full w-[280px] max-w-[85vw] bg-gradient-to-br from-[#1a1848]/98 to-[#0f0e2e]/98 backdrop-blur-lg z-50 p-6 sm:hidden transition-transform duration-300 ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        } border-r border-white/10 shadow-2xl`}
       >
-        <div className="flex justify-between items-center mb-10">
+        <div className="flex items-center justify-between mb-8">
           <img
             src={logo}
             alt="logo"
             onClick={handleLogoClick}
-            className="w-full h-14 object-contain max-w-[180px] cursor-pointer"
+            className="w-32 h-11 object-contain cursor-pointer"
           />
-          <HiOutlineMenu
+          <IoCloseCircle
+            className="w-7 h-7 text-white cursor-pointer hover:text-[#2dd4bf] transition-colors"
             onClick={() => setMobileMenuOpen(false)}
-            className="w-6 h-6 text-gray-300 cursor-pointer"
           />
         </div>
-        <NavLinks handleClick={() => setMobileMenuOpen(false)} />
+        <NavLinks />
       </div>
 
       {/* Mobile backdrop */}
       {mobileMenuOpen && (
         <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 sm:hidden"
           onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm sm:hidden animate-fadeIn"
         />
       )}
     </>
