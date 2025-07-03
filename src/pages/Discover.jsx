@@ -13,7 +13,7 @@ import { selectGenreListId } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { usePersistentScroll } from "../hooks/usePersistentScroll";
-import { genres } from "../assets/constants";
+import { genres, genreIcons } from "../assets/constants";
 import { IoChevronDown } from "react-icons/io5";
 import { Icon } from "@iconify/react";
 
@@ -32,25 +32,6 @@ const Discover = () => {
     genres.find(({ value }) => value === selectedGenre)?.title || "Pop";
 
   const { data, isFetching, error } = useGetSongsByGenreQuery(selectedGenre);
-
-  const genreIcons = {
-    POP: "mdi:star-four-points-outline",
-    HIP_HOP_RAP: "mdi:microphone-variant",
-    DANCE: "mdi:speaker-wireless",
-    ELECTRONIC: "mdi:waveform",
-    SOUL_RNB: "mdi:heart-multiple",
-    ALTERNATIVE: "mdi:vinyl",
-    ROCK: "mdi:guitar-electric",
-    LATIN: "game-icons:maracas",
-    FILM_TV: "mdi:movie-open-outline",
-    COUNTRY: "mdi:hat-fedora",
-    K_POP: "mdi:heart-settings-outline",
-    INDIE: "mdi:cassette",
-    METAL: "game-icons:anvil-impact",
-    JAZZ: "game-icons:saxophone",
-    CLASSICAL: "mdi:piano",
-    LOFI: "mdi:coffee-outline",
-  };
 
   // Sort genres alphabetically
   const sortedGenres = useMemo(() => {
@@ -158,23 +139,29 @@ const Discover = () => {
                       onClick={() => handleGenreChange(genre)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200 relative overflow-hidden ${
                         isSelected
-                          ? "text-[#14b8a6] bg-gradient-to-r from-[#14b8a6]/20 to-transparent"
-                          : "text-white/80 hover:text-white bg-gradient-to-r from-transparent to-transparent hover:from-white/10 hover:to-transparent"
+                          ? "text-[#14b8a6] bg-[#14b8a6]/20"
+                          : "text-white/80 hover:text-white hover:bg-white/10"
                       }`}
                     >
-                      <Icon
-                        icon={iconName}
-                        className={`w-5 h-5 flex-shrink-0 transition-all duration-200 ${
-                          isSelected
-                            ? "text-[#14b8a6]"
-                            : "group-hover:text-[#14b8a6]"
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] transition-transform duration-700 ${
+                          !isSelected ? "group-hover:translate-x-[100%]" : ""
                         }`}
                       />
-                      <span className="font-medium text-left flex-1">
+
+                      <Icon
+                        icon={iconName}
+                        className={`w-5 h-5 flex-shrink-0 z-10 ${
+                          isSelected
+                            ? "drop-shadow-[0_0_6px_rgba(20,184,166,0.6)]"
+                            : ""
+                        }`}
+                      />
+                      <span className="font-medium text-left flex-1 z-10">
                         {genre.title}
                       </span>
                       {isSelected && (
-                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
+                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse z-10" />
                       )}
                     </button>
                   );
@@ -188,9 +175,10 @@ const Discover = () => {
       <ResponsiveGrid type="songs">
         {data?.map((song, i) => (
           <SongCard
-            key={song.key}
+            key={song?.key || song?.id || i}
             song={song}
             isPlaying={isPlaying}
+            activeSong={{}}
             data={data}
             i={i}
           />

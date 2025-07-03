@@ -11,27 +11,9 @@ import {
 import DropdownPortal from "../components/DropdownPortal";
 import { usePersistentScroll } from "../hooks/usePersistentScroll";
 import { useGetTopArtistsQuery } from "../redux/services/spotifyCore";
+import { countries } from "../assets/constants";
 import { IoChevronDown, IoCloseCircle } from "react-icons/io5";
 import { Icon } from "@iconify/react";
-
-const countries = [
-  { code: "US", name: "United States", flag: "us" },
-  { code: "AU", name: "Australia", flag: "au" },
-  { code: "BR", name: "Brazil", flag: "br" },
-  { code: "CA", name: "Canada", flag: "ca" },
-  { code: "DE", name: "Germany", flag: "de" },
-  { code: "ES", name: "Spain", flag: "es" },
-  { code: "FR", name: "France", flag: "fr" },
-  { code: "GB", name: "United Kingdom", flag: "gb" },
-  { code: "IN", name: "India", flag: "in" },
-  { code: "IT", name: "Italy", flag: "it" },
-  { code: "JP", name: "Japan", flag: "jp" },
-  { code: "KR", name: "South Korea", flag: "kr" },
-  { code: "MX", name: "Mexico", flag: "mx" },
-  { code: "NL", name: "Netherlands", flag: "nl" },
-  { code: "SE", name: "Sweden", flag: "se" },
-  { code: "TW", name: "Taiwan", flag: "tw" },
-];
 
 const TopArtists = () => {
   const dispatch = useDispatch();

@@ -32,3 +32,41 @@ export const links = [
   { name: "New Releases", to: "/new-releases", icon: HiOutlineSparkles },
   { name: "Community Playlists", to: "/playlists", icon: HiOutlineCollection },
 ];
+
+export const countries = [
+  { code: "US", name: "United States", flag: "us" },
+  { code: "AU", name: "Australia", flag: "au" },
+  { code: "BR", name: "Brazil", flag: "br" },
+  { code: "CA", name: "Canada", flag: "ca" },
+  { code: "DE", name: "Germany", flag: "de" },
+  { code: "ES", name: "Spain", flag: "es" },
+  { code: "FR", name: "France", flag: "fr" },
+  { code: "GB", name: "United Kingdom", flag: "gb" },
+  { code: "IN", name: "India", flag: "in" },
+  { code: "IT", name: "Italy", flag: "it" },
+  { code: "JP", name: "Japan", flag: "jp" },
+  { code: "KR", name: "South Korea", flag: "kr" },
+  { code: "MX", name: "Mexico", flag: "mx" },
+  { code: "NL", name: "Netherlands", flag: "nl" },
+  { code: "SE", name: "Sweden", flag: "se" },
+  { code: "TW", name: "Taiwan", flag: "tw" },
+];
+
+export const genreIcons = {
+  POP: "mdi:star-four-points-outline",
+  HIP_HOP_RAP: "mdi:microphone-variant",
+  DANCE: "mdi:speaker-wireless",
+  ELECTRONIC: "mdi:waveform",
+  SOUL_RNB: "mdi:heart-multiple",
+  ALTERNATIVE: "mdi:vinyl",
+  ROCK: "mdi:guitar-electric",
+  LATIN: "game-icons:maracas",
+  FILM_TV: "mdi:movie-open-outline",
+  COUNTRY: "mdi:hat-fedora",
+  K_POP: "mdi:heart-settings-outline",
+  INDIE: "mdi:cassette",
+  METAL: "game-icons:anvil-impact",
+  JAZZ: "game-icons:saxophone",
+  CLASSICAL: "mdi:piano",
+  LOFI: "mdi:coffee-outline",
+};
