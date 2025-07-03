@@ -60,17 +60,17 @@ const TopAlbums = () => {
           <div className="relative" ref={countryButtonRef}>
             <button
               onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-              className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
+              className="flex items-center gap-2 px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
             >
               <Icon
                 icon={`circle-flags:${selectedCountryFlag}`}
-                className="w-5 h-4"
+                className="w-4 h-4"
               />
-              <span className="text-white font-medium">
+              <span className="text-white font-medium text-sm">
                 {selectedCountryName}
               </span>
               <IoChevronDown
-                className={`text-white/60 transition-all duration-200 ${
+                className={`text-white/60 transition-all duration-200 w-3 h-3 ${
                   showCountryDropdown ? "rotate-180" : ""
                 }`}
               />
@@ -86,17 +86,6 @@ const TopAlbums = () => {
               className="bg-[#1a1848] border border-white/20 rounded-xl"
             >
               <div className="py-2">
-                <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
-                  <span className="text-white/60 text-xs uppercase tracking-wider">
-                    Select Region
-                  </span>
-                  <button
-                    onClick={() => setShowCountryDropdown(false)}
-                    className="text-white/40 hover:text-white transition-colors"
-                  >
-                    <IoCloseCircle className="w-4 h-4" />
-                  </button>
-                </div>
                 <div className="py-1">
                   {sortedCountries.map((country, index) => {
                     const isSelected = country.code === selectedCountry;

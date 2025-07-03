@@ -105,15 +105,17 @@ const Discover = () => {
           <div className="relative" ref={genreButtonRef}>
             <button
               onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-              className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
+              className="flex items-center gap-2 px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
             >
               <Icon
                 icon={genreIcons[selectedGenre] || "mdi:music-note"}
-                className="w-5 h-5 text-[#14b8a6] group-hover:text-[#2dd4bf] transition-colors"
+                className="w-4 h-4 text-[#14b8a6]"
               />
-              <span className="text-white font-medium">{genreTitle}</span>
+              <span className="text-white font-medium text-sm">
+                {genreTitle}
+              </span>
               <IoChevronDown
-                className={`text-white/60 transition-all duration-200 ${
+                className={`text-white/60 transition-all duration-200 w-3 h-3 ${
                   showGenreDropdown ? "rotate-180" : ""
                 }`}
               />
@@ -123,49 +125,40 @@ const Discover = () => {
               isOpen={showGenreDropdown}
               onClose={() => setShowGenreDropdown(false)}
               triggerRef={genreButtonRef}
-              minWidth={220}
-              maxHeight={400}
+              minWidth={160}
+              maxHeight={262}
               placement="bottom-end"
-              className="bg-[#1a1848]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl"
+              className="bg-[#1a1848] border border-white/20 rounded-xl"
             >
               <div className="py-2">
-                {sortedGenres.map((genre, index) => {
-                  const iconName = genreIcons[genre.value] || "mdi:music-note";
-                  const isSelected = genre.value === selectedGenre;
+                <div className="py-1">
+                  {sortedGenres.map((genre, index) => {
+                    const isSelected = genre.value === selectedGenre;
 
-                  return (
-                    <button
-                      key={genre.value}
-                      onClick={() => handleGenreChange(genre)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200 relative overflow-hidden ${
-                        isSelected
-                          ? "text-[#14b8a6] bg-[#14b8a6]/20"
-                          : "text-white/80 hover:text-white hover:bg-white/10"
-                      }`}
-                    >
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] transition-transform duration-700 ${
-                          !isSelected ? "group-hover:translate-x-[100%]" : ""
-                        }`}
-                      />
-
-                      <Icon
-                        icon={iconName}
-                        className={`w-5 h-5 flex-shrink-0 z-10 ${
+                    return (
+                      <button
+                        key={genre.value}
+                        onClick={() => handleGenreChange(genre)}
+                        className={`w-full flex items-center gap-3 px-4 py-2 transition-all duration-200 ${
                           isSelected
-                            ? "drop-shadow-[0_0_6px_rgba(20,184,166,0.6)]"
-                            : ""
+                            ? "text-[#14b8a6] bg-[#14b8a6]/20"
+                            : "text-white/80 hover:text-white hover:bg-white/10"
                         }`}
-                      />
-                      <span className="font-medium text-left flex-1 z-10">
-                        {genre.title}
-                      </span>
-                      {isSelected && (
-                        <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse z-10" />
-                      )}
-                    </button>
-                  );
-                })}
+                      >
+                        <Icon
+                          icon={genreIcons[genre.value] || "mdi:music-note"}
+                          className="w-4 h-4 flex-shrink-0"
+                        />
+                        <span className="text-sm text-left flex-1">
+                          {genre.title}
+                        </span>
+                        {isSelected && (
+                          <div className="w-1.5 h-1.5 bg-[#14b8a6] rounded-full" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </DropdownPortal>
           </div>
