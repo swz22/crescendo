@@ -106,7 +106,6 @@ const Discover = () => {
             )}
             renderLabel={(genre) => genre.title}
             width={160}
-            className="min-w-[160px]"
           />
         }
       />

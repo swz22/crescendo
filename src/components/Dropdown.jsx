@@ -91,7 +91,7 @@ const Dropdown = ({
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] 
+        className={`inline-flex items-center gap-2 px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] 
           backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 
           hover:border-white/30 group ${buttonClassName} ${className}`}
       >
