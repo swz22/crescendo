@@ -41,10 +41,12 @@ const TopAlbums = () => {
     setShowCountryDropdown(false);
   };
 
-  // Sort countries with US first, then alphabetically
+  // Show US and UK first, then sort alphabetically
   const sortedCountries = [...countries].sort((a, b) => {
     if (a.code === "US") return -1;
     if (b.code === "US") return 1;
+    if (a.code === "GB") return -1;
+    if (b.code === "GB") return 1;
     return a.name.localeCompare(b.name);
   });
 
@@ -93,14 +95,14 @@ const TopAlbums = () => {
 
                     return (
                       <div key={country.code}>
-                        {isUS && index === 0 && (
+                        {index === 0 && (
                           <div className="px-4 pb-1">
                             <div className="text-[10px] text-white/40 uppercase tracking-wider font-medium">
                               Popular
                             </div>
                           </div>
                         )}
-                        {!isUS && index === 1 && (
+                        {index === 2 && (
                           <>
                             <div className="mx-4 my-1 border-t border-white/10" />
                             <div className="px-4 pb-1 pt-1">
