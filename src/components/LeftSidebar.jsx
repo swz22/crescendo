@@ -144,26 +144,29 @@ const SidebarControls = () => {
   };
 
   const countries = [
-    { code: "US", name: "United States" },
-    { code: "GB", name: "United Kingdom" },
-    { code: "CA", name: "Canada" },
-    { code: "AU", name: "Australia" },
-    { code: "DE", name: "Germany" },
-    { code: "FR", name: "France" },
-    { code: "JP", name: "Japan" },
-    { code: "KR", name: "South Korea" },
-    { code: "BR", name: "Brazil" },
-    { code: "MX", name: "Mexico" },
-    { code: "IN", name: "India" },
-    { code: "IT", name: "Italy" },
-    { code: "ES", name: "Spain" },
-    { code: "NL", name: "Netherlands" },
-    { code: "SE", name: "Sweden" },
+    { code: "US", name: "United States", flag: "us" },
+    { code: "GB", name: "United Kingdom", flag: "gb" },
+    { code: "CA", name: "Canada", flag: "ca" },
+    { code: "AU", name: "Australia", flag: "au" },
+    { code: "DE", name: "Germany", flag: "de" },
+    { code: "FR", name: "France", flag: "fr" },
+    { code: "JP", name: "Japan", flag: "jp" },
+    { code: "KR", name: "South Korea", flag: "kr" },
+    { code: "BR", name: "Brazil", flag: "br" },
+    { code: "MX", name: "Mexico", flag: "mx" },
+    { code: "IN", name: "India", flag: "in" },
+    { code: "IT", name: "Italy", flag: "it" },
+    { code: "ES", name: "Spain", flag: "es" },
+    { code: "NL", name: "Netherlands", flag: "nl" },
+    { code: "SE", name: "Sweden", flag: "se" },
   ];
 
   const selectedCountryName =
     countries.find((c) => c.code === (selectedCountry || "US"))?.name ||
     "United States";
+
+  const selectedCountryFlag =
+    countries.find((c) => c.code === (selectedCountry || "US"))?.flag || "us";
 
   const handleSearch = (e) => {
     if (e.key === "Enter" && e.target.value.trim()) {
@@ -185,7 +188,7 @@ const SidebarControls = () => {
 
   return (
     <div
-      className={`absolute bottom-0 left-0 right-0 transition-transform duration-500 ease-out ${
+      className={`absolute -bottom-1 left-0 right-0 transition-transform duration-500 ease-out ${
         shouldShowControls
           ? "translate-y-0"
           : "translate-y-full pointer-events-none"
@@ -283,7 +286,10 @@ const SidebarControls = () => {
                   backdrop-blur-md rounded-xl transition-all duration-200 border border-white/20 
                   hover:border-white/30 group pointer-events-auto"
               >
-                <HiOutlineGlobeAlt className="w-4 h-4 text-[#14b8a6]" />
+                <Icon
+                  icon={`circle-flags:${selectedCountryFlag}`}
+                  className="w-4 h-4"
+                />
                 <span className="text-white font-medium text-sm flex-1 text-left">
                   {selectedCountryName}
                 </span>
@@ -329,6 +335,10 @@ const SidebarControls = () => {
                               : "text-white/80 hover:text-white hover:bg-white/10"
                           }`}
                         >
+                          <Icon
+                            icon={`circle-flags:${country.flag}`}
+                            className="w-4 h-4 flex-shrink-0"
+                          />
                           <span className="text-sm text-left flex-1">
                             {country.name}
                           </span>

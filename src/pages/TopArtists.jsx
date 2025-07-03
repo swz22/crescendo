@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setSelectedCountry as setSelectedCountryAction } from "../redux/features/playerSlice";
 import {
   Error,
   Loader,
@@ -11,28 +12,29 @@ import DropdownPortal from "../components/DropdownPortal";
 import { usePersistentScroll } from "../hooks/usePersistentScroll";
 import { useGetTopArtistsQuery } from "../redux/services/spotifyCore";
 import { IoChevronDown } from "react-icons/io5";
-import { HiOutlineGlobeAlt } from "react-icons/hi";
+import { Icon } from "@iconify/react";
 
 const countries = [
-  { code: "US", name: "United States" },
-  { code: "AU", name: "Australia" },
-  { code: "BR", name: "Brazil" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "ES", name: "Spain" },
-  { code: "FR", name: "France" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "IN", name: "India" },
-  { code: "IT", name: "Italy" },
-  { code: "JP", name: "Japan" },
-  { code: "KR", name: "South Korea" },
-  { code: "MX", name: "Mexico" },
-  { code: "NL", name: "Netherlands" },
-  { code: "SE", name: "Sweden" },
-  { code: "TW", name: "Taiwan" },
+  { code: "US", name: "United States", flag: "us" },
+  { code: "AU", name: "Australia", flag: "au" },
+  { code: "BR", name: "Brazil", flag: "br" },
+  { code: "CA", name: "Canada", flag: "ca" },
+  { code: "DE", name: "Germany", flag: "de" },
+  { code: "ES", name: "Spain", flag: "es" },
+  { code: "FR", name: "France", flag: "fr" },
+  { code: "GB", name: "United Kingdom", flag: "gb" },
+  { code: "IN", name: "India", flag: "in" },
+  { code: "IT", name: "Italy", flag: "it" },
+  { code: "JP", name: "Japan", flag: "jp" },
+  { code: "KR", name: "South Korea", flag: "kr" },
+  { code: "MX", name: "Mexico", flag: "mx" },
+  { code: "NL", name: "Netherlands", flag: "nl" },
+  { code: "SE", name: "Sweden", flag: "se" },
+  { code: "TW", name: "Taiwan", flag: "tw" },
 ];
 
 const TopArtists = () => {
+  const dispatch = useDispatch();
   const { selectedCountry } = useSelector((state) => state.player);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const countryButtonRef = useRef(null);
@@ -42,6 +44,9 @@ const TopArtists = () => {
   const selectedCountryName =
     countries.find((c) => c.code === selectedCountry)?.name || "United States";
 
+  const selectedCountryFlag =
+    countries.find((c) => c.code === selectedCountry)?.flag || "us";
+
   const { data, isFetching, error } = useGetTopArtistsQuery(
     selectedCountry || "US"
   );
@@ -50,7 +55,7 @@ const TopArtists = () => {
   if (error) return <Error />;
 
   const handleCountryChange = (country) => {
-    setSelectedCountry(country.code);
+    dispatch(setSelectedCountryAction(country.code));
     setShowCountryDropdown(false);
   };
 
@@ -72,7 +77,10 @@ const TopArtists = () => {
               onClick={() => setShowCountryDropdown(!showCountryDropdown)}
               className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 hover:border-white/30 group"
             >
-              <HiOutlineGlobeAlt className="text-[#14b8a6] group-hover:text-[#2dd4bf] transition-colors" />
+              <Icon
+                icon={`circle-flags:${selectedCountryFlag}`}
+                className="w-5 h-4"
+              />
               <span className="text-white font-medium">
                 {selectedCountryName}
               </span>
@@ -124,6 +132,10 @@ const TopArtists = () => {
                             : "text-white/80 hover:text-white bg-gradient-to-r from-transparent to-transparent hover:from-white/10 hover:to-transparent"
                         }`}
                       >
+                        <Icon
+                          icon={`circle-flags:${country.flag}`}
+                          className="w-4 h-4 flex-shrink-0"
+                        />
                         <span className="font-medium text-left flex-1">
                           {country.name}
                         </span>
