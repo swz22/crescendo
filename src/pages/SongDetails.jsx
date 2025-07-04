@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { DetailsHeader, Error, Loader, RelatedSongs } from "../components";
 import { playTrack, playPause } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { getTrackId, formatTrackDuration } from "../utils/trackUtils";
 import {
   useGetSongDetailsQuery,
   useGetArtistTopTracksQuery,
@@ -50,16 +51,9 @@ const SongDetails = () => {
 
   const relatedSongs =
     relatedData?.filter((song) => {
-      const songKey = song.key || song.id || song.track_id;
+      const songKey = getTrackId(song);
       return songKey !== songid;
     }) || [];
-
-  const formatDuration = (ms) => {
-    if (!ms) return "Unknown";
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
 
   return (
     <div className="flex flex-col">
@@ -78,7 +72,7 @@ const SongDetails = () => {
             </p>
             <p className="text-gray-400 mb-2">
               <span className="text-gray-300">Duration:</span>{" "}
-              {formatDuration(songData?.duration_ms)}
+              {formatTrackDuration(songData?.duration_ms)}
             </p>
             <p className="text-gray-400 mb-2">
               <span className="text-gray-300">Release Date:</span>{" "}

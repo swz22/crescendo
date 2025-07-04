@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { previewUrlManager } from "../utils/previewUrlManager";
+import { getTrackId } from "../utils/trackUtils";
 import { useToast } from "../context/ToastContext";
 
 export const usePreviewUrl = () => {
@@ -17,7 +18,7 @@ export const usePreviewUrl = () => {
         return song;
       }
 
-      const trackId = song.key || song.id || song.track_id;
+      const trackId = getTrackId(song);
       if (!trackId) {
         console.warn("Song has no valid track ID", song);
         return song;
@@ -74,7 +75,7 @@ export const usePreviewUrl = () => {
   }, []);
 
   const isPreviewCached = useCallback((song) => {
-    const trackId = song?.key || song?.id || song?.track_id;
+    const trackId = getTrackId(song);
     if (!trackId) return false;
 
     const cached = previewUrlManager.cache.get(trackId);
@@ -82,7 +83,7 @@ export const usePreviewUrl = () => {
   }, []);
 
   const hasNoPreview = useCallback((song) => {
-    const trackId = song?.key || song?.id || song?.track_id;
+    const trackId = getTrackId(song);
     if (!trackId) return false;
 
     const cached = previewUrlManager.cache.get(trackId);
@@ -102,7 +103,7 @@ export const usePreviewUrl = () => {
       if (!songs || songs.length === 0) return;
 
       const validSongs = songs.filter((song) => {
-        const trackId = song?.key || song?.id || song?.track_id;
+        const trackId = getTrackId(song);
         return trackId && !song.preview_url;
       });
 

@@ -11,7 +11,13 @@ import {
   BsVolumeUp,
 } from "react-icons/bs";
 import { HiOutlineQueueList } from "react-icons/hi2";
-
+import {
+  getTrackImage,
+  getTrackPreviewUrl,
+  getTrackTitle,
+  getTrackArtist,
+  isSameTrack,
+} from "../../utils/trackUtils";
 import {
   playPause,
   toggleShuffle,
@@ -87,11 +93,8 @@ const MusicPlayer = ({ onOpenQueue }) => {
 
   useEffect(() => {
     if (currentTrack && currentSongs.length > 0) {
-      const currentIndex = currentSongs.findIndex(
-        (song) =>
-          song?.key === currentTrack?.key ||
-          song?.id === currentTrack?.id ||
-          song?.track_id === currentTrack?.track_id
+      const currentIndex = currentSongs.findIndex((song) =>
+        isSameTrack(song, currentTrack)
       );
 
       const nextIndex = currentIndex + 1;
@@ -123,26 +126,11 @@ const MusicPlayer = ({ onOpenQueue }) => {
   };
 
   const getSongImage = () => {
-    if (!currentTrack) return "";
-    return (
-      currentTrack?.images?.coverart ||
-      currentTrack?.album?.images?.[0]?.url ||
-      currentTrack?.images?.background ||
-      ""
-    );
+    return getTrackImage(currentTrack);
   };
 
   const getSongUrl = () => {
-    if (!currentTrack) return "";
-
-    if (currentTrack.preview_url) return currentTrack.preview_url;
-    if (currentTrack.url) return currentTrack.url;
-    if (currentTrack.hub?.actions?.[1]?.uri)
-      return currentTrack.hub.actions[1].uri;
-    if (currentTrack.hub?.actions?.[0]?.uri)
-      return currentTrack.hub.actions[0].uri;
-
-    return "";
+    return getTrackPreviewUrl(currentTrack);
   };
 
   const songUrl = getSongUrl();
@@ -161,10 +149,10 @@ const MusicPlayer = ({ onOpenQueue }) => {
           />
           <div className="min-w-0 flex-1">
             <p className="text-white text-sm font-semibold truncate">
-              {currentTrack?.title}
+              {getTrackTitle(currentTrack)}
             </p>
             <p className="text-gray-300 text-xs truncate">
-              {currentTrack?.subtitle}
+              {getTrackArtist(currentTrack)}
             </p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { getTrackId } from "../utils/trackUtils";
 import {
   createPlaylist,
   deletePlaylist,
@@ -68,10 +69,6 @@ export const usePlaylistManager = () => {
     },
     [dispatch]
   );
-
-  const getTrackId = (track) => {
-    return track?.key || track?.id || track?.track_id || track?.title;
-  };
 
   const isTrackInPlaylist = useCallback(
     (playlistId, trackId) => {

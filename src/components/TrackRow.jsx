@@ -4,7 +4,12 @@ import { useSelector } from "react-redux";
 import PlayPause from "./PlayPause";
 import SongMenu from "./SongMenu";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
-import { isSameTrack } from "../utils/trackUtils";
+import {
+  isSameTrack,
+  getTrackId,
+  getTrackTitle,
+  getTrackArtist,
+} from "../utils/trackUtils";
 
 const TrackRow = ({
   song,
@@ -40,16 +45,14 @@ const TrackRow = ({
       <div className="flex-1 flex flex-row justify-between items-center">
         <div className="flex-1 flex flex-col justify-center mx-3">
           <Link
-            to={`/songs/${song?.key || song?.id}`}
+            to={`/songs/${getTrackId(song)}`}
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-lg font-bold text-white hover:text-[#2dd4bf] transition-colors">
-              {song?.title}
+              {getTrackTitle(song)}
             </p>
           </Link>
-          <p className="text-sm text-gray-300 mt-1">
-            {song?.subtitle || song?.artists?.[0]?.name}
-          </p>
+          <p className="text-sm text-gray-300 mt-1">{getTrackArtist(song)}</p>
         </div>
 
         <div className="flex items-center gap-3">

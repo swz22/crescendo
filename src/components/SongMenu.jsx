@@ -5,6 +5,7 @@ import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useToast } from "../context/ToastContext";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { getTrackId } from "../utils/trackUtils";
 import BottomSheet from "./BottomSheet";
 import Portal from "./Portal";
 import { HiDotsVertical, HiPlus, HiCheck, HiOutlinePlay } from "react-icons/hi";
@@ -32,7 +33,7 @@ const SongMenu = ({ song, children, className = "" }) => {
     isTrackInPlaylist,
   } = usePlaylistManager();
 
-  const trackId = song?.key || song?.id || song?.track_id;
+  const trackId = getTrackId(song);
 
   useEffect(() => {
     if (!isMobile && isOpen && buttonRef.current) {

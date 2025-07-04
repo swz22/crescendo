@@ -7,12 +7,19 @@ import { playPause, playTrack } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioPreload } from "../hooks/useAudioPreload";
 import MusicLoadingSpinner from "./MusicLoadingSpinner";
-import { HiLightningBolt, HiDotsVertical } from "react-icons/hi";
+import { HiLightningBolt } from "react-icons/hi";
 import { BsFillPlayFill, BsFillPauseFill } from "react-icons/bs";
 import { useToast } from "../context/ToastContext";
-import { isSameTrack } from "../utils/trackUtils";
+import {
+  isSameTrack,
+  getTrackId,
+  getTrackImage,
+  getTrackTitle,
+  getTrackArtist,
+  getTrackArtistId,
+} from "../utils/trackUtils";
 
-const SongCard = ({ song, isPlaying, data, i }) => {
+const SongCard = ({ song, isPlaying, i }) => {
   const dispatch = useDispatch();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached, hasNoPreview } =
     usePreviewUrl();
@@ -25,7 +32,7 @@ const SongCard = ({ song, isPlaying, data, i }) => {
   const hoverTimeoutRef = useRef(null);
   const isMountedRef = useRef(true);
   const { showToast } = useToast();
-  const songId = song?.key || song?.id || song?.track_id;
+  const songId = getTrackId(song);
 
   // Get current track from Redux
   const currentTrack = useSelector((state) => state.player.currentTrack);
@@ -153,17 +160,10 @@ const SongCard = ({ song, isPlaying, data, i }) => {
     dispatch(playPause(false));
   }, [dispatch]);
 
-  const coverArt =
-    song?.images?.coverart ||
-    song?.share?.image ||
-    song?.images?.background ||
-    song?.hub?.image ||
-    "";
-
-  const songTitle = song?.title || "Unknown Title";
-  const artistName =
-    song?.subtitle || song?.artists?.[0]?.name || "Unknown Artist";
-  const artistId = song?.artists?.[0]?.adamid || song?.artists?.[0]?.id;
+  const coverArt = getTrackImage(song);
+  const songTitle = getTrackTitle(song);
+  const artistName = getTrackArtist(song);
+  const artistId = getTrackArtistId(song);
 
   return (
     <>
@@ -281,6 +281,40 @@ const SongCard = ({ song, isPlaying, data, i }) => {
                 </div>
               )}
 
+              {/* Loading Animation - Orbiting Circles */}
+              {isLoading && (
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16">
+                    {/* Orbiting container */}
+                    <div
+                      className="absolute inset-0 animate-spin"
+                      style={{ animationDuration: "1s" }}
+                    >
+                      {/* Pink dot */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3">
+                        <div className="w-full h-full bg-pink-500 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)]" />
+                      </div>
+                      {/* Purple dot */}
+                      <div className="absolute top-1/2 right-0 -translate-y-1/2 w-3 h-3">
+                        <div className="w-full h-full bg-purple-500 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
+                      </div>
+                      {/* Blue dot */}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3">
+                        <div className="w-full h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                      </div>
+                      {/* Teal dot */}
+                      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-3 h-3">
+                        <div className="w-full h-full bg-[#14b8a6] rounded-full shadow-[0_0_10px_rgba(20,184,166,0.8)]" />
+                      </div>
+                    </div>
+                    {/* Center pulse */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Play/Pause Button */}
               {(isHovered || isCurrentSong) && !isLoading && (
                 <div
@@ -304,40 +338,6 @@ const SongCard = ({ song, isPlaying, data, i }) => {
               )}
             </div>
           </div>
-
-          {/* Loading Animation - Orbiting Circles */}
-          {isLoading && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl z-30">
-              <div className="absolute top-20 left-1/2 -translate-x-1/2 w-16 h-16">
-                {/* Orbiting container */}
-                <div
-                  className="absolute inset-0 animate-spin"
-                  style={{ animationDuration: "1s" }}
-                >
-                  {/* Pink dot */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3">
-                    <div className="w-full h-full bg-pink-500 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)]" />
-                  </div>
-                  {/* Purple dot */}
-                  <div className="absolute top-1/2 right-0 -translate-y-1/2 w-3 h-3">
-                    <div className="w-full h-full bg-purple-500 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
-                  </div>
-                  {/* Blue dot */}
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3">
-                    <div className="w-full h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
-                  </div>
-                  {/* Teal dot */}
-                  <div className="absolute top-1/2 left-0 -translate-y-1/2 w-3 h-3">
-                    <div className="w-full h-full bg-[#14b8a6] rounded-full shadow-[0_0_10px_rgba(20,184,166,0.8)]" />
-                  </div>
-                </div>
-                {/* Center pulse */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" />
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Song Info */}
           <div className="mt-4 relative">
@@ -382,9 +382,8 @@ const SongCard = ({ song, isPlaying, data, i }) => {
 
 export default React.memo(SongCard, (prevProps, nextProps) => {
   return (
-    prevProps.song.key === nextProps.song.key &&
+    prevProps.song?.key === nextProps.song?.key &&
     prevProps.i === nextProps.i &&
-    prevProps.isPlaying === nextProps.isPlaying &&
-    prevProps.activeSong?.key === nextProps.activeSong?.key
+    prevProps.isPlaying === nextProps.isPlaying
   );
 });

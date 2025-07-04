@@ -23,7 +23,6 @@ import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
 
 // Queue Components
-import QueueButton from "./QueueButton";
 import QueueIndicator from "./QueueIndicator";
 import NowPlaying from "./NowPlaying";
 
@@ -72,7 +71,6 @@ export {
   PlaylistManager,
 
   // Queue
-  QueueButton,
   QueueIndicator,
   NowPlaying,
 
