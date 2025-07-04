@@ -1,6 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Get API URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 // Retry configuration
@@ -78,21 +77,41 @@ const adaptTrackData = (track) => {
 const adaptArtistData = (artist) => {
   if (!artist) return null;
 
+  // Handle different image formats from different endpoints
+  const getArtistImage = () => {
+    if (Array.isArray(artist.images) && artist.images.length > 0) {
+      return artist.images[0].url;
+    }
+    if (artist.images?.background) {
+      return artist.images.background;
+    }
+    if (artist.images?.coverart) {
+      return artist.images.coverart;
+    }
+    if (artist.avatar) {
+      return artist.avatar;
+    }
+    return "";
+  };
+
+  const imageUrl = getArtistImage();
+
   return {
     adamid: artist.id,
+    id: artist.id,
     name: artist.name || "Unknown Artist",
+    alias: artist.name || "Unknown Artist",
+    avatar: imageUrl,
     images: {
-      background: artist.images?.[0]?.url || "",
-      coverart: artist.images?.[0]?.url || "",
+      background: imageUrl,
+      coverart: imageUrl,
     },
     genres: artist.genres || [],
     followers: artist.followers?.total || 0,
     popularity: artist.popularity || 0,
-    id: artist.id,
   };
 };
 
-// Genre name mappings for better search results
 const genreSearchTerms = {
   POP: "Pop",
   HIP_HOP_RAP: "Hip-Hop",
@@ -376,6 +395,123 @@ export const spotifyCoreApi = createApi({
       },
     }),
 
+    getRecommendedArtists: builder.query({
+      queryFn: async (artistId, api, extraOptions, baseQuery) => {
+        try {
+          const artistResponse = await baseQuery({
+            url: `/artists/${artistId}`,
+          });
+
+          if (artistResponse.error) {
+            return { error: artistResponse.error };
+          }
+
+          const artistData = artistResponse.data;
+          const artistGenres = artistData?.genres || [];
+
+          const genreMapping = {
+            pop: "pop",
+            "hip hop": "hip-hop",
+            rap: "hip-hop",
+            dance: "dance",
+            electronic: "electronic",
+            edm: "electronic",
+            "r&b": "r&b",
+            soul: "r&b",
+            alternative: "alternative",
+            rock: "rock",
+            latin: "latin",
+            reggaeton: "latin",
+            country: "country",
+            "k-pop": "k-pop",
+            korean: "k-pop",
+            indie: "indie",
+            metal: "metal",
+            jazz: "jazz",
+            classical: "classical",
+            "lo-fi": "lo-fi",
+            lofi: "lo-fi",
+          };
+
+          let searchGenre = "pop";
+
+          for (const artistGenre of artistGenres) {
+            const lowerGenre = artistGenre.toLowerCase();
+            for (const [key, value] of Object.entries(genreMapping)) {
+              if (lowerGenre.includes(key)) {
+                searchGenre = value;
+                break;
+              }
+            }
+            if (searchGenre !== "pop") break;
+          }
+
+          const searchResponse = await baseQuery({
+            url: `/search?q=genre:${searchGenre}&type=artist&limit=50&market=US`,
+          });
+
+          if (searchResponse.error) {
+            const fallbackResponse = await baseQuery({
+              url: `/search?q=${searchGenre}&type=artist&limit=50&market=US`,
+            });
+
+            if (fallbackResponse.error) {
+              return { error: fallbackResponse.error };
+            }
+
+            const artists = fallbackResponse.data?.artists?.items || [];
+            const relatedArtists = artists
+              .filter(
+                (artist) => artist.id !== artistId && artist.popularity > 50
+              )
+              .map((artist) => adaptArtistData(artist))
+              .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+              .slice(0, 6);
+
+            return { data: relatedArtists };
+          }
+
+          const artists = searchResponse.data?.artists?.items || [];
+
+          const relatedArtists = artists
+            .filter(
+              (artist) => artist.id !== artistId && artist.popularity > 50
+            )
+            .map((artist) => adaptArtistData(artist))
+            .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+            .slice(0, 6);
+
+          if (relatedArtists.length < 3) {
+            const broadSearchResponse = await baseQuery({
+              url: `/search?q=${searchGenre} music&type=artist&limit=50&market=US`,
+            });
+
+            if (
+              !broadSearchResponse.error &&
+              broadSearchResponse.data?.artists?.items
+            ) {
+              const additionalArtists = broadSearchResponse.data.artists.items
+                .filter(
+                  (artist) =>
+                    artist.id !== artistId &&
+                    artist.popularity > 40 &&
+                    !relatedArtists.find((a) => a.id === artist.id)
+                )
+                .map((artist) => adaptArtistData(artist))
+                .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+
+              relatedArtists.push(...additionalArtists);
+              return { data: relatedArtists.slice(0, 6) };
+            }
+          }
+
+          return { data: relatedArtists };
+        } catch (error) {
+          return { error: { status: "CUSTOM_ERROR", error: error.message } };
+        }
+      },
+    }),
+
     getTopAlbums: builder.query({
       query: ({ country = "US" }) => {
         return `/search?q=year:2024-2025&type=album&market=${country}&limit=50`;
@@ -405,6 +541,61 @@ export const spotifyCoreApi = createApi({
           data: response.data || { error: "Failed to fetch top albums" },
         };
       },
+
+      getRecommendedArtists: builder.query({
+        queryFn: async (artistId, api, extraOptions, baseQuery) => {
+          try {
+            const recommendationsResponse = await baseQuery({
+              url: `/recommendations?seed_artists=${artistId}&limit=50&market=US`,
+            });
+
+            if (recommendationsResponse.error) {
+              return { error: recommendationsResponse.error };
+            }
+
+            const tracks = recommendationsResponse.data?.tracks || [];
+
+            // Extract unique artists from the recommended tracks
+            const artistMap = new Map();
+
+            tracks.forEach((track) => {
+              track.artists?.forEach((artist) => {
+                if (artist.id !== artistId && !artistMap.has(artist.id)) {
+                  artistMap.set(artist.id, adaptArtistData(artist));
+                }
+              });
+            });
+
+            // Get the first 6 unique artists
+            const relatedArtists = Array.from(artistMap.values()).slice(0, 6);
+
+            if (relatedArtists.length < 6) {
+              const topTracksResponse = await baseQuery({
+                url: `/artists/${artistId}/top-tracks?market=US`,
+              });
+
+              if (!topTracksResponse.error && topTracksResponse.data?.tracks) {
+                topTracksResponse.data.tracks.forEach((track) => {
+                  track.artists?.forEach((artist) => {
+                    if (
+                      artist.id !== artistId &&
+                      !artistMap.has(artist.id) &&
+                      relatedArtists.length < 6
+                    ) {
+                      artistMap.set(artist.id, adaptArtistData(artist));
+                      relatedArtists.push(artistMap.get(artist.id));
+                    }
+                  });
+                });
+              }
+            }
+
+            return { data: relatedArtists };
+          } catch (error) {
+            return { error: { status: "CUSTOM_ERROR", error: error.message } };
+          }
+        },
+      }),
     }),
 
     getTopArtists: builder.query({
@@ -591,7 +782,7 @@ export const {
   useGetAlbumTracksQuery,
   useGetArtistDetailsQuery,
   useGetArtistAlbumsQuery,
-  useGetRelatedArtistsQuery,
+  useGetRecommendedArtistsQuery,
   useGetArtistTopTracksQuery,
   useGetSongsByGenreQuery,
   useGetSongsBySearchQuery,

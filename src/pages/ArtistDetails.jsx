@@ -7,7 +7,7 @@ import {
   useGetArtistDetailsQuery,
   useGetArtistTopTracksQuery,
   useGetArtistAlbumsQuery,
-  useGetSongsBySearchQuery,
+  useGetRecommendedArtistsQuery,
 } from "../redux/services/spotifyCore";
 import {
   playPause,
@@ -46,20 +46,11 @@ const ArtistDetails = () => {
   const { data: albumsData, isFetching: isFetchingAlbums } =
     useGetArtistAlbumsQuery({ artistId }, { skip: !artistId });
 
-  // Get the primary genre for the artist
-  const primaryGenre = artistData?.genres?.[0];
-
-  // Search for artists in the same genre
-  const { data: genreSearchResults, isFetching: isFetchingRelated } =
-    useGetSongsBySearchQuery(primaryGenre ? `genre:"${primaryGenre}"` : "", {
-      skip: !primaryGenre,
+  // Get recommended artists based on this artist
+  const { data: relatedArtists = [], isFetching: isFetchingRelated } =
+    useGetRecommendedArtistsQuery(artistId, {
+      skip: !artistId,
     });
-
-  // Extract unique artists from the search results
-  const relatedArtists =
-    genreSearchResults?.artists
-      ?.filter((artist) => artist.id !== artistId)
-      .slice(0, 6) || [];
 
   // Filter to only show albums and remove duplicates
   const albums =
@@ -309,12 +300,12 @@ const ArtistDetails = () => {
         </div>
       )}
 
-      {/* Similar Artists Section - Using Genre Search */}
+      {/* Similar Artists Section */}
       {relatedArtists && relatedArtists.length > 0 && (
         <div className="px-4 md:px-6 lg:px-8 mb-8">
           <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
             <HiOutlineUserGroup className="text-[#14b8a6]" />
-            {primaryGenre ? `More ${primaryGenre} Artists` : "Similar Artists"}
+            Similar Artists
           </h2>
 
           {isFetchingRelated ? (
