@@ -335,6 +335,47 @@ export const spotifyCoreApi = createApi({
       },
     }),
 
+    getArtistAlbums: builder.query({
+      query: ({ artistId }) => {
+        if (!artistId) throw new Error("Artist ID is required");
+        return `/artists/${artistId}/albums?include_groups=album,single&market=US&limit=50`;
+      },
+      transformResponse: (response) => {
+        if (!response?.items) return [];
+
+        const processedAlbums = response.items.map((album) => ({
+          ...album,
+          id: album.id,
+          name: album.name,
+          images: album.images || [],
+          release_date: album.release_date,
+          album_type: album.album_type,
+          artists: album.artists || [],
+          total_tracks: album.total_tracks || 0,
+        }));
+
+        // Sort by release date and remove duplicates
+        const uniqueAlbums = processedAlbums
+          .filter(
+            (album, index, self) =>
+              index === self.findIndex((a) => a.name === album.name)
+          )
+          .sort((a, b) => {
+            const dateA = new Date(a.release_date || "1900-01-01");
+            const dateB = new Date(b.release_date || "1900-01-01");
+            return dateB - dateA; // Newest first
+          });
+
+        return uniqueAlbums;
+      },
+      transformErrorResponse: (response) => {
+        return {
+          status: response.status,
+          data: response.data || { error: "Failed to fetch artist albums" },
+        };
+      },
+    }),
+
     getTopAlbums: builder.query({
       query: ({ country = "US" }) => {
         return `/search?q=year:2024-2025&type=album&market=${country}&limit=50`;
@@ -549,6 +590,8 @@ export const {
   useGetAlbumDetailsQuery,
   useGetAlbumTracksQuery,
   useGetArtistDetailsQuery,
+  useGetArtistAlbumsQuery,
+  useGetRelatedArtistsQuery,
   useGetArtistTopTracksQuery,
   useGetSongsByGenreQuery,
   useGetSongsBySearchQuery,
