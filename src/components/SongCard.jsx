@@ -23,13 +23,13 @@ const SongCard = ({ song, isPlaying, data, i }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isPrefetched, setIsPrefetched] = useState(false);
   const hoverTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
   const { showToast } = useToast();
   const songId = song?.key || song?.id || song?.track_id;
 
   // Get current track from Redux
   const currentTrack = useSelector((state) => state.player.currentTrack);
   const { queue } = useSelector((state) => state.player);
-
   const isCurrentSong = isSameTrack(song, currentTrack);
 
   useEffect(() => {
@@ -38,8 +38,11 @@ const SongCard = ({ song, isPlaying, data, i }) => {
   }, [song, isPreviewCached, isPrefetched]);
 
   useEffect(() => {
-    // Cleanup timeout on unmount
+    isMountedRef.current = true;
+
     return () => {
+      isMountedRef.current = false;
+      // Cleanup timeout on unmount
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
         hoverTimeoutRef.current = null;
@@ -59,34 +62,41 @@ const SongCard = ({ song, isPlaying, data, i }) => {
     // Clear any existing timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
 
     hoverTimeoutRef.current = setTimeout(async () => {
       // Check if component is still mounted
-      if (!cardRef.current) return;
+      if (!isMountedRef.current || !cardRef.current) return;
 
       if (!isPreviewCached(song) && !hasNoPreview(song)) {
         const prefetchSuccess = await prefetchPreviewUrl(song, {
           priority: "high",
         });
 
-        if (prefetchSuccess && cardRef.current) {
+        if (prefetchSuccess && isMountedRef.current && cardRef.current) {
           setIsPrefetched(true);
         }
       }
 
-      if (songId && !isAudioReady(songId) && cardRef.current) {
+      if (
+        songId &&
+        !isAudioReady(songId) &&
+        isMountedRef.current &&
+        cardRef.current
+      ) {
         try {
           const songWithPreview = await getPreviewUrl(song);
           const previewUrl = songWithPreview?.preview_url;
 
-          if (previewUrl && cardRef.current) {
+          if (previewUrl && isMountedRef.current && cardRef.current) {
             await preloadAudio(songId, previewUrl);
           }
         } catch (error) {
           console.error("Error preloading audio:", error);
         }
       }
+      hoverTimeoutRef.current = null;
     }, 100);
   }, [
     song,
@@ -118,20 +128,24 @@ const SongCard = ({ song, isPlaying, data, i }) => {
     try {
       const songWithPreview = await getPreviewUrl(song);
 
-      if (songWithPreview?.preview_url) {
+      if (isMountedRef.current && songWithPreview?.preview_url) {
         dispatch(
           playTrack({
             track: songWithPreview,
           })
         );
-      } else {
+      } else if (isMountedRef.current) {
         showToast("No preview available for this track", "error");
       }
     } catch (error) {
       console.error("Error playing track:", error);
-      showToast("Error playing track", "error");
+      if (isMountedRef.current) {
+        showToast("Error playing track", "error");
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [song, dispatch, getPreviewUrl, showToast]);
 
@@ -173,99 +187,54 @@ const SongCard = ({ song, isPlaying, data, i }) => {
           >
             {coverArt ? (
               <img
-                alt="song_img"
+                className="w-full h-full object-cover rounded-lg shadow-lg"
+                alt={songTitle}
                 src={coverArt}
-                className="w-full h-full object-cover rounded-lg"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src =
-                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE1NTY4Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2EwYWVjMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
-                }}
+                loading="lazy"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[#14b8a6] to-[#0891b2] rounded-lg flex items-center justify-center">
-                <span className="text-white/50 text-xl">♪</span>
-              </div>
+              <div className="w-full h-full bg-white/10 rounded-lg animate-pulse" />
             )}
-            {isLoading && (
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                <MusicLoadingSpinner size="sm" />
-              </div>
-            )}
-            {/* Play/Pause overlay for mobile */}
-            <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 active:opacity-100 transition-opacity">
-              {isCurrentSong && isPlaying ? (
-                <BsFillPauseFill className="w-6 h-6 text-white" />
+
+            {/* Play/Pause Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg opacity-100">
+              {isLoading ? (
+                <MusicLoadingSpinner size="small" />
+              ) : isCurrentSong && isPlaying ? (
+                <BsFillPauseFill className="text-white w-6 h-6" />
               ) : (
-                <BsFillPlayFill className="w-6 h-6 text-white translate-x-0.5" />
+                <BsFillPlayFill className="text-white w-6 h-6" />
               )}
             </div>
           </div>
 
-          <div
-            className="flex-1 min-w-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              !isLoading &&
-                (isCurrentSong && isPlaying
-                  ? handlePauseClick()
-                  : handlePlayClick());
-            }}
-          >
-            <div className="flex items-center gap-1.5">
-              <p className="font-medium text-base text-white truncate">
-                {songTitle}
-              </p>
-              {showCacheIndicator && (
-                <HiLightningBolt className="w-3 h-3 text-[#14b8a6] flex-shrink-0" />
+          <div className="flex-1 min-w-0 mr-3">
+            <Link
+              to={`/songs/${songId}`}
+              className="block truncate font-medium text-white hover:text-[#14b8a6] transition-colors"
+            >
+              {songTitle}
+            </Link>
+            <p className="truncate text-sm text-gray-400">
+              {artistId ? (
+                <Link
+                  to={`/artists/${artistId}`}
+                  className="hover:text-[#14b8a6] transition-colors"
+                >
+                  {artistName}
+                </Link>
+              ) : (
+                artistName
               )}
-            </div>
-            <p className="text-sm text-gray-400 truncate">{artistName}</p>
+            </p>
           </div>
 
-          <div className="ml-3 mr-2">
-            {isCurrentSong && isPlaying && (
-              <div className="flex items-center gap-[3px] pr-1">
-                <div
-                  className="w-[3px] bg-[#14b8a6] rounded-full"
-                  style={{
-                    height: "12px",
-                    animation: "scale-y 1.2s ease-in-out infinite",
-                    animationDelay: "0s",
-                  }}
-                />
-                <div
-                  className="w-[3px] bg-[#14b8a6] rounded-full"
-                  style={{
-                    height: "18px",
-                    animation: "scale-y 1.2s ease-in-out infinite",
-                    animationDelay: "0.2s",
-                  }}
-                />
-                <div
-                  className="w-[3px] bg-[#14b8a6] rounded-full"
-                  style={{
-                    height: "14px",
-                    animation: "scale-y 1.2s ease-in-out infinite",
-                    animationDelay: "0.4s",
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          <SongMenu song={song}>
-            <button className="p-2 -mr-2 touch-manipulation">
-              <HiDotsVertical className="w-5 h-5 text-white/60" />
-            </button>
-          </SongMenu>
+          <SongMenu song={song} />
         </div>
 
-        {/* Desktop Card View - Always rendered, hidden on mobile */}
-        <div
-          className={`hidden sm:flex flex-col w-full sm:max-w-[250px] p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm rounded-lg cursor-pointer relative transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10
-          ${isCurrentSong ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""}`}
-        >
+        {/* Desktop Card View - Hidden on mobile */}
+        <div className="hidden sm:block relative p-4 bg-white/[0.08] bg-opacity-80 backdrop-blur-sm animate-slideup rounded-2xl cursor-pointer transition-all duration-300 hover:bg-white/[0.12] card-hover transform hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 group">
+          {/* Cache Indicator */}
           {showCacheIndicator && (
             <div className="absolute top-1.5 right-1.5 z-20">
               <HiLightningBolt
@@ -275,86 +244,107 @@ const SongCard = ({ song, isPlaying, data, i }) => {
             </div>
           )}
 
-          <div className="relative w-full aspect-square group overflow-hidden rounded-lg">
-            {isLoading && (
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
-                <div className="relative w-16 h-16">
-                  {/* Orbiting container */}
-                  <div className="absolute inset-0 animate-spin">
-                    {/* Pink dot */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3">
-                      <div className="w-full h-full bg-pink-500 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)]" />
-                    </div>
-                    {/* Purple dot */}
-                    <div className="absolute top-1/2 right-0 -translate-y-1/2 w-3 h-3">
-                      <div className="w-full h-full bg-purple-500 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
-                    </div>
-                    {/* Blue dot */}
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3">
-                      <div className="w-full h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
-                    </div>
-                    {/* Teal dot */}
-                    <div className="absolute top-1/2 left-0 -translate-y-1/2 w-3 h-3">
-                      <div className="w-full h-full bg-[#14b8a6] rounded-full shadow-[0_0_10px_rgba(20,184,166,0.8)]" />
-                    </div>
-                  </div>
+          <div className="relative w-full h-42 sm:h-46 group">
+            {/* Album Art Container */}
+            <div className="relative w-full h-full overflow-hidden rounded-xl">
+              {coverArt ? (
+                <img
+                  className="w-full h-full object-cover"
+                  alt={songTitle}
+                  src={coverArt}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full bg-white/10 animate-pulse" />
+              )}
 
-                  {/* Center pulse */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" />
+              {/* On-hover overlay */}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+
+              {/* Now Playing Indicator */}
+              {isCurrentSong && isPlaying && (
+                <div className="absolute top-3 left-3 bg-[#14b8a6] px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
+                  <div className="flex gap-1">
+                    <div className="w-1 h-3 bg-white rounded-full animate-scale-y" />
+                    <div
+                      className="w-1 h-3 bg-white rounded-full animate-scale-y"
+                      style={{ animationDelay: "0.2s" }}
+                    />
+                    <div
+                      className="w-1 h-3 bg-white rounded-full animate-scale-y"
+                      style={{ animationDelay: "0.4s" }}
+                    />
                   </div>
+                  <span className="text-xs font-medium text-white">
+                    Playing
+                  </span>
                 </div>
-              </div>
-            )}
-            {(isHovered || isCurrentSong) && !isLoading && (
-              <div
-                className="absolute inset-0 flex items-center justify-center z-20 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  isCurrentSong && isPlaying
-                    ? handlePauseClick()
-                    : handlePlayClick();
-                }}
-              >
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%)",
-                  }}
-                />
-                <PlayPause
-                  song={song}
-                  handlePause={handlePauseClick}
-                  handlePlay={handlePlayClick}
-                  size={50}
-                />
-              </div>
-            )}
+              )}
 
-            {coverArt ? (
-              <img
-                alt="song_img"
-                src={coverArt}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[#14b8a6] to-[#0891b2] flex items-center justify-center">
-                <span className="text-white/50 text-6xl">♪</span>
-              </div>
-            )}
+              {/* Play/Pause Button */}
+              {(isHovered || isCurrentSong) && !isLoading && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center z-20 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    isCurrentSong && isPlaying
+                      ? handlePauseClick()
+                      : handlePlayClick();
+                  }}
+                >
+                  <PlayPause
+                    isPlaying={isCurrentSong && isPlaying}
+                    activeSong={{}}
+                    song={song}
+                    handlePause={handlePauseClick}
+                    handlePlay={() => handlePlayClick()}
+                    isLoading={isLoading}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="mt-4 flex flex-col pr-10">
-            <p className="font-semibold text-xs sm:text-sm lg:text-base text-white truncate">
-              <Link
-                to={`/songs/${song?.key || song?.id}`}
-                className="hover:text-[#14b8a6] transition-colors duration-200"
-              >
-                {songTitle}
-              </Link>
+          {/* Loading Animation - Orbiting Circles */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl z-30">
+              <div className="absolute top-20 left-1/2 -translate-x-1/2 w-16 h-16">
+                {/* Orbiting container */}
+                <div
+                  className="absolute inset-0 animate-spin"
+                  style={{ animationDuration: "1s" }}
+                >
+                  {/* Pink dot */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3">
+                    <div className="w-full h-full bg-pink-500 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)]" />
+                  </div>
+                  {/* Purple dot */}
+                  <div className="absolute top-1/2 right-0 -translate-y-1/2 w-3 h-3">
+                    <div className="w-full h-full bg-purple-500 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
+                  </div>
+                  {/* Blue dot */}
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3">
+                    <div className="w-full h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                  </div>
+                  {/* Teal dot */}
+                  <div className="absolute top-1/2 left-0 -translate-y-1/2 w-3 h-3">
+                    <div className="w-full h-full bg-[#14b8a6] rounded-full shadow-[0_0_10px_rgba(20,184,166,0.8)]" />
+                  </div>
+                </div>
+                {/* Center pulse */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Song Info */}
+          <div className="mt-4 relative">
+            <p className="font-semibold text-base text-white truncate hover:text-[#14b8a6] transition-colors">
+              <Link to={`/songs/${songId}`}>{songTitle}</Link>
             </p>
-            <p className="text-xs sm:text-sm truncate text-gray-300 mt-1">
+            <p className="text-sm text-gray-400 mt-1 truncate">
               {artistId ? (
                 <Link
                   to={`/artists/${artistId}`}

@@ -28,6 +28,27 @@ const PerformanceMonitor = ({ onClose }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
+  const resetTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      // Clean up animation frame
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      // Clean up reset timeout
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+        resetTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Calculate performance score
   const calculateScore = (stats, audioStats) => {
@@ -44,6 +65,8 @@ const PerformanceMonitor = ({ onClose }) => {
   // Update stats
   useEffect(() => {
     const updateStats = () => {
+      if (!isMountedRef.current) return;
+
       const newStats = previewUrlManager.getCacheStats();
       setStats(newStats);
 
@@ -68,10 +91,12 @@ const PerformanceMonitor = ({ onClose }) => {
 
     updateStats();
     const interval = setInterval(updateStats, 1000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
-  // Draw performance graph
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || bufferHistory.length < 2) return;
@@ -81,9 +106,12 @@ const PerformanceMonitor = ({ onClose }) => {
     const height = canvas.height;
 
     const draw = () => {
+      if (!isMountedRef.current || !canvasRef.current) {
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
-      // Create gradient
       const gradient = ctx.createLinearGradient(0, height, 0, 0);
       gradient.addColorStop(0, "rgba(20, 184, 166, 0)");
       gradient.addColorStop(1, "rgba(20, 184, 166, 0.3)");
@@ -115,14 +143,19 @@ const PerformanceMonitor = ({ onClose }) => {
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      animationRef.current = requestAnimationFrame(draw);
+      // Only continue animation if mounted
+      if (isMountedRef.current) {
+        animationRef.current = requestAnimationFrame(draw);
+      }
     };
 
     draw();
 
+    // Cleanup function
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
   }, [bufferHistory]);
@@ -142,7 +175,17 @@ const PerformanceMonitor = ({ onClose }) => {
   const handleResetApp = () => {
     if (!showResetConfirm) {
       setShowResetConfirm(true);
-      setTimeout(() => setShowResetConfirm(false), 3000);
+      // Clear any existing timeout
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+      // Set new timeout with ref
+      resetTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          setShowResetConfirm(false);
+        }
+        resetTimeoutRef.current = null;
+      }, 3000);
       return;
     }
 
@@ -225,140 +268,139 @@ const PerformanceMonitor = ({ onClose }) => {
                     fill="none"
                     strokeLinecap="round"
                     strokeDasharray={`${(performanceScore / 100) * 553} 553`}
-                    className="transition-all duration-1000"
+                    className="transition-all duration-700 ease-out"
                     style={{
-                      filter: getScoreGlow(performanceScore),
+                      filter: `drop-shadow(${getScoreGlow(performanceScore)})`,
                     }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="text-5xl font-bold text-white mb-1">
+                  <span
+                    className="text-5xl font-bold transition-colors duration-700"
+                    style={{ color: getScoreColor(performanceScore) }}
+                  >
                     {performanceScore}
-                  </div>
-                  <div className="text-sm text-white/60">Overall Score</div>
+                  </span>
+                  <span className="text-white/60 text-sm font-medium mt-1">
+                    {getPerformanceText(performanceScore)}
+                  </span>
                 </div>
               </div>
-              <p className="mt-4 text-lg text-white/80 font-medium">
-                {getPerformanceText(performanceScore)}
-              </p>
             </div>
 
-            {/* Main Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {/* Cache Performance Card */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6]/20 to-[#0891b2]/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300" />
-                <div className="relative bg-white/[0.03] backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#14b8a6] to-[#0891b2] rounded-xl flex items-center justify-center">
-                      <HiLightningBolt className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-white">
-                      Cache Performance
-                    </h3>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/60">Hit Rate</span>
-                      <span className="text-2xl font-bold text-[#14b8a6]">
-                        {stats.cached > 0
-                          ? Math.round(
-                              (stats.cached /
-                                (stats.cached + stats.failed + 1)) *
-                                100
-                            )
-                          : 0}
-                        %
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-white/60">Cached</span>
-                        <span className="text-white font-medium">
-                          {stats.cached} tracks
-                        </span>
-                      </div>
-                      <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full transition-all duration-500"
-                          style={{
-                            width: `${Math.min(
-                              (stats.cached / 300) * 100,
-                              100
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="h-0.5" />{" "}
-                    <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                      <span className="text-white/60 text-sm">
-                        Circuit Breaker
-                      </span>
-                      <div
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          stats.circuitBreakerOpen
-                            ? "bg-red-500/20 text-red-400"
-                            : "bg-green-500/20 text-green-400"
-                        }`}
-                      >
-                        {stats.circuitBreakerOpen ? "TRIPPED" : "HEALTHY"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-white/[0.05] rounded-2xl p-4 border border-white/10">
+                <p className="text-white/60 text-sm mb-1">Cached</p>
+                <p className="text-2xl font-bold text-[#14b8a6]">
+                  {stats.cached}
+                </p>
               </div>
+              <div className="bg-white/[0.05] rounded-2xl p-4 border border-white/10">
+                <p className="text-white/60 text-sm mb-1">Pending</p>
+                <p className="text-2xl font-bold text-[#f59e0b]">
+                  {stats.pending}
+                </p>
+              </div>
+              <div className="bg-white/[0.05] rounded-2xl p-4 border border-white/10">
+                <p className="text-white/60 text-sm mb-1">Failed</p>
+                <p className="text-2xl font-bold text-[#ef4444]">
+                  {stats.failed}
+                </p>
+              </div>
+              <div className="bg-white/[0.05] rounded-2xl p-4 border border-white/10">
+                <p className="text-white/60 text-sm mb-1">Hit Rate</p>
+                <p className="text-2xl font-bold text-white">
+                  {stats.cached + stats.failed > 0
+                    ? Math.round(
+                        (stats.cached / (stats.cached + stats.failed)) * 100
+                      )
+                    : 0}
+                  %
+                </p>
+              </div>
+            </div>
 
-              {/* Playback Health Card */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/20 to-[#ec4899]/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300" />
-                <div className="relative bg-white/[0.03] backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#a855f7] to-[#ec4899] rounded-xl flex items-center justify-center">
-                      <TbWaveSine className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-white">
-                      Playback Health
-                    </h3>
-                  </div>
+            {/* Performance Graph */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <TbWaveSine className="w-5 h-5 text-[#14b8a6]" />
+                  Buffer Activity
+                </h3>
+                <span className="text-sm text-white/60">
+                  {audioStats.bufferSizeInMB.toFixed(1)} MB
+                </span>
+              </div>
+              <div className="bg-white/[0.03] rounded-2xl p-4 border border-white/10">
+                <canvas
+                  ref={canvasRef}
+                  width={600}
+                  height={100}
+                  className="w-full h-[100px]"
+                />
+              </div>
+            </div>
 
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/60">Memory Usage</span>
-                      <span className="text-2xl font-bold text-[#a855f7]">
-                        {audioStats
-                          ? `${audioStats.bufferSizeInMB.toFixed(1)}MB`
-                          : "0MB"}
-                      </span>
-                    </div>
-
-                    <div className="h-24 -mx-2">
-                      <canvas
-                        ref={canvasRef}
-                        width={300}
-                        height={96}
-                        className="w-full h-full"
-                      />
-                    </div>
-                  </div>
+            {/* Audio Stats */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <HiLightningBolt className="w-5 h-5 text-[#14b8a6]" />
+                Audio Performance
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between bg-white/[0.05] rounded-xl px-4 py-3">
+                  <span className="text-white/80">Buffer Size</span>
+                  <span className="text-white font-medium">
+                    {audioStats.bufferSizeInMB.toFixed(1)} MB
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-white/[0.05] rounded-xl px-4 py-3">
+                  <span className="text-white/80">Currently Buffered</span>
+                  <span className="text-white font-medium">
+                    {audioStats.currentlyBuffered} tracks
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-white/[0.05] rounded-xl px-4 py-3">
+                  <span className="text-white/80">Success Rate</span>
+                  <span className="text-white font-medium">
+                    {audioStats.totalRequested > 0
+                      ? Math.round(
+                          (audioStats.totalBuffered /
+                            audioStats.totalRequested) *
+                            100
+                        )
+                      : 0}
+                    %
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-white/[0.05] rounded-xl px-4 py-3">
+                  <span className="text-white/80">Circuit Breaker</span>
+                  <span
+                    className={`font-medium ${
+                      stats.circuitBreakerOpen
+                        ? "text-[#ef4444]"
+                        : "text-[#10b981]"
+                    }`}
+                  >
+                    {stats.circuitBreakerOpen ? "Open" : "Closed"}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={handleClearCache}
-                className="flex-1 py-3 px-6 bg-gradient-to-r from-[#f59e0b] to-[#d97706] text-white font-semibold rounded-xl 
-                         hover:shadow-lg hover:shadow-[#f59e0b]/25 transform hover:scale-[1.02] transition-all duration-300"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-[#14b8a6]/25 transition-all duration-300 transform hover:scale-[1.02]"
               >
                 Clear Cache
               </button>
               <button
                 onClick={handleResetApp}
                 disabled={isResetting}
-                className={`flex-1 py-3 px-6 font-semibold rounded-xl transition-all duration-300 ${
+                className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                   showResetConfirm
                     ? "bg-gradient-to-r from-[#dc2626] to-[#b91c1c] text-white hover:shadow-lg hover:shadow-[#ef4444]/30"
                     : "bg-gradient-to-r from-[#ef4444] to-[#dc2626] text-white hover:shadow-lg hover:shadow-[#ef4444]/25"

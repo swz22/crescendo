@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   HiOutlineSparkles,
@@ -31,13 +31,15 @@ const OnboardingModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [animateStep, setAnimateStep] = useState(true);
+  const openTimeoutRef = useRef(null);
+  const stepTimeoutRef = useRef(null);
 
   useEffect(() => {
     // Check if user has seen onboarding
     const hasSeenOnboarding = localStorage.getItem(StorageKeys.ONBOARDING);
     if (!hasSeenOnboarding) {
       // Small delay for better UX
-      setTimeout(() => setIsOpen(true), 800);
+      openTimeoutRef.current = setTimeout(() => setIsOpen(true), 800);
     }
 
     // Listen for manual trigger event
@@ -50,8 +52,18 @@ const OnboardingModal = () => {
 
     return () => {
       window.removeEventListener(SHOW_ONBOARDING_EVENT, handleShowEvent);
+      // Clear any pending timeouts
+      if (openTimeoutRef.current) {
+        clearTimeout(openTimeoutRef.current);
+        openTimeoutRef.current = null;
+      }
+      if (stepTimeoutRef.current) {
+        clearTimeout(stepTimeoutRef.current);
+        stepTimeoutRef.current = null;
+      }
     };
   }, []);
+
   const handleClose = () => {
     setIsOpen(false);
     localStorage.setItem(StorageKeys.ONBOARDING, "true");
@@ -60,9 +72,15 @@ const OnboardingModal = () => {
   const nextStep = () => {
     if (currentStep < features.length - 1) {
       setAnimateStep(false);
-      setTimeout(() => {
+      // Clear any existing timeout
+      if (stepTimeoutRef.current) {
+        clearTimeout(stepTimeoutRef.current);
+      }
+
+      stepTimeoutRef.current = setTimeout(() => {
         setCurrentStep(currentStep + 1);
         setAnimateStep(true);
+        stepTimeoutRef.current = null;
       }, 100);
     } else {
       handleClose();
@@ -72,9 +90,14 @@ const OnboardingModal = () => {
   const prevStep = () => {
     if (currentStep > 0) {
       setAnimateStep(false);
-      setTimeout(() => {
+      if (stepTimeoutRef.current) {
+        clearTimeout(stepTimeoutRef.current);
+      }
+
+      stepTimeoutRef.current = setTimeout(() => {
         setCurrentStep(currentStep - 1);
         setAnimateStep(true);
+        stepTimeoutRef.current = null;
       }, 100);
     }
   };
@@ -97,49 +120,34 @@ const OnboardingModal = () => {
       icon: HiOutlineLightningBolt,
       title: "Performance Optimizations",
       description:
-        "Notice how fast everything loads? Every interaction is optimized for speed.",
+        "Notice how fast everything loads? Every interaction is optimized for speed:",
       highlights: [
-        "Hover over any song to pre-cache audio",
-        "Look for ⚡ icons - instant playback ready",
-        "Smart prefetching prevents rate limiting",
-        "Click the gear icon (bottom left) to see cache stats",
+        "Smart preview URL caching system",
+        "Audio preloading on hover",
+        "Instant playlist switching (<50ms)",
+        "Try spam-clicking next/prev - no delays!",
       ],
-      color: "from-[#0891b2] to-[#0e7490]",
+      color: "from-[#0891b2] to-[#0d9488]",
       glow: "shadow-[#0891b2]/50",
     },
     {
-      icon: HiOutlineCursorClick,
-      title: "Hidden Navigation Features",
+      icon: BsShuffle,
+      title: "Smart Queue Management",
       description:
-        "Every element is interactive - explore these hidden navigation paths:",
+        "Your music, your way. The queue system adapts to how you listen:",
       highlights: [
-        "Click artist names → Artist details page",
-        "Click song titles → Song details with lyrics links",
-        "Click album names → Full album with all tracks",
-        "Click 'View Album' in the player → Album page",
+        "Drag & drop queue reordering",
+        "Smart shuffle that avoids repeats",
+        "Context-aware playback (queue, album, playlist)",
+        "Your queue persists across sessions",
       ],
-      color: "from-[#0e7490] to-[#164e63]",
-      glow: "shadow-[#0e7490]/50",
+      color: "from-[#0d9488] to-[#10b981]",
+      glow: "shadow-[#0d9488]/50",
     },
     {
-      icon: HiOutlineMenuAlt2,
-      title: "Advanced Queue Management",
-      description:
-        "The right sidebar is your personal DJ booth with powerful features:",
-      highlights: [
-        "Songs automatically add to your queue",
-        "Create custom playlists (dropdown at top)",
-        "Queue persists across navigation",
-        "Shuffle & repeat controls in the player",
-      ],
-      color: "from-[#164e63] to-[#155e75]",
-      glow: "shadow-[#164e63]/50",
-    },
-    {
-      icon: HiOutlineCollection,
-      title: "Community Playlists",
-      description:
-        "Load entire Spotify playlists instantly - try the featured 'Lonely Heart Radio'!",
+      icon: BsMusicNoteBeamed,
+      title: "Advanced Playlist Features",
+      description: "Create and manage playlists like never before:",
       highlights: [
         "50+ track playlists load seamlessly",
         "Custom mosaic artwork for each playlist",
@@ -200,135 +208,134 @@ const OnboardingModal = () => {
       {/* Modal */}
       <div
         className={`relative w-full max-w-2xl bg-gradient-to-br from-[#1e1b4b]/98 to-[#0f172a]/98 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden transition-all duration-500 ${
-          animateStep ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          animateStep
+            ? "scale-100 opacity-100"
+            : "scale-95 opacity-0 pointer-events-none"
         }`}
       >
-        {/* Progress bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-white/10">
-          <div
-            className="h-full bg-gradient-to-r from-[#14b8a6] to-[#0891b2] transition-all duration-500"
-            style={{ width: `${((currentStep + 1) / features.length) * 100}%` }}
-          />
-        </div>
+        {/* Gradient border effect */}
+        <div className="absolute inset-0 rounded-3xl p-[1px] bg-gradient-to-r from-[#14b8a6] via-[#7c3aed] to-[#ec4899] opacity-30" />
 
-        {/* Close button */}
-        <button
-          onClick={handleClose}
-          className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all z-10"
-        >
-          <HiX className="w-5 h-5 text-white" />
-        </button>
-
-        {/* Content */}
-        <div className="p-8 pt-12">
-          {/* Step indicator */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            {features.map((_, index) => (
-              <div
-                key={index}
-                className={`transition-all duration-300 ${
-                  index === currentStep
-                    ? "w-8 h-2 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full"
-                    : index < currentStep
-                    ? "w-2 h-2 bg-[#14b8a6] rounded-full"
-                    : "w-2 h-2 bg-white/20 rounded-full"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Icon with glow effect */}
-          <div className="flex justify-center mb-6">
-            <div
-              className={`relative p-6 bg-gradient-to-br ${
-                currentFeature.color
-              } rounded-2xl shadow-2xl ${
-                currentFeature.glow
-              } transform rotate-3 transition-all duration-500 ${
-                animateStep ? "scale-100 rotate-3" : "scale-90 rotate-0"
-              }`}
-            >
-              <currentFeature.icon className="w-12 h-12 text-white" />
-              {/* Pulse animation */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-2xl animate-pulse" />
+        <div className="relative bg-black/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+              {features.map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-1.5 rounded-full transition-all duration-500 ${
+                    index === currentStep
+                      ? "w-8 bg-gradient-to-r " + currentFeature.color
+                      : index < currentStep
+                      ? "w-1.5 bg-white/60"
+                      : "w-1.5 bg-white/20"
+                  }`}
+                />
+              ))}
             </div>
+            <button
+              onClick={handleClose}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors group"
+            >
+              <HiX className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+            </button>
           </div>
 
-          {/* Title and description */}
-          <h2
-            className={`text-3xl font-bold text-center bg-gradient-to-r ${
-              currentFeature.color
-            } bg-clip-text text-transparent mb-4 transition-all duration-500 ${
-              animateStep
-                ? "translate-y-0 opacity-100"
-                : "translate-y-4 opacity-0"
-            }`}
-          >
-            {currentFeature.title}
-          </h2>
+          {/* Content */}
+          <div className="mb-8">
+            {/* Icon */}
+            <div
+              className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${currentFeature.color} mb-6 ${currentFeature.glow} shadow-lg`}
+            >
+              <currentFeature.icon className="w-8 h-8 text-white" />
+            </div>
 
-          <p
-            className={`text-gray-300 text-center mb-8 text-lg leading-relaxed transition-all duration-500 delay-100 ${
-              animateStep
-                ? "translate-y-0 opacity-100"
-                : "translate-y-4 opacity-0"
-            }`}
-          >
-            {currentFeature.description}
-          </p>
+            {/* Title and Description */}
+            <h2 className="text-3xl font-bold text-white mb-3">
+              {currentFeature.title}
+            </h2>
+            <p className="text-gray-300 text-lg leading-relaxed mb-6">
+              {currentFeature.description}
+            </p>
 
-          {/* Highlights */}
-          <div className="space-y-3 mb-8">
-            {currentFeature.highlights.map((highlight, index) => (
-              <div
-                key={index}
-                className={`flex items-start gap-3 transition-all duration-500 ${
-                  animateStep
-                    ? "translate-x-0 opacity-100"
-                    : "translate-x-8 opacity-0"
-                }`}
-                style={{ transitionDelay: `${(index + 2) * 100}ms` }}
-              >
-                <HiOutlineCheckCircle className="w-5 h-5 text-[#14b8a6] mt-0.5 flex-shrink-0" />
-                <p className="text-white/90 text-sm">{highlight}</p>
-              </div>
-            ))}
+            {/* Highlights */}
+            <div className="space-y-3">
+              {currentFeature.highlights.map((highlight, index) => (
+                <div
+                  key={index}
+                  className={`flex items-start gap-3 transition-all duration-500 ${
+                    animateStep
+                      ? "translate-x-0 opacity-100"
+                      : "translate-x-4 opacity-0"
+                  }`}
+                  style={{ transitionDelay: `${index * 100}ms` }}
+                >
+                  <div
+                    className={`mt-1 w-5 h-5 rounded-full bg-gradient-to-br ${currentFeature.color} flex items-center justify-center flex-shrink-0`}
+                  >
+                    <HiOutlineCheckCircle className="w-3 h-3 text-white" />
+                  </div>
+                  <p className="text-gray-300">{highlight}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Navigation */}
           <div className="flex items-center justify-between">
             <button
               onClick={prevStep}
-              className={`px-4 py-2 text-white/60 hover:text-white transition-all flex items-center gap-2 ${
-                currentStep === 0 ? "invisible" : ""
+              disabled={currentStep === 0}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                currentStep === 0
+                  ? "text-gray-500 cursor-not-allowed"
+                  : "text-white hover:bg-white/10"
               }`}
             >
-              <HiOutlineChevronLeft />
-              Back
-            </button>
-
-            <button
-              onClick={currentStep === 0 ? handleClose : undefined}
-              className="text-white/40 hover:text-white/60 text-sm transition-all"
-            >
-              {currentStep === 0
-                ? "Skip tour"
-                : `${currentStep + 1} of ${features.length}`}
+              <HiOutlineChevronLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Previous</span>
             </button>
 
             <button
               onClick={nextStep}
-              className="px-6 py-2.5 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] text-white rounded-full font-medium transition-all hover:shadow-lg hover:scale-105 flex items-center gap-2"
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r ${currentFeature.color} text-white hover:shadow-lg ${currentFeature.glow} hover:shadow-xl transform hover:scale-105`}
             >
-              {currentStep === features.length - 1 ? "Get Started" : "Next"}
-              <HiOutlineChevronRight />
+              <span>
+                {currentStep === features.length - 1
+                  ? "Get Started"
+                  : "Next Feature"}
+              </span>
+              <HiOutlineChevronRight className="w-5 h-5" />
             </button>
           </div>
-        </div>
 
-        {/* Decorative elements */}
-        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-[#14b8a6]/20 to-[#0891b2]/20 rounded-full blur-3xl" />
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-[#7c3aed]/20 to-[#a855f7]/20 rounded-full blur-3xl" />
+          {/* Actions */}
+          {currentStep === features.length - 1 && (
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <p className="text-center text-gray-400 mb-4">
+                Want to see this tour again?
+              </p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => {
+                    localStorage.removeItem(StorageKeys.ONBOARDING);
+                    handleClose();
+                  }}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Reset and show on next visit
+                </button>
+                <span className="text-gray-600">•</span>
+                <button
+                  onClick={handleClose}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Don't show again
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>,
     document.body

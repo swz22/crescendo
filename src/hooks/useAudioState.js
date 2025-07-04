@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
 
 // Global audio state for synchronization
@@ -14,6 +14,9 @@ export const useAudioState = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isBuffering, setIsBuffering] = useState(false);
   const { isPlaying, volume } = useSelector((state) => state.player);
+
+  // Store event handlers in refs
+  const handlersRef = useRef({});
 
   useEffect(() => {
     const handleUpdate = (state) => {
@@ -39,6 +42,48 @@ export const useAudioState = () => {
   const setAudioElement = useCallback((element) => {
     if (!element || globalAudioElement === element) return;
 
+    // Clean up previous element's event listeners
+    if (
+      globalAudioElement &&
+      handlersRef.current.element === globalAudioElement
+    ) {
+      const handlers = handlersRef.current;
+      if (handlers.updateTime) {
+        globalAudioElement.removeEventListener(
+          "timeupdate",
+          handlers.updateTime
+        );
+      }
+      if (handlers.updateDuration) {
+        globalAudioElement.removeEventListener(
+          "loadedmetadata",
+          handlers.updateDuration
+        );
+        globalAudioElement.removeEventListener(
+          "durationchange",
+          handlers.updateDuration
+        );
+      }
+      if (handlers.updateBufferingWaiting) {
+        globalAudioElement.removeEventListener(
+          "waiting",
+          handlers.updateBufferingWaiting
+        );
+      }
+      if (handlers.updateBufferingPlaying) {
+        globalAudioElement.removeEventListener(
+          "playing",
+          handlers.updateBufferingPlaying
+        );
+      }
+      if (handlers.updateBufferingCanPlay) {
+        globalAudioElement.removeEventListener(
+          "canplay",
+          handlers.updateBufferingCanPlay
+        );
+      }
+    }
+
     globalAudioElement = element;
 
     const updateTime = () => {
@@ -58,17 +103,29 @@ export const useAudioState = () => {
       }
     };
 
-    const updateBuffering = (buffering) => {
-      notifyListeners({ isBuffering: buffering });
+    const updateBufferingWaiting = () => notifyListeners({ isBuffering: true });
+    const updateBufferingPlaying = () =>
+      notifyListeners({ isBuffering: false });
+    const updateBufferingCanPlay = () =>
+      notifyListeners({ isBuffering: false });
+
+    // Store handlers for cleanup
+    handlersRef.current = {
+      element,
+      updateTime,
+      updateDuration,
+      updateBufferingWaiting,
+      updateBufferingPlaying,
+      updateBufferingCanPlay,
     };
 
     if (element) {
       element.addEventListener("timeupdate", updateTime);
       element.addEventListener("loadedmetadata", updateDuration);
       element.addEventListener("durationchange", updateDuration);
-      element.addEventListener("waiting", () => updateBuffering(true));
-      element.addEventListener("playing", () => updateBuffering(false));
-      element.addEventListener("canplay", () => updateBuffering(false));
+      element.addEventListener("waiting", updateBufferingWaiting);
+      element.addEventListener("playing", updateBufferingPlaying);
+      element.addEventListener("canplay", updateBufferingCanPlay);
     }
   }, []);
 
@@ -80,6 +137,53 @@ export const useAudioState = () => {
     },
     [duration]
   );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up any remaining event listeners
+      if (
+        globalAudioElement &&
+        handlersRef.current.element === globalAudioElement
+      ) {
+        const handlers = handlersRef.current;
+        if (handlers.updateTime) {
+          globalAudioElement.removeEventListener(
+            "timeupdate",
+            handlers.updateTime
+          );
+        }
+        if (handlers.updateDuration) {
+          globalAudioElement.removeEventListener(
+            "loadedmetadata",
+            handlers.updateDuration
+          );
+          globalAudioElement.removeEventListener(
+            "durationchange",
+            handlers.updateDuration
+          );
+        }
+        if (handlers.updateBufferingWaiting) {
+          globalAudioElement.removeEventListener(
+            "waiting",
+            handlers.updateBufferingWaiting
+          );
+        }
+        if (handlers.updateBufferingPlaying) {
+          globalAudioElement.removeEventListener(
+            "playing",
+            handlers.updateBufferingPlaying
+          );
+        }
+        if (handlers.updateBufferingCanPlay) {
+          globalAudioElement.removeEventListener(
+            "canplay",
+            handlers.updateBufferingCanPlay
+          );
+        }
+      }
+    };
+  }, []);
 
   return {
     duration,
