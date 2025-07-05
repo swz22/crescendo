@@ -11,8 +11,11 @@ import {
 } from "../redux/features/playerSlice";
 import { useGetPlaylistTracksQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { useLoadingState } from "../hooks/useLoadingState";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import PlayPause from "./PlayPause";
+import LoadingState from "./LoadingState";
+import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import SongMenu from "./SongMenu";
 import ModalPlayer from "./ModalPlayer";
 import NowPlaying from "./NowPlaying";
@@ -28,7 +31,7 @@ import {
 import { IoMdTime } from "react-icons/io";
 import { HiPlus } from "react-icons/hi";
 import { useToast } from "../context/ToastContext";
-import { isSameTrack } from "../utils/trackUtils";
+import { isSameTrack, getTrackId } from "../utils/trackUtils";
 
 const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
@@ -47,6 +50,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
   const { showToast } = useToast();
+  const { setLoading, isLoading } = useLoadingState();
   const isDesktopScreen = useMediaQuery("(min-width: 1480px)");
   const isTabletView = useMediaQuery(
     "(min-width: 640px) and (max-width: 1479px)"
@@ -101,6 +105,9 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   };
 
   const handlePlayClick = async (track, index) => {
+    const trackId = getTrackId(track);
+    setLoading(`track-${trackId}`, true);
+
     try {
       const trackWithPreview = await getPreviewUrl(track);
       if (trackWithPreview?.preview_url) {
@@ -115,11 +122,16 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     } catch (error) {
       console.error("Error playing track:", error);
       showToast("Error playing track", "error");
+    } finally {
+      setLoading(`track-${trackId}`, false);
     }
   };
 
   const handlePlayAll = async (shufflePlay = false) => {
     if (!tracks || tracks.length === 0) return;
+
+    const loadingKey = shufflePlay ? "shuffle-play" : "play-all";
+    setLoading(loadingKey, true);
 
     const startIndex = shufflePlay
       ? Math.floor(Math.random() * tracks.length)
@@ -153,8 +165,26 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         }
       } catch (error) {
         console.error("Error getting preview URL:", error);
+      } finally {
+        setLoading(loadingKey, false);
       }
     }
+  };
+
+  const handleAddAllToQueue = () => {
+    if (!tracks || tracks.length === 0) {
+      showToast("No tracks to add", "error");
+      return;
+    }
+
+    // Add all tracks to queue
+    tracks.forEach((track) => {
+      dispatch(addToQueue({ song: track, playNext: false }));
+    });
+
+    // Switch to queue context
+    dispatch(switchContext({ contextType: "queue" }));
+    showToast(`Added ${tracks.length} tracks to queue`);
   };
 
   const handlePauseClick = () => {
@@ -221,12 +251,12 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               {/* Album art */}
               <div className="w-[100px] h-[100px] rounded-xl overflow-hidden shadow-2xl mb-3">
                 {mosaicImages.length === 4 ? (
-                  <div className="grid grid-cols-2 gap-0.5 w-full h-full">
-                    {mosaicImages.map((image, index) => (
+                  <div className="grid grid-cols-2 gap-0.5 w-full h-full bg-black">
+                    {mosaicImages.map((img, i) => (
                       <img
-                        key={index}
-                        alt={`Album ${index + 1}`}
-                        src={image}
+                        key={i}
+                        src={img}
+                        alt=""
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
@@ -237,10 +267,9 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   </div>
                 ) : (
                   <img
-                    alt={playlist.name}
                     src={
-                      playlist.images?.[0]?.url ||
                       mosaicImages[0] ||
+                      playlist.images?.[0]?.url ||
                       placeholderImage
                     }
                     className="w-full h-full object-cover"
@@ -252,46 +281,54 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 )}
               </div>
 
-              {/* Info section */}
-              <div className="text-center max-w-[280px]">
-                <h1 className="text-xl font-bold text-white mb-1">
-                  {playlist.name}
-                </h1>
-                <p className="text-sm text-gray-400 mb-3">
-                  {playlist.owner?.display_name || "Spotify"} •{" "}
-                  {tracks?.length || 0} songs • {getTotalDuration()}
-                </p>
+              {/* Title and subtitle */}
+              <h1 className="text-xl font-bold text-white text-center mb-1">
+                {playlist.name}
+              </h1>
+              <p className="text-gray-400 text-sm mb-2">
+                by {playlist.owner?.display_name || "Spotify"}
+              </p>
+              <div className="flex items-center gap-3 text-xs text-gray-400">
+                <span>{tracks?.length || 0} songs</span>
+                <span>•</span>
+                <span>{getTotalDuration()}</span>
+              </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => handlePlayAll(false)}
-                    className="flex items-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2 px-4 rounded-full transition-all text-sm"
-                  >
-                    <BsFillPlayFill size={20} />
-                    <span>Play All</span>
-                  </button>
+              {/* Action buttons */}
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  onClick={() => handlePlayAll(false)}
+                  disabled={isLoading("play-all")}
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-2.5 rounded-lg transition-all disabled:opacity-80 disabled:cursor-not-allowed"
+                >
+                  {isLoading("play-all") ? (
+                    <LoadingState variant="button" text="Loading..." />
+                  ) : (
+                    <>
+                      <BsFillPlayFill size={20} />
+                      <span>Play All</span>
+                    </>
+                  )}
+                </button>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handlePlayAll(true)}
+                    disabled={isLoading("shuffle-play")}
                     className={`p-2 rounded-full transition-all ${
                       shuffle
                         ? "bg-white/10 text-[#14b8a6]"
                         : "bg-white/10 text-white hover:bg-white/20"
-                    }`}
+                    } disabled:opacity-80 disabled:cursor-not-allowed`}
                     title="Shuffle Play"
                   >
-                    <BsShuffle size={18} />
+                    {isLoading("shuffle-play") ? (
+                      <MusicLoadingSpinner size="sm" />
+                    ) : (
+                      <BsShuffle size={18} />
+                    )}
                   </button>
                   <button
-                    onClick={() => {
-                      const firstTrack = tracks?.[0];
-                      if (firstTrack) {
-                        dispatch(
-                          addToQueue({ song: firstTrack, playNext: false })
-                        );
-                        showToast("Added to queue");
-                      }
-                    }}
+                    onClick={handleAddAllToQueue}
                     className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
                     title="Add to Queue"
                   >
@@ -366,6 +403,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             handlePause={handlePauseClick}
                             handlePlay={() => handlePlayClick(track, i)}
                             size={35}
+                            isLoading={isLoading(`track-${getTrackId(track)}`)}
                           />
                         </div>
                       </div>
@@ -468,33 +506,40 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => handlePlayAll(false)}
-                        className="flex items-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105"
+                        disabled={isLoading("play-all")}
+                        className="flex items-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100"
                       >
-                        <BsFillPlayFill size={24} />
-                        <span>Play All</span>
+                        {isLoading("play-all") ? (
+                          <LoadingState variant="button" text="Loading..." />
+                        ) : (
+                          <>
+                            <BsFillPlayFill size={24} />
+                            <span>Play All</span>
+                          </>
+                        )}
                       </button>
                       <div className="relative group">
                         <button
                           onClick={() => handlePlayAll(true)}
+                          disabled={isLoading("shuffle-play")}
                           className={`p-3 rounded-full transition-all ${
                             shuffle
                               ? "bg-white/10 text-[#14b8a6]"
                               : "bg-white/10 text-white hover:bg-white/20"
-                          }`}
+                          } disabled:opacity-80 disabled:cursor-not-allowed`}
                         >
-                          <BsShuffle size={20} />
+                          {isLoading("shuffle-play") ? (
+                            <MusicLoadingSpinner size="sm" />
+                          ) : (
+                            <BsShuffle size={20} />
+                          )}
                         </button>
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                           Shuffle Play
                         </span>
                       </div>
                       <button
-                        onClick={() => {
-                          dispatch(
-                            addToQueue({ song: tracks[0], playNext: false })
-                          );
-                          showToast("Added to queue");
-                        }}
+                        onClick={handleAddAllToQueue}
                         className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
                       >
                         <HiPlus size={20} />
@@ -503,8 +548,8 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   </div>
                 </div>
 
-                {/* Track List Section */}
-                <div className="flex-1 overflow-y-auto p-6 pb-20">
+                {/* Track List */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                   {isFetching ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader title="Loading tracks..." />
@@ -570,6 +615,9 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                   handlePause={handlePauseClick}
                                   handlePlay={() => handlePlayClick(track, i)}
                                   size={35}
+                                  isLoading={isLoading(
+                                    `track-${getTrackId(track)}`
+                                  )}
                                 />
                               </div>
                             </div>
@@ -596,7 +644,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
           <div
             className={`fixed top-0 left-0 bottom-0 z-40 transition-all duration-300 ${
               isAnimating
-                ? "bg-black/60 backdrop-blur-sm"
+                ? "bg-black/70 backdrop-blur-md"
                 : "bg-transparent pointer-events-none"
             }`}
             onClick={handleBackdropClick}
@@ -607,130 +655,154 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
           {/* Slide-up Modal */}
           <div
-            className={`fixed left-0 bottom-0 top-0 z-50 bg-gradient-to-br from-[#1a1848] to-[#0f0b2d] transition-all duration-500 overflow-hidden ${
+            className={`fixed left-0 bottom-0 top-0 z-50 transition-all duration-500 overflow-hidden ${
               isAnimating
                 ? "translate-y-0 opacity-100"
                 : "translate-y-full opacity-0"
             }`}
             style={{
               right: "380px", // Stop at SidebarPlayer boundary
-              boxShadow: isAnimating ? "0 -10px 40px rgba(0,0,0,0.5)" : "none",
+              background: "linear-gradient(135deg, #1a1848 0%, #0f0b2d 100%)",
+              boxShadow: isAnimating
+                ? "0 0 50px rgba(20, 184, 166, 0.15)"
+                : "none",
             }}
           >
-            <div className="h-full flex">
+            {/* Subtle gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6]/5 via-transparent to-purple-600/5 pointer-events-none"></div>
+
+            <div className="h-full flex relative">
               {/* Left Panel - Info */}
-              <div className="w-[400px] 2xl:w-[450px] flex-shrink-0 p-6 2xl:p-8 flex flex-col">
+              <div className="w-[400px] 2xl:w-[450px] flex-shrink-0 p-6 2xl:p-8 flex flex-col relative">
+                <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-20 right-10 w-40 h-40 bg-[#14b8a6]/20 rounded-full blur-3xl"></div>
+
                 <button
                   onClick={handleClose}
-                  className="absolute top-6 left-6 p-2 rounded-full bg-black/20 hover:bg-black/40 transition-all z-20"
+                  className="absolute top-6 left-6 p-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all z-20 border border-white/10"
                 >
                   <IoArrowBack className="w-5 h-5 text-white" />
                 </button>
 
-                <div className="flex-1 flex flex-col items-center justify-center">
-                  <div className="w-72 h-72 rounded-2xl overflow-hidden shadow-2xl mb-6 group relative">
-                    {mosaicImages.length === 4 ? (
-                      mosaicImages.every((img) => img === mosaicImages[0]) &&
-                      mosaicImages[0] !== placeholderImage ? (
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                  {/* Album art with glow effect */}
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-[#14b8a6] to-purple-600 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-500"></div>
+                    <div className="relative w-72 h-72 rounded-3xl overflow-hidden shadow-2xl">
+                      {mosaicImages.length === 4 ? (
+                        mosaicImages.every((img) => img === mosaicImages[0]) &&
+                        mosaicImages[0] !== placeholderImage ? (
+                          <img
+                            alt="playlist_cover"
+                            src={mosaicImages[0]}
+                            className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = placeholderImage;
+                            }}
+                          />
+                        ) : (
+                          <div className="grid grid-cols-2 gap-0.5 w-full h-full bg-black">
+                            {mosaicImages.map((image, index) => (
+                              <img
+                                key={index}
+                                alt={`Album ${index + 1}`}
+                                src={image}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = placeholderImage;
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )
+                      ) : (
                         <img
-                          alt="playlist_cover"
-                          src={mosaicImages[0]}
-                          className="w-full h-full object-cover"
+                          alt={playlist.name}
+                          src={
+                            playlist.images?.[0]?.url ||
+                            mosaicImages[0] ||
+                            placeholderImage
+                          }
+                          className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110"
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = placeholderImage;
                           }}
                         />
-                      ) : (
-                        <div className="grid grid-cols-2 gap-1 w-full h-full">
-                          {mosaicImages.map((image, index) => (
-                            <img
-                              key={index}
-                              alt={`Album ${index + 1}`}
-                              src={image}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = placeholderImage;
-                              }}
-                            />
-                          ))}
-                        </div>
-                      )
-                    ) : (
-                      <img
-                        alt={playlist.name}
-                        src={
-                          playlist.images?.[0]?.url ||
-                          mosaicImages[0] ||
-                          placeholderImage
-                        }
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = placeholderImage;
-                        }}
-                      />
-                    )}
+                      )}
+                    </div>
                   </div>
 
-                  <div className="text-center max-w-[350px]">
-                    <p className="text-sm text-[#14b8a6] font-medium mb-2">
-                      COMMUNITY PLAYLIST
+                  <div className="text-center px-4 mt-8">
+                    <p className="text-sm text-[#14b8a6] font-semibold mb-3 tracking-wider uppercase">
+                      Community Playlist
                     </p>
-                    <h1 className="text-3xl 2xl:text-4xl font-bold text-white mb-3 line-clamp-2">
+                    <h1 className="text-4xl font-bold text-white mb-4 line-clamp-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                       {playlist.name}
                     </h1>
-                    <p className="text-gray-400 mb-2">
+                    <p className="text-gray-300 mb-6">
                       by {playlist.owner?.display_name || "Spotify"}
                     </p>
-                    <div className="flex items-center justify-center gap-4 text-sm text-gray-400 mb-6">
-                      <div className="flex items-center gap-1">
-                        <BsMusicNoteBeamed />
+
+                    <div className="flex items-center justify-center gap-6 text-sm text-gray-300 mb-8">
+                      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
+                        <BsMusicNoteBeamed className="text-[#14b8a6]" />
                         <span>{tracks?.length || 0} songs</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <BsClock />
+                      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
+                        <BsClock className="text-purple-400" />
                         <span>{getTotalDuration()}</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-6">
                       <button
                         onClick={() => handlePlayAll(false)}
-                        className="flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-lg shadow-[#14b8a6]/25"
+                        disabled={isLoading("play-all")}
+                        className="group relative flex items-center justify-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#14b8a6] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-xl shadow-[#14b8a6]/30 disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100 w-48 mx-auto"
                       >
-                        <BsFillPlayFill size={24} />
-                        <span>Play All</span>
+                        <div className="absolute inset-0 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
+                        {isLoading("play-all") ? (
+                          <LoadingState variant="button" text="Loading..." />
+                        ) : (
+                          <>
+                            <BsFillPlayFill
+                              size={24}
+                              className="relative z-10"
+                            />
+                            <span className="relative z-10">Play All</span>
+                          </>
+                        )}
                       </button>
+
                       <div className="flex items-center gap-3 justify-center">
                         <div className="relative group">
                           <button
                             onClick={() => handlePlayAll(true)}
-                            className={`p-3 rounded-full transition-all ${
+                            disabled={isLoading("shuffle-play")}
+                            className={`p-2.5 rounded-full backdrop-blur-md transition-all border ${
                               shuffle
-                                ? "bg-white/10 text-[#14b8a6]"
-                                : "bg-white/10 text-white hover:bg-white/20"
-                            }`}
+                                ? "bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/50"
+                                : "bg-white/10 text-white hover:bg-white/20 border-white/20"
+                            } disabled:opacity-80 disabled:cursor-not-allowed hover:scale-110`}
                           >
-                            <BsShuffle size={20} />
+                            {isLoading("shuffle-play") ? (
+                              <MusicLoadingSpinner size="sm" />
+                            ) : (
+                              <BsShuffle size={18} />
+                            )}
                           </button>
-                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-white/10">
                             Shuffle Play
                           </span>
                         </div>
                         <button
-                          onClick={() => {
-                            if (tracks && tracks.length > 0) {
-                              dispatch(
-                                addToQueue({ song: tracks[0], playNext: false })
-                              );
-                              showToast("Added to queue");
-                            }
-                          }}
-                          className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                          onClick={handleAddAllToQueue}
+                          className="p-2.5 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all border border-white/20 hover:scale-110"
                         >
-                          <HiPlus size={20} />
+                          <HiPlus size={18} />
                         </button>
                       </div>
                     </div>
@@ -739,8 +811,11 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               </div>
 
               {/* Right Panel - Track List */}
-              <div className="flex-1 flex flex-col bg-black/20">
-                <div className="p-6 2xl:p-8 overflow-y-auto custom-scrollbar">
+              <div className="flex-1 relative overflow-hidden">
+                {/* Subtle vertical separator */}
+                <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+
+                <div className="h-full overflow-y-auto custom-scrollbar p-6 2xl:p-8 pl-8">
                   {isFetching ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader title="Loading tracks..." />
@@ -748,7 +823,7 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   ) : error ? (
                     <Error />
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {tracks?.map((track, i) => {
                         const isActive =
                           isSameTrack(track, currentTrack) &&
@@ -759,19 +834,30 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             key={`${track.key || track.id}-${i}`}
                             ref={isActive ? activeTrackRef : null}
                             onClick={() => handlePlayClick(track, i)}
-                            className={`flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition-all group cursor-pointer ${
-                              isActive ? "bg-white/10" : ""
+                            className={`group flex items-center gap-4 p-4 rounded-xl transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent border border-[#14b8a6]/30"
+                                : "hover:bg-white/5 border border-transparent hover:border-white/10"
                             }`}
                           >
-                            <span className="text-gray-400 text-sm w-8 text-center">
+                            {/* Track numbers */}
+                            <div
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
+                                isActive
+                                  ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                                  : "bg-white/5 text-gray-400 group-hover:bg-white/10 group-hover:text-white"
+                              }`}
+                            >
                               {i + 1}
-                            </span>
+                            </div>
 
                             <img
                               src={track.images?.coverart || placeholderImage}
                               alt={track.title}
-                              className={`w-12 h-12 rounded object-cover ${
-                                isActive ? "ring-2 ring-[#14b8a6]" : ""
+                              className={`w-12 h-12 rounded-lg object-cover shadow-lg transition-all ${
+                                isActive
+                                  ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-transparent"
+                                  : "group-hover:shadow-xl"
                               }`}
                               onError={(e) => {
                                 e.target.onerror = null;
@@ -781,8 +867,10 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
                             <div className="flex-1 min-w-0">
                               <p
-                                className={`font-medium truncate ${
-                                  isActive ? "text-[#14b8a6]" : "text-white"
+                                className={`font-medium truncate transition-colors ${
+                                  isActive
+                                    ? "text-[#14b8a6]"
+                                    : "text-white group-hover:text-[#14b8a6]"
                                 }`}
                               >
                                 {track.title}
@@ -792,24 +880,24 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               </p>
                             </div>
 
-                            <div
-                              className="flex-shrink-0 w-10 flex justify-center"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <SongMenu song={track} />
-                            </div>
-
-                            <span className="text-gray-400 text-sm w-16 text-center">
+                            <span className="text-gray-400 text-sm tabular-nums">
                               {formatDuration(track.duration_ms)}
                             </span>
 
-                            <div className="flex-shrink-0 w-10 flex justify-center">
+                            {/* Actions */}
+                            <div className="flex items-center gap-3">
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <SongMenu song={track} />
+                              </div>
                               <div onClick={(e) => e.stopPropagation()}>
                                 <PlayPause
                                   song={track}
                                   handlePause={handlePauseClick}
                                   handlePlay={() => handlePlayClick(track, i)}
-                                  size={35}
+                                  size={40}
+                                  isLoading={isLoading(
+                                    `track-${getTrackId(track)}`
+                                  )}
                                 />
                               </div>
                             </div>
