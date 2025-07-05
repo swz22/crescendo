@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { Error, Loader, PlayPause, SongMenu } from "../components";
+import { useEffect } from "react";
+import { Error, LoadingState, PlayPause, SongMenu } from "../components";
 import AlbumCard from "../components/AlbumCard";
 import ArtistCard from "../components/ArtistCard";
 import {
@@ -15,8 +16,13 @@ import {
   switchContext,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { useLoadingState } from "../hooks/useLoadingState";
 import { useToast } from "../context/ToastContext";
-import { formatTrackDuration, isSameTrack } from "../utils/trackUtils";
+import {
+  formatTrackDuration,
+  isSameTrack,
+  getTrackId,
+} from "../utils/trackUtils";
 import {
   HiOutlineUserGroup,
   HiOutlineFire,
@@ -33,6 +39,7 @@ const ArtistDetails = () => {
   const { isPlaying, currentTrack } = useSelector((state) => state.player);
   const { getPreviewUrl } = usePreviewUrl();
   const { showToast } = useToast();
+  const { setLoading, isLoading } = useLoadingState();
 
   const {
     data: artistData,
@@ -47,10 +54,13 @@ const ArtistDetails = () => {
     useGetArtistAlbumsQuery({ artistId }, { skip: !artistId });
 
   // Get recommended artists based on this artist
-  const { data: relatedArtists = [], isFetching: isFetchingRelated } =
-    useGetRecommendedArtistsQuery(artistId, {
-      skip: !artistId,
-    });
+  const {
+    data: relatedArtists,
+    isFetching: isFetchingRelated,
+    error: relatedError,
+  } = useGetRecommendedArtistsQuery(artistId, {
+    skip: !artistId,
+  });
 
   // Filter to only show albums and remove duplicates
   const albums =
@@ -80,7 +90,13 @@ const ArtistDetails = () => {
 
   // Loading state for core data
   if (isFetchingArtistDetails || isFetchingTopTracks)
-    return <Loader title="Loading artist details..." />;
+    return (
+      <LoadingState
+        variant="page"
+        title="Loading artist details..."
+        subtitle="Fetching top tracks and albums"
+      />
+    );
 
   if (error) return <Error />;
 
@@ -89,6 +105,9 @@ const ArtistDetails = () => {
   };
 
   const handlePlayClick = async (song, i) => {
+    const trackId = getTrackId(song);
+    setLoading(`track-${trackId}`, true);
+
     try {
       const songWithPreview = await getPreviewUrl(song);
 
@@ -111,6 +130,9 @@ const ArtistDetails = () => {
       }
     } catch (error) {
       console.error("Error playing track:", error);
+      showToast("Error loading track", "error");
+    } finally {
+      setLoading(`track-${trackId}`, false);
     }
   };
 
@@ -119,6 +141,8 @@ const ArtistDetails = () => {
       showToast("No tracks available", "error");
       return;
     }
+
+    setLoading("play-all", true);
 
     try {
       const tracksToPlay = topTracks.slice(0, 5);
@@ -151,123 +175,123 @@ const ArtistDetails = () => {
       );
 
       dispatch(switchContext({ contextType: "queue" }));
+      showToast(`Playing ${tracksWithPreviews.length} tracks`);
     } catch (error) {
       console.error("Error playing all tracks:", error);
-      showToast("Failed to play tracks", "error");
+      showToast("Error loading tracks", "error");
+    } finally {
+      setLoading("play-all", false);
     }
   };
 
-  const formatNumber = (num) => {
-    if (!num) return "0";
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-  };
-
   const artistImage =
-    artistData?.images?.background || artistData?.images?.coverart || "";
+    artistData?.images?.background || artistData?.avatar || "";
+  const artistBio = artistData?.bio || "";
+  const genres = artistData?.genres || [];
+  const followers = artistData?.followers
+    ? artistData.followers.toLocaleString()
+    : "0";
 
   return (
     <div className="flex flex-col">
-      {/* Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 h-96 bg-gradient-to-b from-[#14b8a6]/20 to-transparent" />
+      {/* Artist Header */}
+      <div className="relative px-4 md:px-6 lg:px-8 pt-8 pb-6">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#14b8a6]/20 to-transparent -z-10" />
 
-        {/* Header Content */}
-        <div className="relative px-4 md:px-6 lg:px-8 pt-8 pb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
-            {/* Artist Image */}
-            <div className="relative group">
+        {/* Artist Info */}
+        <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
+          {/* Artist Image */}
+          {artistImage && (
+            <div className="relative w-48 h-48 md:w-64 md:h-64 flex-shrink-0">
               <img
                 src={artistImage}
                 alt={artistData?.name}
-                className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full object-cover shadow-2xl"
+                className="w-full h-full object-cover rounded-full shadow-2xl"
                 onError={(e) => {
-                  e.target.onerror = null;
                   e.target.src =
-                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE1NTY4Ii8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2EwYWVjMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4=";
+                    "data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%234a5568'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial, sans-serif' font-size='24' fill='%23a0aec0' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
                 }}
               />
-              {/* Glow effect */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#14b8a6]/40 to-purple-600/40 blur-3xl scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#14b8a6]/30 to-purple-600/30 -z-10 scale-110 blur-2xl" />
+            </div>
+          )}
+
+          {/* Artist Details */}
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-sm text-[#14b8a6] font-medium flex items-center gap-1">
+                <HiCheckCircle className="w-4 h-4" />
+                Verified Artist
+              </span>
             </div>
 
-            {/* Artist Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <p className="text-sm font-medium text-[#14b8a6] uppercase tracking-wider">
-                  Artist
-                </p>
-                {artistData?.popularity >= 70 && (
-                  <HiCheckCircle
-                    className="w-5 h-5 text-[#14b8a6]"
-                    title="Verified Artist"
-                  />
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+              {artistData?.name || "Unknown Artist"}
+            </h1>
+
+            <div className="flex flex-col gap-3">
+              {/* Stats */}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300">
+                <span className="flex items-center gap-1">
+                  <HiOutlineUserGroup className="w-4 h-4" />
+                  {followers} followers
+                </span>
+                {topTracks && topTracks.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <HiOutlineMusicNote className="w-4 h-4" />
+                    {topTracks.length} top tracks
+                  </span>
                 )}
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-                {artistData?.name || "Unknown Artist"}
-              </h1>
-
-              {/* Stats Bar */}
-              <div className="flex flex-wrap items-center gap-6 text-white/80">
-                <div className="flex items-center gap-2">
-                  <HiOutlineUserGroup className="w-5 h-5 text-[#14b8a6]" />
-                  <span className="text-lg font-semibold">
-                    {formatNumber(artistData?.followers || 0)}
-                  </span>
-                  <span className="text-sm">followers</span>
+              {/* Genres */}
+              {genres.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {genres.slice(0, 4).map((genre, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1 bg-white/10 rounded-full text-sm capitalize"
+                    >
+                      {genre}
+                    </span>
+                  ))}
                 </div>
+              )}
+            </div>
 
-                <div className="flex items-center gap-2">
-                  <HiOutlineFire className="w-5 h-5 text-orange-500" />
-                  <span className="text-lg font-semibold">
-                    {artistData?.popularity || 0}
-                  </span>
-                  <span className="text-sm">popularity</span>
-                </div>
-
-                {artistData?.genres?.length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <HiOutlineMusicNote className="w-5 h-5 text-purple-500" />
-                    {artistData.genres.slice(0, 3).map((genre, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 bg-white/10 rounded-full text-sm capitalize"
-                      >
-                        {genre}
-                      </span>
-                    ))}
-                  </div>
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-3 mt-6">
+              <button
+                onClick={handlePlayAll}
+                disabled={
+                  !topTracks || topTracks.length === 0 || isLoading("play-all")
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-[#14b8a6] text-white rounded-full text-sm font-medium hover:bg-[#0d9488] transition-all transform hover:scale-105 disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {isLoading("play-all") ? (
+                  <LoadingState variant="button" text="Loading..." />
+                ) : (
+                  <>
+                    <BsFillPlayFill className="w-4 h-4" />
+                    Play Top Tracks
+                  </>
                 )}
-              </div>
+              </button>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3 mt-6">
-                <button
-                  onClick={handlePlayAll}
-                  disabled={!topTracks || topTracks.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#14b8a6] text-white rounded-full text-sm font-medium hover:bg-[#0d9488] transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <BsFillPlayFill className="w-4 h-4" />
-                  Play Top Tracks
-                </button>
-
-                <button
-                  onClick={() =>
-                    window.open(
-                      `https://open.spotify.com/artist/${artistId}`,
-                      "_blank"
-                    )
-                  }
-                  className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-full text-sm font-medium hover:bg-white/20 transition-all border border-white/20"
-                >
-                  <BsSpotify className="w-4 h-4" />
-                  Open in Spotify
-                  <HiExternalLink className="w-3 h-3" />
-                </button>
-              </div>
+              <button
+                onClick={() =>
+                  window.open(
+                    `https://open.spotify.com/artist/${artistId}`,
+                    "_blank"
+                  )
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-full text-sm font-medium hover:bg-white/20 transition-all border border-white/20"
+              >
+                <BsSpotify className="w-4 h-4" />
+                Open in Spotify
+                <HiExternalLink className="w-3 h-3" />
+              </button>
             </div>
           </div>
         </div>
@@ -276,15 +300,10 @@ const ArtistDetails = () => {
       {/* Albums Section */}
       {uniqueAlbums && uniqueAlbums.length > 0 && (
         <div className="px-4 md:px-6 lg:px-8 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <BsDisc className="text-[#14b8a6]" />
-              Albums
-            </h2>
-            <span className="text-gray-400 text-sm">
-              {uniqueAlbums.length} albums
-            </span>
-          </div>
+          <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+            <BsDisc className="text-[#14b8a6]" />
+            Albums
+          </h2>
 
           {isFetchingAlbums ? (
             <div className="flex items-center justify-center h-48">
@@ -301,54 +320,57 @@ const ArtistDetails = () => {
       )}
 
       {/* Similar Artists Section */}
-      {relatedArtists && relatedArtists.length > 0 && (
-        <div className="px-4 md:px-6 lg:px-8 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-            <HiOutlineUserGroup className="text-[#14b8a6]" />
-            Similar Artists
-          </h2>
+      <div className="px-4 md:px-6 lg:px-8 mb-8">
+        <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+          <HiOutlineUserGroup className="text-[#14b8a6]" />
+          Similar Artists
+        </h2>
 
-          {isFetchingRelated ? (
-            <div className="flex items-center justify-center h-48">
-              <div className="w-8 h-8 border-2 border-[#14b8a6] border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {relatedArtists.map((artist) => (
-                <ArtistCard key={artist.id} track={{ artists: [artist] }} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        {isFetchingRelated ? (
+          <div className="flex items-center justify-center h-48">
+            <div className="w-8 h-8 border-2 border-[#14b8a6] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : relatedError ? (
+          <p className="text-gray-400">
+            Error loading similar artists. Please try again later.
+          </p>
+        ) : relatedArtists && relatedArtists.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {relatedArtists.slice(0, 12).map((artist) => (
+              <ArtistCard key={artist.id} track={{ artists: [artist] }} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-400">No similar artists found.</p>
+        )}
+      </div>
 
-      {/* Top Songs Section */}
-      <div className="px-4 md:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">Top Songs</h2>
-          {topTracks && topTracks.length > 0 && (
-            <span className="text-gray-400 text-sm">
-              {topTracks.length} tracks
-            </span>
-          )}
-        </div>
+      {/* Top Tracks Section */}
+      <div className="px-4 md:px-6 lg:px-8 mb-8">
+        <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+          <HiOutlineFire className="text-[#14b8a6]" />
+          Top Tracks
+        </h2>
 
         {topTracks && topTracks.length > 0 ? (
           <div className="space-y-2">
-            {topTracks.map((track, i) => {
+            {topTracks.slice(0, 5).map((track, i) => {
               const isCurrentSong = isSameTrack(track, currentTrack);
+              const trackId = getTrackId(track);
+              const isTrackLoading = isLoading(`track-${trackId}`);
 
               return (
                 <div
-                  key={`${track.id}-${i}`}
-                  className={`group flex items-center gap-4 p-4 rounded-lg hover:bg-white/10 transition-all ${
+                  key={track.key || track.id || i}
+                  className={`flex items-center gap-4 p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer group ${
                     isCurrentSong ? "bg-white/10" : ""
                   }`}
+                  onClick={() => handlePlayClick(track, i)}
                 >
                   {/* Track number */}
-                  <span className="text-gray-400 w-6 text-center">{i + 1}</span>
+                  <span className="text-gray-400 text-sm w-5">{i + 1}</span>
 
-                  {/* Track image */}
+                  {/* Album art */}
                   <img
                     src={
                       track.album?.images?.[0]?.url ||
@@ -391,6 +413,7 @@ const ArtistDetails = () => {
                       handlePause={handlePauseClick}
                       handlePlay={() => handlePlayClick(track, i)}
                       size={30}
+                      isLoading={isTrackLoading}
                     />
                   </div>
                 </div>

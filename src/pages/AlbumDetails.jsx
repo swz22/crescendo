@@ -1,11 +1,12 @@
 import { Link, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { Error, Loader, PlayPause, SongMenu } from "../components";
+import { Error, LoadingState, PlayPause, SongMenu } from "../components";
 import {
   useGetAlbumDetailsQuery,
   useGetAlbumTracksQuery,
 } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
+import { useLoadingState } from "../hooks/useLoadingState";
 import {
   replaceContext,
   addToQueue,
@@ -14,9 +15,13 @@ import {
   switchContext,
 } from "../redux/features/playerSlice";
 import { useToast } from "../context/ToastContext";
-import { isSameTrack, formatTrackDuration } from "../utils/trackUtils";
+import {
+  isSameTrack,
+  formatTrackDuration,
+  getTrackId,
+} from "../utils/trackUtils";
 import { BsFillPlayFill, BsCalendar3, BsDisc, BsSpotify } from "react-icons/bs";
-import { HiPlus, HiMusicNote, HiClock } from "react-icons/hi";
+import { HiPlus, HiMusicNote, HiClock, HiExternalLink } from "react-icons/hi";
 import { RiAlbumLine } from "react-icons/ri";
 
 const AlbumDetails = () => {
@@ -25,6 +30,7 @@ const AlbumDetails = () => {
   const { getPreviewUrl } = usePreviewUrl();
   const { showToast } = useToast();
   const { isPlaying, currentTrack } = useSelector((state) => state.player);
+  const { setLoading, isLoading } = useLoadingState();
 
   const {
     data: albumData,
@@ -39,7 +45,13 @@ const AlbumDetails = () => {
   } = useGetAlbumTracksQuery({ albumId });
 
   if (isFetchingAlbumDetails || isFetchingTracks) {
-    return <Loader title="Loading album..." />;
+    return (
+      <LoadingState
+        variant="page"
+        title="Loading album..."
+        subtitle="Fetching tracks and artwork"
+      />
+    );
   }
 
   if (albumError || tracksError) {
@@ -71,6 +83,8 @@ const AlbumDetails = () => {
       return;
     }
 
+    setLoading("album-play", true);
+
     try {
       const firstTrackWithPreview = await getPreviewUrl(tracksWithAlbumArt[0]);
 
@@ -95,6 +109,8 @@ const AlbumDetails = () => {
     } catch (error) {
       console.error("Error playing album:", error);
       showToast("Error playing album", "error");
+    } finally {
+      setLoading("album-play", false);
     }
   };
 
@@ -113,6 +129,9 @@ const AlbumDetails = () => {
   };
 
   const handlePlayClick = async (track, index) => {
+    const trackId = getTrackId(track);
+    setLoading(`track-${trackId}`, true);
+
     try {
       const songWithPreview = await getPreviewUrl(track);
 
@@ -128,6 +147,8 @@ const AlbumDetails = () => {
     } catch (error) {
       console.error("Error playing track:", error);
       showToast("Error loading track", "error");
+    } finally {
+      setLoading(`track-${trackId}`, false);
     }
   };
 
@@ -216,10 +237,17 @@ const AlbumDetails = () => {
             <div className="hidden sm:flex items-center gap-3 mt-4">
               <button
                 onClick={handlePlayAlbum}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-full font-medium transition-all hover:scale-105 shadow-lg"
+                disabled={isLoading("album-play")}
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-full font-medium transition-all hover:scale-105 shadow-lg disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <BsFillPlayFill className="w-5 h-5" />
-                Play Album
+                {isLoading("album-play") ? (
+                  <LoadingState variant="button" text="Loading..." />
+                ) : (
+                  <>
+                    <BsFillPlayFill className="w-5 h-5" />
+                    Play Album
+                  </>
+                )}
               </button>
               <button
                 onClick={handleAddToQueue}
@@ -233,9 +261,11 @@ const AlbumDetails = () => {
                   href={albumData.external_urls.spotify}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 text-[#1DB954] hover:text-[#1ed760] hover:bg-white/10 rounded-full transition-all"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full font-medium transition-all border border-white/20"
                 >
-                  <BsSpotify className="w-5 h-5" />
+                  <BsSpotify className="w-4 h-4" />
+                  Open in Spotify
+                  <HiExternalLink className="w-3 h-3" />
                 </a>
               )}
             </div>
@@ -246,10 +276,17 @@ const AlbumDetails = () => {
         <div className="flex sm:hidden items-center gap-2 mt-4">
           <button
             onClick={handlePlayAlbum}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-lg font-medium transition-all"
+            disabled={isLoading("album-play")}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#14b8a6] hover:bg-[#10a094] text-white rounded-lg font-medium transition-all disabled:opacity-80 disabled:cursor-not-allowed"
           >
-            <BsFillPlayFill className="w-5 h-5" />
-            Play Album
+            {isLoading("album-play") ? (
+              <LoadingState variant="button" text="Loading..." />
+            ) : (
+              <>
+                <BsFillPlayFill className="w-5 h-5" />
+                Play Album
+              </>
+            )}
           </button>
           <button
             onClick={handleAddToQueue}
@@ -261,7 +298,7 @@ const AlbumDetails = () => {
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main content - SINGLE COLUMN LAYOUT */}
       <div className="px-4 md:px-0 pb-24 mt-4 sm:mt-6">
         {/* Mobile Layout */}
         <div className="md:hidden">
@@ -289,24 +326,97 @@ const AlbumDetails = () => {
                   value={formatReleaseDate(albumData?.release_date)}
                 />
                 <InfoRow
+                  icon={HiMusicNote}
+                  iconColor="text-pink-400"
+                  label="Tracks"
+                  value={`${tracksWithAlbumArt.length} songs`}
+                />
+                <InfoRow
                   icon={HiClock}
-                  iconColor="text-[#14b8a6]"
+                  iconColor="text-green-400"
                   label="Duration"
                   value={getTotalDuration()}
                 />
               </div>
             </div>
           </div>
+
+          {/* Tracks */}
+          <div className="bg-gradient-to-br from-white/[0.07] to-white/[0.05] backdrop-blur-sm rounded-xl border border-white/10">
+            <div className="p-3">
+              <h2 className="text-base font-bold text-white mb-3">Tracks</h2>
+              {/* Mobile track list */}
+              <div className="space-y-1">
+                {tracksWithAlbumArt.length > 0 ? (
+                  tracksWithAlbumArt.map((track, i) => {
+                    const trackId = getTrackId(track);
+                    const isTrackLoading = isLoading(`track-${trackId}`);
+
+                    return (
+                      <div
+                        key={track?.key || i}
+                        className={`flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer ${
+                          isSameTrack(track, currentTrack) ? "bg-white/10" : ""
+                        }`}
+                        onClick={() => handlePlayClick(track, i)}
+                      >
+                        {/* Track Number */}
+                        <span className="text-gray-400 text-sm w-5 text-center">
+                          {i + 1}
+                        </span>
+
+                        {/* Track Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-medium truncate">
+                            {track?.title || track?.name || "Unknown"}
+                          </p>
+                        </div>
+
+                        {/* Duration */}
+                        <span className="text-gray-400 text-xs">
+                          {formatTrackDuration(track?.duration_ms)}
+                        </span>
+
+                        {/* Menu and Play Button */}
+                        <div className="flex items-center gap-1">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <SongMenu song={track} />
+                          </div>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <PlayPause
+                              isPlaying={
+                                isPlaying && isSameTrack(track, currentTrack)
+                              }
+                              song={track}
+                              handlePause={handlePauseClick}
+                              handlePlay={() => handlePlayClick(track, i)}
+                              size={28}
+                              isLoading={isTrackLoading}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-400 text-sm py-4 text-center">
+                    No tracks available.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Desktop Layout - Album Info */}
-        <div className="hidden md:block mb-5">
+        {/* Desktop Layout */}
+        <div className="hidden md:block space-y-5">
+          {/* Album Info */}
           <div className="bg-gradient-to-br from-white/[0.06] to-white/[0.03] backdrop-blur-sm rounded-xl p-5 border border-white/10">
             <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
               <RiAlbumLine className="text-[#14b8a6]" />
               Album Information
             </h2>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {albumData?.label && (
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Label</p>
@@ -322,6 +432,12 @@ const AlbumDetails = () => {
                 </p>
               </div>
               <div>
+                <p className="text-xs text-gray-400 mb-1">Tracks</p>
+                <p className="text-sm font-medium text-white">
+                  {tracksWithAlbumArt.length} songs
+                </p>
+              </div>
+              <div>
                 <p className="text-xs text-gray-400 mb-1">Duration</p>
                 <p className="text-sm font-medium text-white">
                   {getTotalDuration()}
@@ -329,64 +445,71 @@ const AlbumDetails = () => {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Tracks Section */}
-        <div className="mt-3">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-2">
-            Tracks
-          </h2>
-          <div className="space-y-1">
-            {tracksWithAlbumArt.length > 0 ? (
-              tracksWithAlbumArt.map((track, i) => (
-                <div
-                  key={track.key || track.id || i}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group ${
-                    isPlaying && isSameTrack(track, currentTrack)
-                      ? "bg-white/10"
-                      : ""
-                  }`}
-                  onClick={() => handlePlayClick(track, i)}
-                >
-                  {/* Track Number */}
-                  <span className="text-gray-400 text-sm w-8 text-left">
-                    {i + 1}.
-                  </span>
+          {/* Tracks Section */}
+          <div className="bg-gradient-to-br from-white/[0.07] to-white/[0.05] backdrop-blur-sm rounded-2xl border border-white/10">
+            <div className="p-6">
+              <h2 className="text-lg font-bold text-white mb-4">Tracks</h2>
+              {/* Desktop track list */}
+              {tracksWithAlbumArt.length > 0 ? (
+                <div className="space-y-1">
+                  {tracksWithAlbumArt.map((track, i) => {
+                    const trackId = getTrackId(track);
+                    const isTrackLoading = isLoading(`track-${trackId}`);
 
-                  {/* Track Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm sm:text-base font-medium truncate">
-                      {track?.title || track?.name || "Unknown"}
-                    </p>
-                    <p className="text-gray-400 text-xs sm:text-sm">
-                      {formatTrackDuration(track?.duration_ms)}
-                    </p>
-                  </div>
+                    return (
+                      <div
+                        key={track?.key || i}
+                        className={`flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer ${
+                          isSameTrack(track, currentTrack) ? "bg-white/10" : ""
+                        }`}
+                        onClick={() => handlePlayClick(track, i)}
+                      >
+                        {/* Track Number */}
+                        <span className="text-gray-400 text-sm w-6 text-center">
+                          {i + 1}
+                        </span>
 
-                  {/* Menu and Play Button */}
-                  <div className="flex items-center gap-2">
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <SongMenu song={track} />
-                    </div>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <PlayPause
-                        isPlaying={
-                          isPlaying && isSameTrack(track, currentTrack)
-                        }
-                        song={track}
-                        handlePause={handlePauseClick}
-                        handlePlay={() => handlePlayClick(track, i)}
-                        size={30}
-                      />
-                    </div>
-                  </div>
+                        {/* Track Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-base font-medium truncate">
+                            {track?.title || track?.name || "Unknown"}
+                          </p>
+                        </div>
+
+                        {/* Duration */}
+                        <span className="text-gray-400 text-sm">
+                          {formatTrackDuration(track?.duration_ms)}
+                        </span>
+
+                        {/* Menu and Play Button */}
+                        <div className="flex items-center gap-2">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <SongMenu song={track} />
+                          </div>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <PlayPause
+                              isPlaying={
+                                isPlaying && isSameTrack(track, currentTrack)
+                              }
+                              song={track}
+                              handlePause={handlePauseClick}
+                              handlePlay={() => handlePlayClick(track, i)}
+                              size={30}
+                              isLoading={isTrackLoading}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-400 text-sm py-4 text-center">
-                No tracks available.
-              </p>
-            )}
+              ) : (
+                <p className="text-gray-400 text-sm py-4 text-center">
+                  No tracks available.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
