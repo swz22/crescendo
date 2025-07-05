@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useId } from "react";
 
 const MusicLoadingSpinner = ({ size = "md" }) => {
+  const uniqueId = useId();
+  const gradientId = `gradient-${uniqueId}`;
   const sizeClasses = {
     sm: "w-8 h-8",
     md: "w-12 h-12",
@@ -17,13 +19,13 @@ const MusicLoadingSpinner = ({ size = "md" }) => {
             cy="25"
             r="20"
             fill="none"
-            stroke="url(#gradient)"
+            stroke={`url(#${gradientId})`}
             strokeWidth="4"
             strokeLinecap="round"
             strokeDasharray="80 40"
           />
           <defs>
-            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#ec4899" />
               <stop offset="50%" stopColor="#8b5cf6" />
               <stop offset="100%" stopColor="#3b82f6" />
