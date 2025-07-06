@@ -25,6 +25,11 @@ const NavLinks = () => {
   const scrollContainerRef = useScrollContainer();
 
   const handleNavClick = (to) => {
+    // Close Performance Monitor if open
+    if (showPerformanceMonitor) {
+      setShowPerformanceMonitor(false);
+    }
+
     // Clear saved scroll position
     const storageKey = `crescendo_scroll_${to}`;
     sessionStorage.removeItem(storageKey);
