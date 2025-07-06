@@ -7,6 +7,7 @@ import {
   setModalOpen,
   toggleShuffle,
   switchContext,
+  addToQueue,
 } from "../redux/features/playerSlice";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useLoadingState } from "../hooks/useLoadingState";
@@ -164,12 +165,8 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
             replaceContext({
               contextType: playlist.id,
               tracks: updatedTracks,
-              startIndex: startIndex,
-              playlistData: {
-                id: playlist.id,
-                name: playlist.name,
-                tracks: updatedTracks,
-              },
+              startIndex,
+              playlistData: { ...playlist, tracks: updatedTracks },
             })
           );
           showToast(
@@ -186,29 +183,22 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     }
   };
 
+  const handleAddAllToQueue = () => {
+    if (!tracks || tracks.length === 0) {
+      showToast("No tracks to add", "error");
+      return;
+    }
+
+    tracks.forEach((track) => {
+      dispatch(addToQueue({ song: track, playNext: false }));
+    });
+
+    dispatch(switchContext({ contextType: "queue" }));
+    showToast(`Added ${tracks.length} tracks to queue`);
+  };
+
   const handlePauseClick = () => {
     dispatch(playPause(false));
-  };
-
-  const handleRemoveTrack = (trackIndex) => {
-    const track = tracks[trackIndex];
-    handleRemoveFromPlaylist(playlist.id, getTrackId(track));
-    showToast("Track removed from playlist");
-    setSelectedTrackIndex(null);
-  };
-
-  const handleSaveEdit = () => {
-    if (editName.trim() && editName !== playlist.name) {
-      handleRenamePlaylist(playlist.id, editName.trim());
-      showToast("Playlist renamed");
-    }
-    setIsEditingName(false);
-  };
-
-  const handleDeleteConfirm = () => {
-    handleDeletePlaylist(playlist.id);
-    showToast("Playlist deleted");
-    handleClose();
   };
 
   const handleBackdropClick = (e) => {
@@ -235,25 +225,23 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes} min`;
   };
 
+  const handleSaveEdit = () => {
+    if (editName.trim() && editName !== playlist.name) {
+      handleRenamePlaylist(playlist.id, editName.trim());
+    }
+    setIsEditingName(false);
+  };
+
+  const handleDeleteConfirm = () => {
+    handleDeletePlaylist(playlist.id);
+    setShowDeleteDialog(false);
+    handleClose();
+  };
+
   const isTrackActive = (track, index) => {
     if (activeContext !== playlist.id) return false;
     return currentIndex === index;
   };
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest(".dropdown-menu")) {
-        setSelectedTrackIndex(null);
-        setShowPlaylistMenu(false);
-      }
-    };
-
-    if (selectedTrackIndex !== null || showPlaylistMenu) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [selectedTrackIndex, showPlaylistMenu]);
 
   return (
     <>
@@ -261,12 +249,12 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
       <div
         className={`sm:hidden fixed inset-0 z-40 bg-gradient-to-b from-[#1a1848] to-[#0f0b2d] transition-all duration-500 ${
           isAnimating
-            ? "translate-y-0 opacity-100"
-            : "translate-y-full opacity-0"
+            ? "translate-x-0 opacity-100"
+            : "translate-x-full opacity-0"
         }`}
       >
         <div className="flex flex-col h-full pb-24">
-          {/* Mobile Header */}
+          {/* Mobile Header*/}
           <div className="flex items-center justify-between p-3 flex-shrink-0">
             <button
               onClick={handleClose}
@@ -275,39 +263,9 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               <IoArrowBack className="w-5 h-5 text-white" />
             </button>
             <h2 className="text-base font-semibold text-white uppercase tracking-wider">
-              Your Playlist
+              My Playlist
             </h2>
-            <button
-              onClick={() => setShowPlaylistMenu(!showPlaylistMenu)}
-              className="p-2 rounded-full bg-black/20 hover:bg-black/40 transition-all relative dropdown-menu"
-            >
-              <BsThreeDots className="w-5 h-5 text-white" />
-
-              {showPlaylistMenu && (
-                <div className="absolute right-0 top-12 w-48 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 overflow-hidden z-20">
-                  <button
-                    onClick={() => {
-                      setIsEditingName(true);
-                      setShowPlaylistMenu(false);
-                    }}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-white hover:bg-white/10 transition-colors text-left"
-                  >
-                    <HiOutlinePencil className="w-4 h-4" />
-                    <span>Rename</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowPlaylistMenu(false);
-                      setShowDeleteDialog(true);
-                    }}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors text-left"
-                  >
-                    <HiOutlineTrash className="w-4 h-4" />
-                    <span>Delete Playlist</span>
-                  </button>
-                </div>
-              )}
-            </button>
+            <div className="w-9" />
           </div>
 
           {/* Mobile Album Art and Info */}
@@ -316,10 +274,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               {/* Album art */}
               <div className="w-[100px] h-[100px] rounded-xl overflow-hidden shadow-2xl mb-3">
                 {mosaicImages.length === 4 ? (
-                  <div className="grid grid-cols-2 gap-0.5 w-full h-full">
-                    {mosaicImages.map((img, idx) => (
+                  <div className="grid grid-cols-2 gap-0.5 w-full h-full bg-black">
+                    {mosaicImages.map((img, i) => (
                       <img
-                        key={idx}
+                        key={i}
                         src={img}
                         alt=""
                         className="w-full h-full object-cover"
@@ -330,55 +288,45 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                       />
                     ))}
                   </div>
-                ) : mosaicImages.length > 0 ? (
+                ) : (
                   <img
-                    src={mosaicImages[0]}
-                    alt=""
+                    src={mosaicImages[0] || placeholderImage}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = placeholderImage;
                     }}
                   />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                    <BsMusicNoteBeamed className="w-12 h-12 text-white/20" />
-                  </div>
                 )}
               </div>
 
-              {/* Info */}
-              <div className="text-center">
-                {isEditingName ? (
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveEdit();
-                      if (e.key === "Escape") setIsEditingName(false);
-                    }}
-                    onBlur={handleSaveEdit}
-                    className="text-xl font-bold bg-white/10 border border-white/20 rounded px-3 py-1 text-white outline-none focus:bg-white/20 focus:border-[#14b8a6]/50 text-center"
-                    autoFocus
-                  />
-                ) : (
-                  <h1 className="text-xl font-bold text-white mb-1">
-                    {playlist.name}
-                  </h1>
-                )}
-                <div className="flex items-center gap-3 text-xs text-gray-400">
-                  <span>{tracks.length} songs</span>
-                  <span>•</span>
-                  <span>{getTotalDuration()}</span>
-                </div>
+              {/* Title and subtitle */}
+              {isEditingName ? (
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onBlur={handleSaveEdit}
+                  onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
+                  className="text-xl font-bold text-white text-center bg-white/10 rounded px-2 py-1 mb-1 max-w-[250px] mx-auto"
+                  autoFocus
+                />
+              ) : (
+                <h1 className="text-xl font-bold text-white text-center mb-1">
+                  {playlist.name}
+                </h1>
+              )}
+              <div className="flex items-center gap-3 text-xs text-gray-400">
+                <span>{tracks?.length || 0} songs</span>
+                <span>•</span>
+                <span>{getTotalDuration()}</span>
               </div>
 
               {/* Action buttons */}
               <div className="flex items-center gap-3 mt-4">
                 <button
                   onClick={() => handlePlayAll(false)}
-                  disabled={isLoading("play-all") || tracks.length === 0}
+                  disabled={isLoading("play-all")}
                   className="flex-1 flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-2.5 rounded-lg transition-all disabled:opacity-80 disabled:cursor-not-allowed"
                 >
                   {isLoading("play-all") ? (
@@ -390,57 +338,69 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     </>
                   )}
                 </button>
-                <button
-                  onClick={() => handlePlayAll(true)}
-                  disabled={isLoading("shuffle-play") || tracks.length === 0}
-                  className={`p-2 rounded-full transition-all ${
-                    shuffle
-                      ? "bg-white/10 text-[#14b8a6]"
-                      : "bg-white/10 text-white hover:bg-white/20"
-                  } disabled:opacity-80 disabled:cursor-not-allowed`}
-                >
-                  {isLoading("shuffle-play") ? (
-                    <MusicLoadingSpinner size={20} />
-                  ) : (
-                    <BsShuffle size={20} />
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePlayAll(true)}
+                    disabled={isLoading("shuffle-play")}
+                    className={`p-2 rounded-full transition-all ${
+                      shuffle
+                        ? "bg-white/10 text-[#14b8a6]"
+                        : "bg-white/10 text-white hover:bg-white/20"
+                    } disabled:opacity-80 disabled:cursor-not-allowed`}
+                    title="Shuffle Play"
+                  >
+                    {isLoading("shuffle-play") ? (
+                      <MusicLoadingSpinner size="sm" />
+                    ) : (
+                      <BsShuffle size={18} />
+                    )}
+                  </button>
+                  <button
+                    onClick={handleAddAllToQueue}
+                    className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                    title="Add all to queue"
+                  >
+                    <HiPlus size={18} />
+                  </button>
+                  <button
+                    onClick={() => setIsEditingName(true)}
+                    className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                    title="Rename playlist"
+                  >
+                    <HiOutlinePencil size={18} />
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="p-2 rounded-full bg-white/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                    title="Delete playlist"
+                  >
+                    <HiOutlineTrash size={18} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Mobile Track list */}
-          <div
-            ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto px-4 pb-4"
-          >
-            {tracks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                <BsMusicNoteBeamed className="w-16 h-16 mb-4 opacity-30" />
-                <p className="text-lg">No tracks in this playlist</p>
-                <p className="text-sm mt-2">Add some songs to get started!</p>
-              </div>
-            ) : (
-              tracks.map((track, index) => {
-                const isActive = isTrackActive(track, index);
-                const trackId = getTrackId(track);
-                const loadingKey = `track-${trackId}`;
-
+          {/* Mobile Track List */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-4">
+              {tracks?.map((track, i) => {
+                const isActive = isTrackActive(track, i);
                 return (
                   <div
-                    key={track.key || track.id || index}
+                    key={`${track.key || track.id}-${i}`}
                     ref={isActive ? activeTrackRef : null}
-                    className={`flex items-center gap-3 p-3 rounded-lg mb-2 transition-all group ${
-                      isActive ? "bg-[#14b8a6]/20" : "hover:bg-white/5"
+                    onClick={() => handlePlayClick(track, i)}
+                    className={`flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition-all group cursor-pointer ${
+                      isActive ? "bg-white/10" : ""
                     }`}
-                    onClick={() => handlePlayClick(track, index)}
                   >
+                    <span className="text-gray-400 text-sm w-6 text-center">
+                      {i + 1}
+                    </span>
+
                     <img
-                      src={
-                        track.album?.images?.[0]?.url ||
-                        track.images?.coverart ||
-                        placeholderImage
-                      }
+                      src={track.images?.coverart || placeholderImage}
                       alt={track.title}
                       className={`w-12 h-12 rounded object-cover ${
                         isActive ? "ring-2 ring-[#14b8a6]" : ""
@@ -457,37 +417,43 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           isActive ? "text-[#14b8a6]" : "text-white"
                         }`}
                       >
-                        {track.title || track.name}
+                        {track.title}
                       </p>
-                      <p className="text-sm text-gray-400 truncate">
-                        {track.subtitle ||
-                          track.artists?.map((a) => a.name).join(", ")}
+                      <p className="text-gray-400 text-sm truncate">
+                        {track.subtitle}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    {/* Menu & Play */}
+                    <div className="flex items-center gap-1">
                       <div onClick={(e) => e.stopPropagation()}>
-                        <SongMenu song={track} />
+                        <SongMenu
+                          song={track}
+                          onRemoveFromPlaylist={() => {
+                            handleRemoveFromPlaylist(playlist.id, i);
+                            setSelectedTrackIndex(null);
+                          }}
+                        />
                       </div>
                       <div onClick={(e) => e.stopPropagation()}>
                         <PlayPause
                           song={track}
                           handlePause={handlePauseClick}
-                          handlePlay={() => handlePlayClick(track, index)}
+                          handlePlay={() => handlePlayClick(track, i)}
                           size={35}
-                          isLoading={isLoading(loadingKey)}
+                          isLoading={isLoading(`track-${getTrackId(track)}`)}
                         />
                       </div>
                     </div>
                   </div>
                 );
-              })
-            )}
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Tablet View */}
+      {/* Tablet View with Integrated Player */}
       {!isDesktopScreen && (
         <div className="hidden sm:block">
           <div
@@ -518,36 +484,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 >
                   <IoArrowBack className="w-5 h-5 text-white" />
                 </button>
-                <button
-                  onClick={() => setShowPlaylistMenu(!showPlaylistMenu)}
-                  className="p-2 rounded-full bg-black/20 hover:bg-black/40 transition-all relative dropdown-menu"
-                >
-                  <BsThreeDots className="w-5 h-5 text-white" />
-                  {showPlaylistMenu && (
-                    <div className="absolute right-0 top-12 w-48 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 overflow-hidden z-20">
-                      <button
-                        onClick={() => {
-                          setIsEditingName(true);
-                          setShowPlaylistMenu(false);
-                        }}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-white hover:bg-white/10 transition-colors text-left"
-                      >
-                        <HiOutlinePencil className="w-4 h-4" />
-                        <span>Rename</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowPlaylistMenu(false);
-                          setShowDeleteDialog(true);
-                        }}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors text-left"
-                      >
-                        <HiOutlineTrash className="w-4 h-4" />
-                        <span>Delete Playlist</span>
-                      </button>
-                    </div>
-                  )}
-                </button>
+                <div className="w-9" />
               </div>
 
               {/* Content */}
@@ -556,12 +493,12 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   {/* Album Art */}
                   <div className="w-48 h-48 flex-shrink-0 rounded-xl overflow-hidden shadow-2xl">
                     {mosaicImages.length === 4 ? (
-                      <div className="grid grid-cols-2 gap-0.5 w-full h-full">
-                        {mosaicImages.map((img, idx) => (
+                      <div className="grid grid-cols-2 gap-1 w-full h-full">
+                        {mosaicImages.map((image, index) => (
                           <img
-                            key={idx}
-                            src={img}
-                            alt=""
+                            key={index}
+                            alt={`Album ${index + 1}`}
+                            src={image}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.target.onerror = null;
@@ -570,38 +507,34 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           />
                         ))}
                       </div>
-                    ) : mosaicImages.length > 0 ? (
+                    ) : (
                       <img
-                        src={mosaicImages[0]}
-                        alt=""
+                        alt={playlist.name}
+                        src={mosaicImages[0] || placeholderImage}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = placeholderImage;
                         }}
                       />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                        <BsMusicNoteBeamed className="w-16 h-16 text-white/20" />
-                      </div>
                     )}
                   </div>
 
-                  <div className="flex-1">
+                  {/* Info */}
+                  <div className="flex-1 flex flex-col justify-center">
                     <p className="text-sm text-[#14b8a6] font-medium mb-2">
-                      YOUR PLAYLIST
+                      MY PLAYLIST
                     </p>
                     {isEditingName ? (
                       <input
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveEdit();
-                          if (e.key === "Escape") setIsEditingName(false);
-                        }}
                         onBlur={handleSaveEdit}
-                        className="text-3xl font-bold bg-white/10 border border-white/20 rounded px-3 py-1 text-white outline-none focus:bg-white/20 focus:border-[#14b8a6]/50 mb-3 w-full"
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleSaveEdit()
+                        }
+                        className="text-3xl font-bold text-white bg-white/10 rounded px-3 py-1 mb-3 max-w-[300px]"
                         autoFocus
                       />
                     ) : (
@@ -610,7 +543,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                       </h1>
                     )}
                     <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
-                      <span>{tracks.length} songs</span>
+                      <span>{tracks?.length || 0} songs</span>
                       <span>•</span>
                       <span>{getTotalDuration()}</span>
                     </div>
@@ -618,7 +551,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => handlePlayAll(false)}
-                        disabled={isLoading("play-all") || tracks.length === 0}
+                        disabled={isLoading("play-all")}
                         className="flex items-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100"
                       >
                         {isLoading("play-all") ? (
@@ -630,62 +563,50 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           </>
                         )}
                       </button>
-                      <button
-                        onClick={() => handlePlayAll(true)}
-                        disabled={
-                          isLoading("shuffle-play") || tracks.length === 0
-                        }
-                        className={`p-3 rounded-full transition-all ${
-                          shuffle
-                            ? "bg-white/10 text-[#14b8a6]"
-                            : "bg-white/10 text-white hover:bg-white/20"
-                        } disabled:opacity-80 disabled:cursor-not-allowed`}
-                      >
-                        {isLoading("shuffle-play") ? (
-                          <MusicLoadingSpinner size={20} />
-                        ) : (
-                          <BsShuffle size={20} />
-                        )}
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={() => handlePlayAll(true)}
+                          disabled={isLoading("shuffle-play")}
+                          className={`p-3 rounded-full transition-all ${
+                            shuffle
+                              ? "bg-white/10 text-[#14b8a6]"
+                              : "bg-white/10 text-white hover:bg-white/20"
+                          } disabled:opacity-80 disabled:cursor-not-allowed`}
+                        >
+                          {isLoading("shuffle-play") ? (
+                            <MusicLoadingSpinner size="sm" />
+                          ) : (
+                            <BsShuffle size={20} />
+                          )}
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          Shuffle Play
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Track list */}
-                <div className="flex-1 overflow-y-auto p-6">
-                  {tracks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                      <BsMusicNoteBeamed className="w-16 h-16 mb-4 opacity-30" />
-                      <p className="text-lg">No tracks in this playlist</p>
-                      <p className="text-sm mt-2">
-                        Add some songs to get started!
-                      </p>
-                    </div>
-                  ) : (
-                    tracks.map((track, index) => {
-                      const isActive = isTrackActive(track, index);
-                      const trackId = getTrackId(track);
-                      const loadingKey = `track-${trackId}`;
-
+                {/* Track List */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                  <div className="space-y-1">
+                    {tracks?.map((track, i) => {
+                      const isActive = isTrackActive(track, i);
                       return (
                         <div
-                          key={track.key || track.id || index}
+                          key={`${track.key || track.id}-${i}`}
                           ref={isActive ? activeTrackRef : null}
-                          className={`flex items-center gap-4 p-4 rounded-lg mb-2 transition-all group cursor-pointer ${
-                            isActive ? "bg-white/10" : "hover:bg-white/5"
+                          onClick={() => handlePlayClick(track, i)}
+                          className={`flex items-center gap-4 p-3 rounded-lg hover:bg-white/10 transition-all group cursor-pointer ${
+                            isActive ? "bg-white/10" : ""
                           }`}
-                          onClick={() => handlePlayClick(track, index)}
                         >
                           <span className="text-gray-400 text-sm w-8 text-center">
-                            {index + 1}
+                            {i + 1}
                           </span>
 
                           <img
-                            src={
-                              track.images?.coverart ||
-                              track.album?.images?.[0]?.url ||
-                              placeholderImage
-                            }
+                            src={track.images?.coverart || placeholderImage}
                             alt={track.title}
                             className={`w-12 h-12 rounded object-cover ${
                               isActive ? "ring-2 ring-[#14b8a6]" : ""
@@ -699,6 +620,315 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           <div className="flex-1 min-w-0">
                             <p
                               className={`font-medium truncate ${
+                                isActive ? "text-[#14b8a6]" : "text-white"
+                              }`}
+                            >
+                              {track.title}
+                            </p>
+                            <p className="text-gray-400 text-sm truncate">
+                              {track.subtitle}
+                            </p>
+                          </div>
+
+                          <span className="text-gray-400 text-sm hidden md:block">
+                            {formatDuration(track.duration_ms)}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <SongMenu
+                                song={track}
+                                onRemoveFromPlaylist={() => {
+                                  handleRemoveFromPlaylist(playlist.id, i);
+                                  setSelectedTrackIndex(null);
+                                }}
+                              />
+                            </div>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <PlayPause
+                                song={track}
+                                handlePause={handlePauseClick}
+                                handlePlay={() => handlePlayClick(track, i)}
+                                size={35}
+                                isLoading={isLoading(
+                                  `track-${getTrackId(track)}`
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Player */}
+              {isTabletView && currentTrack && (
+                <ModalPlayer onOpenNowPlaying={() => setShowNowPlaying(true)} />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop View (1480px+) */}
+      {isDesktopScreen && (
+        <div className="hidden sm:block">
+          <div
+            className={`fixed top-0 left-0 bottom-0 z-40 transition-all duration-300 ${
+              isAnimating
+                ? "bg-black/70 backdrop-blur-md"
+                : "bg-transparent pointer-events-none"
+            }`}
+            onClick={handleBackdropClick}
+            style={{
+              right: "380px",
+            }}
+          />
+
+          {/* Slide-in Modal */}
+          <div
+            className={`fixed left-0 bottom-0 top-0 z-50 transition-all duration-500 overflow-hidden ${
+              isAnimating
+                ? "translate-x-0 opacity-100"
+                : "-translate-x-full opacity-0"
+            }`}
+            style={{
+              right: "380px",
+              background: "linear-gradient(135deg, #1a1848 0%, #0f0b2d 100%)",
+              boxShadow: isAnimating
+                ? "0 0 50px rgba(20, 184, 166, 0.15)"
+                : "none",
+            }}
+          >
+            {/* Subtle gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6]/5 via-transparent to-purple-600/5 pointer-events-none"></div>
+
+            <div className="h-full flex relative">
+              {/* Left Panel */}
+              <div className="w-[400px] 2xl:w-[450px] flex-shrink-0 p-6 2xl:p-8 flex flex-col relative">
+                <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-20 right-10 w-40 h-40 bg-[#14b8a6]/20 rounded-full blur-3xl"></div>
+
+                <button
+                  onClick={handleClose}
+                  className="absolute top-6 left-6 p-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all z-20 border border-white/10"
+                >
+                  <IoArrowBack className="w-5 h-5 text-white" />
+                </button>
+
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                  {/* Album art with glow effect */}
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-[#14b8a6] to-purple-600 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-500"></div>
+                    <div className="relative w-72 h-72 rounded-3xl overflow-hidden shadow-2xl">
+                      {mosaicImages.length === 4 ? (
+                        mosaicImages.every((img) => img === mosaicImages[0]) &&
+                        mosaicImages[0] !== placeholderImage ? (
+                          <img
+                            alt="playlist_cover"
+                            src={mosaicImages[0]}
+                            className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = placeholderImage;
+                            }}
+                          />
+                        ) : (
+                          <div className="grid grid-cols-2 gap-0.5 w-full h-full bg-black">
+                            {mosaicImages.map((image, index) => (
+                              <img
+                                key={index}
+                                alt={`Album ${index + 1}`}
+                                src={image}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = placeholderImage;
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )
+                      ) : (
+                        <img
+                          alt={playlist.name}
+                          src={mosaicImages[0] || placeholderImage}
+                          className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = placeholderImage;
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-center px-4 mt-8">
+                    <p className="text-sm text-[#14b8a6] font-semibold mb-3 tracking-wider uppercase">
+                      My Playlist
+                    </p>
+                    {isEditingName ? (
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onBlur={handleSaveEdit}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleSaveEdit()
+                        }
+                        className="text-4xl font-bold text-white bg-white/10 rounded px-3 py-1 mb-6 text-center max-w-[320px] mx-auto"
+                        autoFocus
+                      />
+                    ) : (
+                      <h1 className="text-4xl font-bold text-white mb-6 line-clamp-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                        {playlist.name}
+                      </h1>
+                    )}
+
+                    <div className="flex items-center justify-center gap-6 text-sm text-gray-300 mb-8">
+                      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
+                        <BsMusicNoteBeamed className="text-[#14b8a6]" />
+                        <span>{tracks?.length || 0} songs</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
+                        <BsClock className="text-purple-400" />
+                        <span>{getTotalDuration()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-6">
+                      <button
+                        onClick={() => handlePlayAll(false)}
+                        disabled={isLoading("play-all")}
+                        className="group relative flex items-center justify-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#14b8a6] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-xl shadow-[#14b8a6]/30 disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100 w-48 mx-auto"
+                      >
+                        <div className="absolute inset-0 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
+                        {isLoading("play-all") ? (
+                          <LoadingState variant="button" text="Loading..." />
+                        ) : (
+                          <>
+                            <BsFillPlayFill
+                              size={24}
+                              className="relative z-10"
+                            />
+                            <span className="relative z-10">Play All</span>
+                          </>
+                        )}
+                      </button>
+
+                      <div className="flex items-center gap-3 justify-center">
+                        <div className="relative group">
+                          <button
+                            onClick={() => handlePlayAll(true)}
+                            disabled={isLoading("shuffle-play")}
+                            className={`p-2.5 rounded-full backdrop-blur-md transition-all border ${
+                              shuffle
+                                ? "bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/50"
+                                : "bg-white/10 text-white hover:bg-white/20 border-white/20"
+                            } disabled:opacity-80 disabled:cursor-not-allowed hover:scale-110`}
+                          >
+                            {isLoading("shuffle-play") ? (
+                              <MusicLoadingSpinner size="sm" />
+                            ) : (
+                              <BsShuffle size={18} />
+                            )}
+                          </button>
+                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-white/10">
+                            Shuffle Play
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={handleAddAllToQueue}
+                            className="p-2.5 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all border border-white/20 hover:scale-110"
+                            title="Add all to queue"
+                          >
+                            <HiPlus size={18} />
+                          </button>
+                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-white/10">
+                            Add to Queue
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => setIsEditingName(true)}
+                            className="p-2.5 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all border border-white/20 hover:scale-110"
+                            title="Rename playlist"
+                          >
+                            <HiOutlinePencil size={18} />
+                          </button>
+                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-white/10">
+                            Rename
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => setShowDeleteDialog(true)}
+                            className="p-2.5 rounded-full bg-white/10 backdrop-blur-md text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all border border-white/20 hover:border-red-500/30 hover:scale-110"
+                            title="Delete playlist"
+                          >
+                            <HiOutlineTrash size={18} />
+                          </button>
+                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-white/10">
+                            Delete
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Panel - Track List */}
+              <div className="flex-1 relative overflow-hidden">
+                {/* Vertical separator */}
+                <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+
+                <div className="h-full overflow-y-auto custom-scrollbar p-6 2xl:p-8 pl-8">
+                  <div className="space-y-2">
+                    {tracks?.map((track, i) => {
+                      const isActive = isTrackActive(track, i);
+                      return (
+                        <div
+                          key={`${track.key || track.id}-${i}`}
+                          ref={isActive ? activeTrackRef : null}
+                          onClick={() => handlePlayClick(track, i)}
+                          className={`group flex items-center gap-4 p-4 rounded-xl transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent border border-[#14b8a6]/30"
+                              : "hover:bg-white/5 border border-transparent hover:border-white/10"
+                          }`}
+                        >
+                          {/* Track numbers */}
+                          <div
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
+                              isActive
+                                ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                                : "bg-white/5 text-gray-400 group-hover:bg-white/10 group-hover:text-white"
+                            }`}
+                          >
+                            {i + 1}
+                          </div>
+
+                          <img
+                            src={track.images?.coverart || placeholderImage}
+                            alt={track.title}
+                            className={`w-12 h-12 rounded-lg object-cover shadow-lg transition-all ${
+                              isActive
+                                ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-transparent"
+                                : "group-hover:shadow-xl"
+                            }`}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = placeholderImage;
+                            }}
+                          />
+
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`font-medium truncate transition-colors ${
                                 isActive
                                   ? "text-[#14b8a6]"
                                   : "text-white group-hover:text-[#14b8a6]"
@@ -715,339 +945,33 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             {formatDuration(track.duration_ms)}
                           </span>
 
+                          {/* Actions */}
                           <div className="flex items-center gap-3">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedTrackIndex(
-                                  selectedTrackIndex === index ? null : index
-                                );
-                              }}
-                              className="p-2 rounded-full hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100 dropdown-menu relative"
-                            >
-                              <BsThreeDots className="w-4 h-4 text-white/70" />
-
-                              {selectedTrackIndex === index && (
-                                <div className="absolute right-0 top-10 w-48 bg-[#282464]/95 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 overflow-hidden z-20">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRemoveTrack(index);
-                                    }}
-                                    className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors text-left"
-                                  >
-                                    <HiOutlineTrash className="w-4 h-4" />
-                                    <span>Remove from playlist</span>
-                                  </button>
-                                </div>
-                              )}
-                            </button>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <SongMenu
+                                song={track}
+                                onRemoveFromPlaylist={() => {
+                                  handleRemoveFromPlaylist(playlist.id, i);
+                                  setSelectedTrackIndex(null);
+                                }}
+                              />
+                            </div>
                             <div onClick={(e) => e.stopPropagation()}>
                               <PlayPause
                                 song={track}
                                 handlePause={handlePauseClick}
-                                handlePlay={() => handlePlayClick(track, index)}
+                                handlePlay={() => handlePlayClick(track, i)}
                                 size={40}
-                                isLoading={isLoading(loadingKey)}
+                                isLoading={isLoading(
+                                  `track-${getTrackId(track)}`
+                                )}
                               />
                             </div>
                           </div>
                         </div>
                       );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* Modal Player for tablet view */}
-              {isTabletView && currentTrack && (
-                <ModalPlayer onOpenNowPlaying={() => setShowNowPlaying(true)} />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Desktop View (1480px+) */}
-      {isDesktopScreen && (
-        <div className="hidden sm:block">
-          <div
-            className={`fixed top-0 left-0 bottom-0 z-40 transition-all duration-300 ${
-              isAnimating
-                ? "translate-x-0 opacity-100"
-                : "-translate-x-full opacity-0"
-            }`}
-            style={{
-              width: "calc(100vw - 376px)",
-              background: "linear-gradient(to bottom, #0f0b2d, #1a1848)",
-            }}
-          >
-            <div className="flex h-full">
-              {/* Sidebar */}
-              <div className="w-96 bg-gradient-to-b from-[#1e1b4b]/50 to-[#0f0b2d]/50 backdrop-blur-sm border-r border-white/10 flex flex-col p-8">
-                {/* Close button */}
-                <button
-                  onClick={handleClose}
-                  className="self-start p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all mb-8"
-                >
-                  <IoArrowBack className="w-6 h-6 text-white" />
-                </button>
-
-                {/* Playlist artwork */}
-                <div className="w-full aspect-square rounded-2xl overflow-hidden shadow-2xl mb-8">
-                  {mosaicImages.length === 4 ? (
-                    <div className="grid grid-cols-2 gap-0.5 w-full h-full">
-                      {mosaicImages.map((img, idx) => (
-                        <img
-                          key={idx}
-                          src={img}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = placeholderImage;
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : mosaicImages.length > 0 ? (
-                    <img
-                      src={mosaicImages[0]}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = placeholderImage;
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                      <BsMusicNoteBeamed className="w-24 h-24 text-white/20" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Playlist info */}
-                <div className="text-center">
-                  <p className="text-sm text-[#14b8a6] font-bold mb-4 tracking-wider uppercase">
-                    Your Playlist
-                  </p>
-                  {isEditingName ? (
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleSaveEdit();
-                        if (e.key === "Escape") setIsEditingName(false);
-                      }}
-                      onBlur={handleSaveEdit}
-                      className="text-3xl font-bold bg-white/10 border border-white/20 rounded px-3 py-2 text-white outline-none focus:bg-white/20 focus:border-[#14b8a6]/50 mb-4 w-full text-center"
-                      autoFocus
-                    />
-                  ) : (
-                    <h1 className="text-3xl font-bold text-white mb-4">
-                      {playlist.name}
-                    </h1>
-                  )}
-                  <div className="flex items-center justify-center gap-6 text-sm text-gray-300 mb-8">
-                    <div className="flex items-center gap-2">
-                      <BsMusicNoteBeamed className="text-[#14b8a6]" />
-                      <span>{tracks.length} songs</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <BsClock className="text-purple-400" />
-                      <span>{getTotalDuration()}</span>
-                    </div>
+                    })}
                   </div>
-
-                  {/* Action buttons */}
-                  <div className="flex flex-col gap-3">
-                    <button
-                      onClick={() => handlePlayAll(false)}
-                      disabled={isLoading("play-all") || tracks.length === 0}
-                      className="group relative flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all disabled:opacity-80 disabled:cursor-not-allowed"
-                    >
-                      {isLoading("play-all") ? (
-                        <LoadingState variant="button" text="Loading..." />
-                      ) : (
-                        <>
-                          <BsFillPlayFill size={24} />
-                          <span>Play All</span>
-                        </>
-                      )}
-                    </button>
-                    <div className="flex items-center gap-3 justify-center">
-                      <button
-                        onClick={() => handlePlayAll(true)}
-                        disabled={
-                          isLoading("shuffle-play") || tracks.length === 0
-                        }
-                        className={`p-2.5 rounded-lg transition-all ${
-                          shuffle
-                            ? "bg-white/10 text-[#14b8a6]"
-                            : "bg-white/10 text-white hover:bg-white/20"
-                        } disabled:opacity-80 disabled:cursor-not-allowed`}
-                      >
-                        <BsShuffle size={20} />
-                      </button>
-                      <button
-                        onClick={() => setShowPlaylistMenu(!showPlaylistMenu)}
-                        className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all relative dropdown-menu"
-                      >
-                        <BsThreeDots className="w-5 h-5 text-white" />
-                        {showPlaylistMenu && (
-                          <div className="absolute right-0 top-12 w-48 bg-[#282464]/95 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 overflow-hidden z-20">
-                            <button
-                              onClick={() => {
-                                setIsEditingName(true);
-                                setShowPlaylistMenu(false);
-                              }}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-white hover:bg-white/10 transition-colors text-left"
-                            >
-                              <HiOutlinePencil className="w-4 h-4" />
-                              <span>Rename</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowPlaylistMenu(false);
-                                setShowDeleteDialog(true);
-                              }}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors text-left"
-                            >
-                              <HiOutlineTrash className="w-4 h-4" />
-                              <span>Delete Playlist</span>
-                            </button>
-                          </div>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Track list area */}
-              <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Track list header */}
-                <div className="flex items-center px-8 py-3 text-sm text-gray-400 uppercase tracking-wider border-b border-white/10">
-                  <span className="w-16 text-center">#</span>
-                  <span className="flex-1">Title</span>
-                  <span className="w-32 text-right">Duration</span>
-                  <span className="w-20"></span>
-                </div>
-
-                {/* Tracks */}
-                <div className="flex-1 overflow-y-auto">
-                  {tracks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                      <BsMusicNoteBeamed className="w-24 h-24 mb-6 opacity-20" />
-                      <p className="text-2xl mb-2">
-                        No tracks in this playlist
-                      </p>
-                      <p className="text-lg">Add some songs to get started!</p>
-                    </div>
-                  ) : (
-                    <div>
-                      {tracks.map((track, index) => {
-                        const isActive = isTrackActive(track, index);
-                        const trackId = getTrackId(track);
-                        const loadingKey = `track-${trackId}`;
-
-                        return (
-                          <div
-                            key={track.key || track.id || index}
-                            className={`flex items-center px-8 py-3 group hover:bg-white/5 transition-all cursor-pointer ${
-                              isActive ? "bg-white/10" : ""
-                            }`}
-                            onClick={() => handlePlayClick(track, index)}
-                          >
-                            <span className="w-16 text-center text-gray-400 text-sm">
-                              {index + 1}
-                            </span>
-
-                            <div className="flex items-center gap-4 flex-1">
-                              <img
-                                src={
-                                  track.album?.images?.[0]?.url ||
-                                  track.images?.coverart ||
-                                  placeholderImage
-                                }
-                                alt={track.title}
-                                className={`w-14 h-14 rounded object-cover ${
-                                  isActive ? "ring-2 ring-[#14b8a6]" : ""
-                                }`}
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = placeholderImage;
-                                }}
-                              />
-
-                              <div className="flex-1 min-w-0">
-                                <p
-                                  className={`font-medium truncate ${
-                                    isActive ? "text-[#14b8a6]" : "text-white"
-                                  }`}
-                                >
-                                  {track.title || track.name}
-                                </p>
-                                <p className="text-gray-400 text-sm truncate">
-                                  {track.subtitle ||
-                                    track.artists
-                                      ?.map((a) => a.name)
-                                      .join(", ")}
-                                </p>
-                              </div>
-                            </div>
-
-                            <span className="w-32 text-right text-gray-400 text-sm tabular-nums">
-                              {formatDuration(track.duration_ms)}
-                            </span>
-
-                            {/* Actions */}
-                            <div className="w-20 flex items-center justify-end gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTrackIndex(
-                                    selectedTrackIndex === index ? null : index
-                                  );
-                                }}
-                                className="p-1.5 rounded-full hover:bg-white/10 transition-all dropdown-menu relative"
-                              >
-                                <BsThreeDots className="w-4 h-4 text-gray-400 hover:text-white" />
-
-                                {selectedTrackIndex === index && (
-                                  <div className="absolute right-0 top-8 w-48 bg-[#282464]/95 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 overflow-hidden z-20">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRemoveTrack(index);
-                                      }}
-                                      className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors text-left"
-                                    >
-                                      <HiOutlineTrash className="w-4 h-4" />
-                                      <span>Remove from playlist</span>
-                                    </button>
-                                  </div>
-                                )}
-                              </button>
-                              <div onClick={(e) => e.stopPropagation()}>
-                                <PlayPause
-                                  song={track}
-                                  handlePause={handlePauseClick}
-                                  handlePlay={() =>
-                                    handlePlayClick(track, index)
-                                  }
-                                  size={35}
-                                  isLoading={isLoading(loadingKey)}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -1063,7 +987,6 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         />
       )}
 
-      {/* Delete confirmation dialog */}
       <ConfirmDialog
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
@@ -1071,7 +994,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         title="Delete Playlist"
         message={`Are you sure you want to delete "${playlist.name}"? This action cannot be undone.`}
         confirmText="Delete"
-        isDestructive
+        confirmVariant="danger"
       />
     </>
   );
