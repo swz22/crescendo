@@ -318,7 +318,7 @@ const LeftSidebar = () => {
           <img
             src={logo}
             alt="logo"
-            className="w-full h-10 object-contain cursor-pointer"
+            className="w-full h-14 object-contain cursor-pointer"
             onClick={() => (window.location.href = "/")}
           />
         </div>
