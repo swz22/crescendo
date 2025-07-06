@@ -173,9 +173,10 @@ const SidebarPlayer = () => {
           </div>
           <button
             onClick={() => showOnboardingModal()}
-            className="h-10 px-3 bg-white/10 hover:bg-gradient-to-br hover:from-yellow-100/30 hover:to-amber-200/20 rounded-lg transition-all duration-200 group flex-shrink-0 flex items-center justify-center"
+            className="h-10 px-3 bg-white/10 hover:bg-white/10 rounded-lg transition-all duration-200 group flex-shrink-0 flex items-center justify-center"
+            title="Learn more!"
           >
-            <HiOutlineLightBulb className="w-5 h-5 text-white/50 group-hover:text-yellow-300 transition-all duration-200 group-hover:drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]" />
+            <HiOutlineLightBulb className="w-5 h-5 text-white/50 group-hover:text-amber-400 transition-all duration-200 group-hover:drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
           </button>
         </div>
 
