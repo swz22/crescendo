@@ -733,3 +733,145 @@ body.modal-open {
 .animate-scaleIn {
   animation: scaleIn 0.3s ease-out;
 }
+
+/* Performance Monitor */
+@keyframes flow {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite;
+}
+
+.performance-ring-container {
+  box-shadow: none !important;
+  border: none !important;
+  background: none !important;
+  outline: none !important;
+}
+
+.performance-ring-container * {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.performance-ring-container svg {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* Performance Modal */
+.performance-modal {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.performance-modal * {
+  box-shadow: none !important;
+}
+
+.performance-modal .teal-glow,
+.performance-modal .teal-glow-hover {
+  box-shadow: none !important;
+}
+
+.performance-modal .grid,
+.performance-modal [class*="grid"],
+.performance-modal [class*="col-span"] {
+  box-shadow: none !important;
+  filter: none !important;
+  border: none !important;
+}
+
+.performance-ring-container,
+.performance-ring-container *,
+.performance-ring-container svg,
+.performance-ring-container svg * {
+  box-shadow: none !important;
+  filter: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.performance-modal-container {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.performance-aurora-1 {
+  position: absolute;
+  inset: 0;
+  width: 24rem;
+  height: 24rem;
+  top: 50%;
+  right: 0;
+  background: linear-gradient(
+    to bottom right,
+    rgba(59, 130, 246, 0.1),
+    rgba(168, 85, 247, 0.1)
+  );
+  border-radius: 9999px;
+  filter: blur(3rem);
+}
+
+.performance-aurora-2 {
+  position: absolute;
+  inset: 0;
+  width: 24rem;
+  height: 24rem;
+  bottom: 0;
+  left: 50%;
+  background: linear-gradient(
+    to top right,
+    rgba(30, 64, 175, 0.1),
+    rgba(236, 72, 153, 0.1)
+  );
+  border-radius: 9999px;
+  filter: blur(3rem);
+}
+
+.performance-ring,
+.performance-ring-mobile {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.performance-ring *,
+.performance-ring-mobile * {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.performance-score-container {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.performance-score-container svg {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.performance-grid {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.performance-grid > * {
+  box-shadow: none !important;
+  filter: none !important;
+}
