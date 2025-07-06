@@ -263,21 +263,23 @@ const SongCard = ({ song, isPlaying, i }) => {
 
               {/* Now Playing Indicator */}
               {isCurrentSong && isPlaying && (
-                <div className="absolute top-3 left-3 bg-[#14b8a6] px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
-                  <div className="flex gap-1">
-                    <div className="w-1 h-3 bg-white rounded-full animate-scale-y" />
-                    <div
-                      className="w-1 h-3 bg-white rounded-full animate-scale-y"
-                      style={{ animationDelay: "0.2s" }}
-                    />
-                    <div
-                      className="w-1 h-3 bg-white rounded-full animate-scale-y"
-                      style={{ animationDelay: "0.4s" }}
-                    />
+                <div className="absolute top-0 left-0 z-30">
+                  <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/20 shadow-lg">
+                    <div className="flex gap-0.5">
+                      <div className="w-0.5 h-3 bg-[#14b8a6] rounded-full animate-scale-y shadow-[0_0_4px_rgba(20,184,166,0.8)]" />
+                      <div
+                        className="w-0.5 h-3 bg-[#14b8a6] rounded-full animate-scale-y shadow-[0_0_4px_rgba(20,184,166,0.8)]"
+                        style={{ animationDelay: "0.15s" }}
+                      />
+                      <div
+                        className="w-0.5 h-3 bg-[#14b8a6] rounded-full animate-scale-y shadow-[0_0_4px_rgba(20,184,166,0.8)]"
+                        style={{ animationDelay: "0.3s" }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-white">
+                      Now Playing
+                    </span>
                   </div>
-                  <span className="text-xs font-medium text-white">
-                    Playing
-                  </span>
                 </div>
               )}
 
@@ -363,7 +365,7 @@ const SongCard = ({ song, isPlaying, i }) => {
             className="absolute bottom-4 right-3 z-30 opacity-40 hover:opacity-100 transition-all duration-200"
           >
             <button
-              className="relative p-1.5 rounded-lg hover:bg-white/[0.08] transition-all duration-200 group/menu"
+              className="relative p-2.5 -m-1 rounded-lg hover:bg-white/[0.08] transition-all duration-200 group/menu"
               aria-label="More options"
             >
               {/* Vertical three dot button */}
