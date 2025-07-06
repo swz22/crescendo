@@ -5,6 +5,7 @@ import { AppHeader, ResponsiveGrid, Loader } from "../components";
 import UserPlaylistCard from "../components/UserPlaylistCard";
 import PlaylistHeroSection from "../components/PlaylistHeroSection";
 import EmptyPlaylistsState from "../components/EmptyPlaylistsState";
+import UserPlaylistModal from "../components/UserPlaylistModal";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { FiSearch, FiFilter } from "react-icons/fi";
 import { HiOutlineSortAscending } from "react-icons/hi";
@@ -178,6 +179,16 @@ const MyPlaylists = () => {
         </>
       ) : (
         <EmptyPlaylistsState onCreatePlaylist={handleCreateNewPlaylist} />
+      )}
+
+      {/* Playlist Modal */}
+      {selectedPlaylist && (
+        <>
+          <UserPlaylistModal
+            playlist={selectedPlaylist}
+            onClose={() => setSelectedPlaylist(null)}
+          />
+        </>
       )}
     </div>
   );
