@@ -8,9 +8,12 @@ import { FiWifi, FiDatabase, FiActivity } from "react-icons/fi";
 import { previewUrlManager } from "../utils/previewUrlManager";
 import { clearAllAppData } from "../utils/storageManager";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { useToast } from "../context/ToastContext";
+import ConfirmDialog from "./ConfirmDialog";
 
 const PerformanceMonitor = ({ onClose }) => {
   const dispatch = useDispatch();
+  const { showToast } = useToast();
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isTablet = useMediaQuery("(min-width: 640px) and (max-width: 1023px)");
   const isDesktop = useMediaQuery("(min-width: 1480px)");
@@ -52,6 +55,10 @@ const PerformanceMonitor = ({ onClose }) => {
   const animationRef = useRef(null);
   const intervalRef = useRef(null);
   const isMountedRef = useRef(true);
+
+  // Dialog states
+  const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -271,23 +278,10 @@ const PerformanceMonitor = ({ onClose }) => {
       failed: 0,
       circuitBreakerOpen: false,
     });
+    showToast("Cache cleared successfully", "success");
   };
 
   const handleResetApp = () => {
-    if (!showResetConfirm) {
-      setShowResetConfirm(true);
-      if (resetTimeoutRef.current) {
-        clearTimeout(resetTimeoutRef.current);
-      }
-      resetTimeoutRef.current = setTimeout(() => {
-        if (isMountedRef.current) {
-          setShowResetConfirm(false);
-        }
-        resetTimeoutRef.current = null;
-      }, 3000);
-      return;
-    }
-
     setIsResetting(true);
     clearAllAppData();
     setTimeout(() => window.location.reload(), 1000);
@@ -567,7 +561,7 @@ const PerformanceMonitor = ({ onClose }) => {
             {/* Bottom Action Buttons */}
             <div className="flex gap-3 mt-auto">
               <button
-                onClick={handleClearCache}
+                onClick={() => setShowClearCacheDialog(true)}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/[0.08] backdrop-blur-md rounded-xl transition-all duration-300 border border-white/10 hover:border-white/20 group"
               >
                 <FiDatabase className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
@@ -576,7 +570,7 @@ const PerformanceMonitor = ({ onClose }) => {
                 </span>
               </button>
               <button
-                onClick={handleResetApp}
+                onClick={() => setShowResetDialog(true)}
                 disabled={isResetting}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 backdrop-blur-md group ${
                   showResetConfirm
@@ -853,14 +847,14 @@ const PerformanceMonitor = ({ onClose }) => {
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={handleClearCache}
+                        onClick={() => setShowClearCacheDialog(true)}
                         className="p-2 bg-white/[0.05] hover:bg-white/[0.08] backdrop-blur-md rounded-lg transition-all duration-300 border border-white/10 hover:border-white/20 group"
                         title="Clear Cache"
                       >
                         <FiDatabase className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
                       </button>
                       <button
-                        onClick={handleResetApp}
+                        onClick={() => setShowResetDialog(true)}
                         disabled={isResetting}
                         className={`p-2 rounded-lg transition-all duration-300 backdrop-blur-md group ${
                           showResetConfirm
@@ -1078,6 +1072,43 @@ const PerformanceMonitor = ({ onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        isOpen={showClearCacheDialog}
+        onClose={() => setShowClearCacheDialog(false)}
+        onConfirm={handleClearCache}
+        title="Clear Preview Cache?"
+        message="This will remove all cached preview URLs and performance data. You'll need to reload previews for songs you play."
+        confirmText="Clear Cache"
+        cancelText="Cancel"
+        variant="warning"
+        icon={FiDatabase}
+        details={[
+          `${stats.cached} cached preview URLs will be removed`,
+          "Performance monitoring data will be reset",
+          "Your playlists and preferences will be preserved",
+        ]}
+      />
+
+      <ConfirmDialog
+        isOpen={showResetDialog}
+        onClose={() => setShowResetDialog(false)}
+        onConfirm={handleResetApp}
+        title="Reset Crescendo?"
+        message="This will completely reset the app to its initial state. All your data will be permanently deleted."
+        confirmText="Reset Everything"
+        cancelText="Cancel"
+        variant="danger"
+        icon={HiLightningBolt}
+        details={[
+          "All playlists will be deleted",
+          "Play history will be cleared",
+          "App preferences will be reset",
+          "Cached data will be removed",
+          "This action cannot be undone",
+        ]}
+      />
     </>
   );
 };

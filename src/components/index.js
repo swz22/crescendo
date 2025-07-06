@@ -38,6 +38,7 @@ import MusicLoadingSpinner from "./MusicLoadingSpinner";
 import LoadingState from "./LoadingState";
 import SongMenu from "./SongMenu";
 import BottomSheet from "./BottomSheet";
+import ConfirmDialog from "./ConfirmDialog";
 
 // Page Components
 import DetailsHeader from "./DetailsHeader";
@@ -87,6 +88,7 @@ export {
   LoadingState,
   SongMenu,
   BottomSheet,
+  ConfirmDialog,
 
   // Page Components
   DetailsHeader,
