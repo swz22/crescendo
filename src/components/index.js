@@ -21,6 +21,9 @@ import PlaylistModal from "./PlaylistModal";
 import SidebarPlayer from "./SidebarPlayer";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
+import UserPlaylistCard from "./UserPlaylistCard";
+import PlaylistHeroSection from "./PlaylistHeroSection";
+import EmptyPlaylistsState from "./EmptyPlaylistsState";
 
 // Queue Components
 import QueueIndicator from "./QueueIndicator";
@@ -71,6 +74,9 @@ export {
   SidebarPlayer,
   PlaylistDropdown,
   PlaylistManager,
+  UserPlaylistCard,
+  PlaylistHeroSection,
+  EmptyPlaylistsState,
 
   // Queue
   QueueIndicator,

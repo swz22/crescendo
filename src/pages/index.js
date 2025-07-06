@@ -9,6 +9,7 @@ const SongDetails = lazy(() => import("./SongDetails"));
 const Search = lazy(() => import("./Search"));
 const NewReleases = lazy(() => import("./NewReleases"));
 const CommunityPlaylists = lazy(() => import("./CommunityPlaylists"));
+const MyPlaylists = lazy(() => import("./MyPlaylists"));
 
 export {
   Discover,
@@ -20,4 +21,5 @@ export {
   SongDetails,
   NewReleases,
   CommunityPlaylists,
+  MyPlaylists,
 };

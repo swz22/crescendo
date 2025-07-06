@@ -4,6 +4,7 @@ import {
   HiOutlineSparkles,
   HiOutlineCollection,
   HiOutlinePhotograph,
+  HiOutlineFolderOpen,
 } from "react-icons/hi";
 
 export const genres = [
@@ -31,6 +32,7 @@ export const links = [
   { name: "Top Albums", to: "/top-albums", icon: HiOutlinePhotograph },
   { name: "New Releases", to: "/new-releases", icon: HiOutlineSparkles },
   { name: "Community Playlists", to: "/playlists", icon: HiOutlineCollection },
+  { name: "My Playlists", to: "/my-playlists", icon: HiOutlineFolderOpen },
 ];
 
 export const countries = [

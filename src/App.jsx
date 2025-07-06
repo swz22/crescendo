@@ -21,6 +21,7 @@ import {
   SongDetails,
   NewReleases,
   CommunityPlaylists,
+  MyPlaylists,
 } from "./pages";
 
 const PageLoader = () => (
@@ -69,10 +70,11 @@ const MainContent = () => {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Discover />} />
-              <Route path="/top-albums" element={<TopAlbums />} />
               <Route path="/top-artists" element={<TopArtists />} />
+              <Route path="/top-albums" element={<TopAlbums />} />
               <Route path="/new-releases" element={<NewReleases />} />
               <Route path="/playlists" element={<CommunityPlaylists />} />
+              <Route path="/my-playlists" element={<MyPlaylists />} />
               <Route path="/albums/:id" element={<AlbumDetails />} />
               <Route path="/artists/:id" element={<ArtistDetails />} />
               <Route path="/songs/:songid" element={<SongDetails />} />
