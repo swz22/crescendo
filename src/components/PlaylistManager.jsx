@@ -10,6 +10,7 @@ import {
   HiOutlineCheck,
 } from "react-icons/hi";
 import { BsMusicNoteList } from "react-icons/bs";
+import ConfirmDialog from "./ConfirmDialog";
 
 const PlaylistManager = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
@@ -27,6 +28,8 @@ const PlaylistManager = ({ isOpen, onClose }) => {
   const [editingName, setEditingName] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [playlistToDelete, setPlaylistToDelete] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -73,18 +76,28 @@ const PlaylistManager = ({ isOpen, onClose }) => {
     onClose();
   };
 
+  const handleDeleteConfirm = () => {
+    if (playlistToDelete) {
+      handleDeletePlaylist(playlistToDelete.id);
+      setPlaylistToDelete(null);
+      setShowDeleteDialog(false);
+    }
+  };
+
   if (!isVisible) return null;
 
   return (
     <Portal>
-      <div className="fixed inset-0 z-[200] flex">
+      <div className="fixed inset-0 z-[60] flex">
         {/* Backdrop */}
-        <div
-          className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-            isAnimating ? "opacity-100" : "opacity-0"
-          }`}
-          onClick={handleBackdropClick}
-        />
+        {!showDeleteDialog && (
+          <div
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+              isAnimating ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={handleBackdropClick}
+          />
+        )}
 
         {/* Panel - Match SidebarPlayer width of 380px */}
         <div
@@ -239,9 +252,10 @@ const PlaylistManager = ({ isOpen, onClose }) => {
                                 <HiOutlinePencil className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() =>
-                                  handleDeletePlaylist(playlist.id)
-                                }
+                                onClick={() => {
+                                  setPlaylistToDelete(playlist);
+                                  setShowDeleteDialog(true);
+                                }}
                                 className="p-2 bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 rounded-lg transition-all"
                                 title="Delete playlist"
                               >
@@ -259,6 +273,27 @@ const PlaylistManager = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
+      {playlistToDelete && (
+        <ConfirmDialog
+          isOpen={showDeleteDialog}
+          onClose={() => {
+            setShowDeleteDialog(false);
+            setPlaylistToDelete(null);
+          }}
+          onConfirm={handleDeleteConfirm}
+          title={`Delete "${playlistToDelete.name}"?`}
+          message="This playlist will be permanently deleted. All tracks will be removed from this playlist."
+          confirmText="Delete Playlist"
+          cancelText="Cancel"
+          variant="danger"
+          icon={HiOutlineTrash}
+          details={[
+            `${playlistToDelete.tracks.length} tracks will be removed from this playlist`,
+            "The songs themselves won't be deleted",
+            "This action cannot be undone",
+          ]}
+        />
+      )}
     </Portal>
   );
 };

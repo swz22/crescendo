@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import ConfirmDialog from "./ConfirmDialog";
 import {
   playPause,
   playFromContext,
@@ -54,11 +55,16 @@ const SidebarPlayer = () => {
   const { handleNextSong, handlePrevSong, isNavigating } = useSongNavigation();
   const { getPreviewUrl, prefetchPreviewUrl, isPreviewCached } =
     usePreviewUrl();
-
   const [showManagePanel, setShowManagePanel] = useState(false);
+  const [showClearQueueDialog, setShowClearQueueDialog] = useState(false);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
   const { duration, currentTime, seek } = useAudioState();
+
+  const handleClearQueue = () => {
+    dispatch(clearQueue());
+    setShowClearQueueDialog(false);
+  };
 
   // Auto-scroll to active track
   useEffect(() => {
@@ -419,11 +425,7 @@ const SidebarPlayer = () => {
               <>
                 <div className="w-px h-4 bg-white/10" />
                 <button
-                  onClick={() => {
-                    if (confirm("Clear entire queue?")) {
-                      dispatch(clearQueue());
-                    }
-                  }}
+                  onClick={() => setShowClearQueueDialog(true)}
                   className="text-white/40 hover:text-red-400 text-sm font-medium transition-all duration-200 px-3 py-1 rounded-lg bg-white/10 hover:bg-red-400/20"
                 >
                   Clear All
@@ -629,6 +631,22 @@ const SidebarPlayer = () => {
       <PlaylistManager
         isOpen={showManagePanel}
         onClose={() => setShowManagePanel(false)}
+      />
+      <ConfirmDialog
+        isOpen={showClearQueueDialog}
+        onClose={() => setShowClearQueueDialog(false)}
+        onConfirm={handleClearQueue}
+        title="Clear entire queue?"
+        message="This will remove all tracks from your queue. You'll need to add songs again to continue playing."
+        confirmText="Clear Queue"
+        cancelText="Cancel"
+        variant="warning"
+        icon={HiOutlineQueueList}
+        details={[
+          `${tracks.length} tracks will be removed`,
+          "Currently playing track will stop",
+          "This action cannot be undone",
+        ]}
       />
     </div>
   );

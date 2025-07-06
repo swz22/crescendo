@@ -18,22 +18,27 @@ const ConfirmDialog = ({
   details = [],
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showContent, setShowContent] = useState(false);
   const isMobile = useMediaQuery("(max-width: 640px)");
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setIsAnimating(true), 50);
+      setTimeout(() => setShowContent(true), 100);
     } else {
+      setShowContent(false);
       setIsAnimating(false);
     }
   }, [isOpen]);
 
   const handleClose = () => {
+    setShowContent(false);
     setIsAnimating(false);
     setTimeout(onClose, 300);
   };
 
   const handleConfirm = () => {
+    setShowContent(false);
     setIsAnimating(false);
     setTimeout(() => {
       onConfirm();
@@ -79,7 +84,7 @@ const ConfirmDialog = ({
           style={{ animationDuration: "3s" }}
         />
         <div
-          className={`relative inline-flex p-4 rounded-2xl bg-gradient-to-br ${styles.iconBg} backdrop-blur-sm border border-white/10`}
+          className={`relative inline-flex p-4 rounded-2xl bg-gradient-to-br ${styles.iconBg} border border-white/10`}
         >
           <IconComponent className={`w-8 h-8 ${styles.iconColor}`} />
         </div>
@@ -93,7 +98,7 @@ const ConfirmDialog = ({
 
       {/* Details list if provided */}
       {details.length > 0 && (
-        <div className="mb-6 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+        <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
           <div className="space-y-2">
             {details.map((detail, index) => (
               <div key={index} className="flex items-start gap-2">
@@ -109,13 +114,13 @@ const ConfirmDialog = ({
       <div className="flex gap-3 mt-8">
         <button
           onClick={handleClose}
-          className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl font-medium transition-all duration-200 border border-white/20 hover:border-white/30"
+          className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-all duration-200 border border-white/20 hover:border-white/30"
         >
           {cancelText}
         </button>
         <button
           onClick={handleConfirm}
-          className={`flex-1 px-6 py-3 ${styles.buttonBg} backdrop-blur-sm rounded-xl font-medium transition-all duration-200 border ${styles.buttonText}`}
+          className={`flex-1 px-6 py-3 ${styles.buttonBg} rounded-xl font-medium transition-all duration-200 border ${styles.buttonText}`}
         >
           {confirmText}
         </button>
@@ -129,7 +134,7 @@ const ConfirmDialog = ({
       <>
         {/* Backdrop */}
         <div
-          className={`fixed inset-0 z-[100] transition-all duration-300 ${
+          className={`fixed inset-0 z-[100] ${
             isAnimating
               ? "bg-black/70 backdrop-blur-sm"
               : "bg-transparent pointer-events-none"
@@ -140,11 +145,11 @@ const ConfirmDialog = ({
         {/* Bottom sheet */}
         <div
           className={`fixed bottom-0 left-0 right-0 z-[101] transition-all duration-300 ${
-            isAnimating ? "translate-y-0" : "translate-y-full"
+            isAnimating && showContent ? "translate-y-0" : "translate-y-full"
           }`}
         >
           <div
-            className="bg-gradient-to-b from-[#2d2467] to-[#1a1848] backdrop-blur-xl rounded-t-3xl shadow-2xl border-t border-white/20 px-6 pt-6 pb-8"
+            className="bg-gradient-to-b from-[#2d2467] to-[#1a1848] rounded-t-3xl shadow-2xl border-t border-white/20 px-6 pt-6 pb-8"
             style={{
               boxShadow: `0 -10px 40px ${styles.glowColor}`,
             }}
@@ -164,7 +169,7 @@ const ConfirmDialog = ({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[100] transition-all duration-300 ${
+        className={`fixed inset-0 z-[100] ${
           isAnimating
             ? "bg-black/70 backdrop-blur-md"
             : "bg-transparent pointer-events-none"
@@ -176,7 +181,7 @@ const ConfirmDialog = ({
       <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
         <div
           className={`relative max-w-md w-full pointer-events-auto transition-all duration-300 ${
-            isAnimating
+            isAnimating && showContent
               ? "scale-100 opacity-100 translate-y-0"
               : "scale-95 opacity-0 translate-y-4"
           }`}
@@ -189,7 +194,7 @@ const ConfirmDialog = ({
 
           {/* Main content */}
           <div
-            className="relative bg-gradient-to-br from-[#1e1b4b]/98 to-[#0f172a]/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden p-8"
+            className="relative bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] rounded-2xl shadow-2xl border border-white/20 overflow-hidden p-8"
             style={{
               boxShadow: `0 20px 60px ${styles.glowColor}`,
             }}

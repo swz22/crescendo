@@ -30,6 +30,7 @@ import {
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useAudioState } from "../hooks/useAudioState";
 import { useSongNavigation } from "../hooks/useSongNavigation";
+import ConfirmDialog from "./ConfirmDialog";
 
 const NowPlaying = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
@@ -55,6 +56,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
   const [isRemoving, setIsRemoving] = useState(null);
   const [dragY, setDragY] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+  const [showClearQueueDialog, setShowClearQueueDialog] = useState(false);
 
   const startYRef = useRef(0);
   const sheetRef = useRef(null);
@@ -112,7 +114,6 @@ const NowPlaying = ({ isOpen, onClose }) => {
   const handleTouchEnd = () => {
     setIsDragging(false);
     if (dragY > 50) {
-      // Reduced from 100 to 50 for easier dismissal
       onClose();
     }
     setDragY(0);
@@ -159,9 +160,8 @@ const NowPlaying = ({ isOpen, onClose }) => {
   };
 
   const handleClearQueue = () => {
-    if (confirm("Clear entire queue?")) {
-      dispatch(clearQueue());
-    }
+    dispatch(clearQueue());
+    setShowClearQueueDialog(false);
   };
 
   const formatTime = (seconds) => {
@@ -262,7 +262,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
               <div className="flex items-center gap-2">
                 {activeContext === "queue" && tracks.length > 0 && (
                   <button
-                    onClick={handleClearQueue}
+                    onClick={() => setShowClearQueueDialog(true)}
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-white/[0.08] to-white/[0.05] hover:from-red-500/20 hover:to-red-600/20 hover:text-red-400 backdrop-blur-xl rounded-full text-white font-medium transition-all border border-white/10 hover:border-red-500/30 text-sm shadow-lg shadow-black/20"
                   >
                     <HiOutlineTrash className="w-3.5 h-3.5" />
@@ -585,6 +585,22 @@ const NowPlaying = ({ isOpen, onClose }) => {
             </div>
           )}
         </div>
+        <ConfirmDialog
+          isOpen={showClearQueueDialog}
+          onClose={() => setShowClearQueueDialog(false)}
+          onConfirm={handleClearQueue}
+          title="Clear entire queue?"
+          message="This will remove all tracks from your queue. You'll need to add songs again to continue playing."
+          confirmText="Clear Queue"
+          cancelText="Cancel"
+          variant="warning"
+          icon={HiOutlineQueueList}
+          details={[
+            `${tracks.length} tracks will be removed`,
+            "Currently playing track will stop",
+            "This action cannot be undone",
+          ]}
+        />
       </div>
     </>
   );

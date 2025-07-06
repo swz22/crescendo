@@ -28,9 +28,7 @@ export const usePlaylistManager = () => {
 
   const handleDeletePlaylist = useCallback(
     (playlistId) => {
-      if (window.confirm("Are you sure you want to delete this playlist?")) {
-        dispatch(deletePlaylist({ playlistId }));
-      }
+      dispatch(deletePlaylist({ playlistId }));
     },
     [dispatch]
   );
