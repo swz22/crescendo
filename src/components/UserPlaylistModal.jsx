@@ -116,23 +116,19 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     try {
       const trackWithPreview = await getPreviewUrl(track);
       if (trackWithPreview?.preview_url) {
-        // Switch to this playlist context
         dispatch(
-          switchContext({
+          replaceContext({
             contextType: currentPlaylist.id,
-            contextData: {
+            tracks: tracks,
+            startIndex: index,
+            playlistData: {
               id: currentPlaylist.id,
               name: currentPlaylist.name,
               tracks: tracks,
             },
           })
         );
-
-        dispatch(
-          playTrack({
-            track: trackWithPreview,
-          })
-        );
+        showToast(`Playing from ${currentPlaylist.name}`);
       } else {
         showToast("No preview available", "error");
       }

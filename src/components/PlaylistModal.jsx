@@ -111,11 +111,22 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     try {
       const trackWithPreview = await getPreviewUrl(track);
       if (trackWithPreview?.preview_url) {
+        const updatedTracks = [...tracks];
+        updatedTracks[index] = trackWithPreview;
+
         dispatch(
-          playTrack({
-            track: trackWithPreview,
+          replaceContext({
+            contextType: "community_playlist",
+            tracks: updatedTracks,
+            startIndex: index,
+            playlistData: {
+              id: playlist.id,
+              name: playlist.name,
+              tracks: updatedTracks,
+            },
           })
         );
+        showToast(`Playing from ${playlist.name}`);
       } else {
         showToast("No preview available", "error");
       }
