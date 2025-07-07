@@ -255,208 +255,290 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
             : "translate-x-full opacity-0"
         }`}
       >
-        <div className="flex flex-col h-full pb-24">
+        <div className="flex flex-col h-full pb-safe">
           {/* Mobile Header*/}
-          <div className="flex items-center justify-between p-3 flex-shrink-0">
+          <div className="flex items-center justify-between p-3 pt-safe">
             <button
               onClick={handleClose}
-              className="p-2 rounded-full bg-black/20 hover:bg-black/40 transition-all"
+              className="p-2.5 rounded-2xl bg-white/[0.08] backdrop-blur-xl 
+          border border-white/10 shadow-lg
+          active:scale-95 transition-all duration-200"
             >
               <IoArrowBack className="w-5 h-5 text-white" />
             </button>
-            <h2 className="text-base font-semibold text-white uppercase tracking-wider">
+            <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">
               My Playlist
             </h2>
-            <div className="w-9" />
+            <div className="w-[42px]" /> {/* Spacer for balance */}
           </div>
 
-          {/* Mobile Album Art and Info */}
+          {/* Album Art and Info */}
           <div className="px-4 pb-4 flex-shrink-0">
-            <div className="flex flex-col items-center">
-              {/* Album art */}
-              <div className="w-[100px] h-[100px] rounded-xl overflow-hidden shadow-2xl mb-3">
-                {mosaicImages.length === 4 ? (
-                  <div className="grid grid-cols-2 gap-0.5 w-full h-full bg-black">
-                    {mosaicImages.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = placeholderImage;
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <img
-                    src={mosaicImages[0] || placeholderImage}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = placeholderImage;
-                    }}
+            <div className="flex gap-5 items-center">
+              {/* Album art with glow */}
+              <div className="relative flex-shrink-0">
+                {/* Animated glow background */}
+                <div
+                  className="absolute -inset-3 bg-gradient-to-r from-[#14b8a6]/20 via-purple-600/20 to-[#14b8a6]/20 
+            rounded-2xl blur-xl animate-pulse-glow"
+                ></div>
+
+                {/* Album art container */}
+                <div
+                  className="relative w-[100px] h-[100px] rounded-xl overflow-hidden shadow-2xl 
+            ring-1 ring-white/10"
+                >
+                  {mosaicImages.length === 4 ? (
+                    <div className="grid grid-cols-2 gap-0.5 w-full h-full bg-black/50">
+                      {mosaicImages.map((img, i) => (
+                        <img
+                          key={i}
+                          src={img}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = placeholderImage;
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <img
+                      src={mosaicImages[0] || placeholderImage}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = placeholderImage;
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Title and metadata */}
+              <div className="flex-1 ml-1">
+                {isEditingName ? (
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={handleSaveEdit}
+                    onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
+                    className="text-[22px] font-bold text-white bg-white/10 
+                rounded-lg px-2 py-0.5 mb-2 w-full
+                border border-white/20 focus:border-[#14b8a6]/50 focus:outline-none
+                focus:bg-white/15 transition-all duration-200"
+                    autoFocus
                   />
+                ) : (
+                  <h1 className="text-[22px] font-bold text-white mb-2 line-clamp-2">
+                    {currentPlaylist.name}
+                  </h1>
                 )}
-              </div>
 
-              {/* Title and subtitle */}
-              {isEditingName ? (
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onBlur={handleSaveEdit}
-                  onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
-                  className="text-xl font-bold text-white text-center bg-white/10 rounded px-2 py-1 mb-1 max-w-[250px] mx-auto"
-                  autoFocus
-                />
-              ) : (
-                <h1 className="text-xl font-bold text-white text-center mb-1">
-                  {currentPlaylist.name}
-                </h1>
-              )}
-              <div className="flex items-center gap-3 text-xs text-gray-400">
-                <span>{tracks?.length || 0} songs</span>
-                <span>•</span>
-                <span>{getTotalDuration()}</span>
+                {/* Stats */}
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-2">
+                    <BsMusicNoteBeamed className="w-4 h-4 text-[#14b8a6]" />
+                    <span className="text-sm text-white/80">
+                      {tracks?.length || 0} songs
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <BsClock className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-white/80">
+                      {getTotalDuration()}
+                    </span>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-3 mt-4">
-                <button
-                  onClick={() => handlePlayAll(false)}
-                  disabled={isLoading("play-all")}
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-2.5 rounded-lg transition-all disabled:opacity-80 disabled:cursor-not-allowed"
+            {/* Action buttons */}
+            <div className="flex items-center gap-2.5 mt-5">
+              {/* Play All button */}
+              <button
+                onClick={() => handlePlayAll(false)}
+                disabled={isLoading("play-all") || tracks.length === 0}
+                className="flex-1 relative group"
+              >
+                <div
+                  className="absolute -inset-0.5 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] 
+            rounded-xl blur opacity-50 group-active:opacity-70 transition duration-200"
+                ></div>
+
+                <div
+                  className="relative flex items-center justify-center gap-2 
+            bg-gradient-to-r from-[#14b8a6] to-[#0891b2] 
+            text-white font-semibold py-3 px-4 rounded-xl
+            transition-all duration-200 transform active:scale-[0.98]
+            disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {isLoading("play-all") ? (
                     <LoadingState variant="button" text="Loading..." />
                   ) : (
                     <>
                       <BsFillPlayFill size={20} />
-                      <span>Play All</span>
+                      <span className="text-sm">Play All</span>
                     </>
                   )}
-                </button>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePlayAll(true)}
-                    disabled={isLoading("shuffle-play")}
-                    className={`p-2 rounded-full transition-all ${
-                      shuffle
-                        ? "bg-white/10 text-[#14b8a6]"
-                        : "bg-white/10 text-white hover:bg-white/20"
-                    } disabled:opacity-80 disabled:cursor-not-allowed`}
-                    title="Shuffle Play"
-                  >
-                    {isLoading("shuffle-play") ? (
-                      <MusicLoadingSpinner size="sm" />
-                    ) : (
-                      <BsShuffle size={18} />
-                    )}
-                  </button>
-                  <button
-                    onClick={handleAddAllToQueue}
-                    className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-                    title="Add all to queue"
-                  >
-                    <HiPlus size={18} />
-                  </button>
-                  <button
-                    onClick={() => setIsEditingName(true)}
-                    className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-                    title="Rename playlist"
-                  >
-                    <HiOutlinePencil size={18} />
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="p-2 rounded-full bg-white/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
-                    title="Delete playlist"
-                  >
-                    <HiOutlineTrash size={18} />
-                  </button>
                 </div>
+              </button>
+
+              {/* Secondary actions */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePlayAll(true)}
+                  disabled={isLoading("shuffle-play") || tracks.length === 0}
+                  className={`p-3 rounded-xl transition-all duration-200 
+              backdrop-blur-md border
+              ${
+                shuffle
+                  ? "bg-[#14b8a6]/20 border-[#14b8a6]/50 text-[#14b8a6]"
+                  : "bg-white/[0.08] border-white/10 text-white/70"
+              } 
+              active:scale-95 disabled:opacity-70`}
+                >
+                  {isLoading("shuffle-play") ? (
+                    <MusicLoadingSpinner size="sm" />
+                  ) : (
+                    <BsShuffle size={18} />
+                  )}
+                </button>
+
+                <button
+                  onClick={handleAddAllToQueue}
+                  disabled={tracks.length === 0}
+                  className="p-3 rounded-xl bg-white/[0.08] backdrop-blur-md 
+              border border-white/10 text-white/70 
+              active:scale-95 transition-all duration-200
+              disabled:opacity-70"
+                >
+                  <HiPlus size={18} />
+                </button>
+
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  className="p-3 rounded-xl bg-white/[0.08] backdrop-blur-md 
+              border border-white/10 text-white/70 
+              active:scale-95 transition-all duration-200"
+                >
+                  <HiOutlinePencil size={18} />
+                </button>
+
+                <button
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="p-3 rounded-xl bg-white/[0.08] backdrop-blur-md 
+              border border-white/10 text-red-400 
+              hover:bg-red-500/20 hover:text-red-300 
+              active:scale-95 transition-all duration-200"
+                >
+                  <HiOutlineTrash size={18} />
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Mobile Track List */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="px-4">
-              {tracks?.map((track, i) => {
-                const isActive = isTrackActive(track, i);
-                return (
-                  <div
-                    key={`${track.key || track.id}-${i}`}
-                    ref={isActive ? activeTrackRef : null}
-                    onClick={() => handlePlayClick(track, i)}
-                    className={`relative flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-all group cursor-pointer ${
+          {/* Track List */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            <div className="px-3 pb-3">
+              {tracks.length === 0 ? (
+                <div className="text-center py-12">
+                  <BsMusicNoteBeamed className="w-12 h-12 text-white/20 mx-auto mb-4" />
+                  <p className="text-white/60">Your playlist is empty</p>
+                  <p className="text-white/40 text-sm mt-2">
+                    Add some tracks to get started
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {tracks?.map((track, i) => {
+                    const isActive = isTrackActive(track, i);
+                    return (
+                      <div
+                        key={`${track.key || track.id}-${i}`}
+                        ref={isActive ? activeTrackRef : null}
+                        onClick={() => handlePlayClick(track, i)}
+                        className={`relative flex items-center gap-3 p-3 rounded-xl 
+                    transition-all duration-200 cursor-pointer group
+                    ${
                       isActive
-                        ? "bg-gradient-to-r from-[#14b8a6]/15 to-transparent before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-[#14b8a6] before:rounded-l-lg"
-                        : ""
+                        ? "bg-gradient-to-r from-[#14b8a6]/15 to-transparent backdrop-blur-md"
+                        : "hover:bg-white/[0.05] active:bg-white/[0.08]"
                     }`}
-                  >
-                    <span className="text-gray-400 text-sm w-6 text-center">
-                      {i + 1}
-                    </span>
-
-                    <img
-                      src={track.images?.coverart || placeholderImage}
-                      alt={track.title}
-                      className="w-12 h-12 rounded object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = placeholderImage;
-                      }}
-                    />
-
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`font-medium truncate ${
-                          isActive ? "text-[#14b8a6]" : "text-white"
-                        }`}
                       >
-                        {track.title}
-                      </p>
-                      <p className="text-gray-400 text-sm truncate">
-                        {track.subtitle}
-                      </p>
-                    </div>
+                        {/* Track number */}
+                        <div
+                          className={`flex items-center justify-center w-7 h-7 rounded-lg
+                    text-xs font-semibold transition-all duration-200
+                    ${
+                      isActive
+                        ? "bg-[#14b8a6]/20 text-[#14b8a6]"
+                        : "bg-white/[0.06] text-white/50"
+                    }`}
+                        >
+                          {i + 1}
+                        </div>
 
-                    {/* Menu & Play */}
-                    <div className="flex items-center gap-1">
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <SongMenu
-                          song={track}
-                          onRemoveFromPlaylist={() => {
-                            handleRemoveFromPlaylist(
-                              currentPlaylist.id,
-                              getTrackId(track)
-                            );
+                        {/* Album art */}
+                        <img
+                          src={track.images?.coverart || placeholderImage}
+                          alt={track.title}
+                          className="w-11 h-11 rounded-lg object-cover shadow-md flex-shrink-0"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = placeholderImage;
                           }}
                         />
+
+                        {/* Track info */}
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`font-medium truncate text-sm leading-tight
+                      ${isActive ? "text-[#14b8a6]" : "text-white/90"}`}
+                          >
+                            {track.title}
+                          </p>
+                          <p className="text-white/50 text-xs truncate">
+                            {track.subtitle}
+                          </p>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <SongMenu
+                              song={track}
+                              onRemoveFromPlaylist={() => {
+                                handleRemoveFromPlaylist(
+                                  currentPlaylist.id,
+                                  getTrackId(track)
+                                );
+                              }}
+                            />
+                          </div>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <PlayPause
+                              song={track}
+                              handlePause={handlePauseClick}
+                              handlePlay={() => handlePlayClick(track, i)}
+                              size={34}
+                              isLoading={isLoading(
+                                `track-${getTrackId(track)}`
+                              )}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <PlayPause
-                          song={track}
-                          handlePause={handlePauseClick}
-                          handlePlay={() => handlePlayClick(track, i)}
-                          size={35}
-                          isLoading={isLoading(`track-${getTrackId(track)}`)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-
       {/* Tablet View with Integrated Player */}
       {!isDesktopScreen && (
         <div className="hidden sm:block">

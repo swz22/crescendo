@@ -1015,3 +1015,167 @@ body.modal-open {
     transform: translateZ(0);
   }
 }
+
+/* Mobile Modal Animations */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+/* Button press effect */
+@media (max-width: 639px) {
+  button:active {
+    transform: scale(0.95);
+  }
+
+  .group:active {
+    transition-duration: 100ms;
+  }
+
+  .touch-feedback {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .touch-feedback::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+  }
+
+  .touch-feedback:active::after {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+/* Mobile scrolling */
+@media (max-width: 639px) {
+  .overscroll-contain {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  .track-list-item {
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+@supports (backdrop-filter: blur(12px)) {
+  .glass-effect {
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+  }
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .pt-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+}
+
+/* Enhanced mobile typography */
+@media (max-width: 639px) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Better text contrast */
+  .text-white\/90 {
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .text-white\/80 {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .text-white\/60 {
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .text-white\/50 {
+    color: rgba(255, 255, 255, 0.55);
+  }
+}
+
+/* Mobile-specific hover states */
+@media (hover: none) and (pointer: coarse) {
+  .hover\:bg-white\/\[0\.12\]:hover {
+    background-color: transparent;
+  }
+
+  /* Use active states instead */
+  .hover\:bg-white\/\[0\.12\]:active {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* Enhanced shadow utilities for mobile */
+@media (max-width: 639px) {
+  .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-xl {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .shadow-2xl {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Smooth modal transitions */
+.modal-transition {
+  transition: transform 500ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Enhanced loading states */
+@keyframes shimmer-mobile {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-mobile 1.5s infinite;
+}
