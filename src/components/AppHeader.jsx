@@ -27,7 +27,7 @@ const AppHeader = memo(({ title, subtitle, action, showSearch = false, className
     setMobileMenuOpen(true);
     setTimeout(() => {
       setIsMenuAnimating(true);
-    }, 10);
+    }, 50);
   };
 
   const closeMenu = () => {
