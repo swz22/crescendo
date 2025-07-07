@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiSearch } from "react-icons/fi";
-import { HiOutlineLightBulb } from "react-icons/hi";
-import { showOnboardingModal } from "./OnboardingModal";
+import { HiOutlineX } from "react-icons/hi";
 
 const Searchbar = () => {
   const navigate = useNavigate();
@@ -16,10 +15,6 @@ const Searchbar = () => {
     }
   };
 
-  const handleShowTour = () => {
-    showOnboardingModal();
-  };
-
   return (
     <form onSubmit={handleSubmit} autoComplete="off" className="w-full">
       <label htmlFor="search-field" className="sr-only">
@@ -27,7 +22,7 @@ const Searchbar = () => {
       </label>
       <div className="relative group">
         <FiSearch
-          className={`absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-all duration-300 ${
+          className={`absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-all duration-300 ${
             isFocused
               ? "text-[#2dd4bf] scale-110"
               : "text-gray-400 group-hover:text-gray-300"
@@ -37,9 +32,10 @@ const Searchbar = () => {
           name="search-field"
           id="search-field"
           className="w-full bg-white/[0.08] backdrop-blur-xl border border-white/20 rounded-full 
-   placeholder-gray-400 outline-none text-sm sm:text-base text-white pl-10 sm:pl-12 pr-10 sm:pr-4 py-2 sm:py-1.5
-   focus:bg-white/[0.12] focus:border-[#14b8a6]/50 focus:shadow-[0_0_30px_rgba(45,212,191,0.3)] 
-   transition-all duration-300 hover:bg-white/10 hover:border-white/30"
+            placeholder-gray-400 outline-none text-base sm:text-base text-white pl-12 pr-12 py-3 sm:py-2.5
+            focus:bg-white/[0.12] focus:border-[#14b8a6]/50 focus:shadow-[0_0_30px_rgba(45,212,191,0.3)] 
+            transition-all duration-300 hover:bg-white/10 hover:border-white/30
+            [-webkit-text-size-adjust:100%] [font-size:16px] sm:[font-size:16px]"
           placeholder="Search songs..."
           type="search"
           value={searchTerm}
@@ -50,27 +46,14 @@ const Searchbar = () => {
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck="false"
-          inputMode="search"
         />
         {searchTerm && (
           <button
             type="button"
             onClick={() => setSearchTerm("")}
-            className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-all duration-200 hover:scale-110 p-1"
+            className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 p-1.5 text-gray-400 hover:text-white transition-all duration-200 hover:scale-110"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <HiOutlineX className="w-5 h-5" />
           </button>
         )}
         {/* Glow effect on focus */}
