@@ -60,16 +60,18 @@ const MyPlaylists = () => {
     });
 
   const handlePlaylistClick = (playlist) => {
+    console.log("Playlist clicked:", playlist.name);
     setSelectedPlaylist(playlist);
+  };
+
+  const handleModalClose = () => {
+    console.log("Closing modal");
+    setSelectedPlaylist(null);
   };
 
   const handleCreateNewPlaylist = () => {
     const playlistName = `My Playlist #${playlists.length + 1}`;
     const newId = handleCreatePlaylist(playlistName);
-    const newPlaylist = playlists.find((p) => p.id === newId);
-    if (newPlaylist) {
-      setSelectedPlaylist(newPlaylist);
-    }
   };
 
   if (loading) {
@@ -77,6 +79,12 @@ const MyPlaylists = () => {
   }
 
   const stats = getPlaylistStats();
+
+  const sortOptions = [
+    { value: "recent", label: "Recently Created" },
+    { value: "name", label: "Name (A-Z)" },
+    { value: "tracks", label: "Track Count" },
+  ];
 
   return (
     <div className="flex flex-col">
@@ -93,60 +101,42 @@ const MyPlaylists = () => {
 
       {playlists.length > 0 ? (
         <>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6 px-0 md:px-0">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          {/* Search and Sort Controls */}
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-8 px-4 md:px-6">
+            <div className="relative w-full md:w-96">
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search your playlists..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white/[0.08] backdrop-blur-xl border border-white/20 rounded-xl 
-                  placeholder-gray-400 outline-none text-white pl-10 pr-4 py-3
-                  focus:bg-white/[0.12] focus:border-[#14b8a6]/50 focus:shadow-[0_0_20px_rgba(45,212,191,0.2)] 
-                  transition-all duration-300"
+                className="w-full pl-12 pr-4 py-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6] focus:border-transparent transition-all"
               />
             </div>
 
-            {/* Sort Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowSortMenu(!showSortMenu)}
-                className="flex items-center gap-2 px-4 py-3 bg-white/[0.08] backdrop-blur-xl 
-                  border border-white/20 rounded-xl text-white hover:bg-white/[0.12] 
-                  transition-all duration-300"
+                className="flex items-center gap-2 px-4 py-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/10 text-white hover:bg-white/20 transition-all"
               >
                 <HiOutlineSortAscending className="w-5 h-5" />
-                <span className="text-sm font-medium">
-                  Sort by{" "}
-                  {sortBy === "recent"
-                    ? "Recent"
-                    : sortBy === "name"
-                    ? "Name"
-                    : "Tracks"}
+                <span>
+                  Sort by: {sortOptions.find((o) => o.value === sortBy)?.label}
                 </span>
               </button>
 
               {showSortMenu && (
-                <div
-                  className="absolute right-0 mt-2 w-48 bg-[#1e1b4b]/98 backdrop-blur-xl 
-                  rounded-xl shadow-xl border border-white/20 overflow-hidden z-20"
-                >
-                  {[
-                    { value: "recent", label: "Recently Created" },
-                    { value: "name", label: "Name (A-Z)" },
-                    { value: "tracks", label: "Track Count" },
-                  ].map((option) => (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-[#1e1b4b]/95 backdrop-blur-xl rounded-lg shadow-2xl border border-white/10 overflow-hidden z-20">
+                  {sortOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => {
                         setSortBy(option.value);
                         setShowSortMenu(false);
                       }}
-                      className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors ${
+                      className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors ${
                         sortBy === option.value
-                          ? "text-[#14b8a6]"
+                          ? "bg-white/10 text-[#14b8a6]"
                           : "text-white"
                       }`}
                     >
@@ -183,12 +173,11 @@ const MyPlaylists = () => {
 
       {/* Playlist Modal */}
       {selectedPlaylist && (
-        <>
-          <UserPlaylistModal
-            playlist={selectedPlaylist}
-            onClose={() => setSelectedPlaylist(null)}
-          />
-        </>
+        <UserPlaylistModal
+          key={selectedPlaylist.id}
+          playlist={selectedPlaylist}
+          onClose={handleModalClose}
+        />
       )}
     </div>
   );
