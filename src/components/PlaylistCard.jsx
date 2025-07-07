@@ -132,119 +132,67 @@ const PlaylistCard = ({ playlist, onClick, onClickWithMosaic, isFeatured }) => {
 
   return (
     <div
-      className={`w-full p-3 sm:p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer relative transition-all duration-200 active:scale-[0.98] sm:hover:scale-105 ${
-        isFeatured ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""
-      }`}
+      className={`w-full p-2 xs:p-3 sm:p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm 
+        animate-slideup rounded-lg cursor-pointer relative transition-all duration-200 
+        active:scale-[0.98] sm:hover:scale-105 ${
+          isFeatured ? "ring-2 ring-[#14b8a6] ring-opacity-50" : ""
+        }`}
       onClick={handleClick}
     >
       {/* Featured badge */}
       {isFeatured && (
-        <div className="absolute top-2 right-2 bg-[#14b8a6] text-white text-xs px-2 py-1 rounded-full z-10 font-semibold">
+        <div
+          className="absolute top-1 right-1 xs:top-2 xs:right-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] 
+          text-white text-[9px] xs:text-xs px-1.5 xs:px-2 py-0.5 xs:py-1 rounded-full z-10 font-bold"
+        >
           Featured
         </div>
       )}
 
-      <div className="relative w-full aspect-square mb-2 sm:mb-4">
+      <div className="relative w-full aspect-square mb-2 xs:mb-3 sm:mb-4">
         {isFeatured &&
         safePlaylist.name.toLowerCase().includes("lonely heart") ? (
-          // Custom artwork for featured playlist
-          <div className="w-full h-full rounded-lg overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6] via-[#0891b2] to-[#0e7490] animate-gradient">
-              <div className="absolute inset-0 bg-black/20"></div>
-            </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-              <div className="relative mb-4">
-                <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg
-                    className="w-16 h-16 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </div>
-                <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-white/80 text-xs font-medium mb-1">
-                  FEATURED STATION
-                </p>
-                <p className="text-white font-bold text-sm">
-                  Lonely Hearts Radio
-                </p>
-              </div>
-              {/* Animated pulse rings */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="absolute w-32 h-32 rounded-full border border-white/20 animate-ping"></div>
-                <div className="absolute w-40 h-40 rounded-full border border-white/10 animate-ping animation-delay-200"></div>
-              </div>
-            </div>
-          </div>
-        ) : mosaicImages.length === 4 ? (
-          // Check if all images are the same (playlist cover fallback)
-          mosaicImages.every((img) => img === mosaicImages[0]) &&
-          mosaicImages[0] !== placeholderImage ? (
-            // Show single playlist cover instead of 4 identical quadrants
-            <img
-              alt="playlist_cover"
-              src={mosaicImages[0]}
-              className="w-full h-full rounded-lg object-cover"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = placeholderImage;
-              }}
-            />
-          ) : (
-            // Show mosaic grid
-            <div className="grid grid-cols-2 gap-1 w-full h-full rounded-lg overflow-hidden">
-              {mosaicImages.map((image, index) => (
-                <img
-                  key={index}
-                  alt={`Album ${index + 1}`}
-                  src={image}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = placeholderImage;
-                  }}
-                />
-              ))}
-            </div>
-          )
-        ) : (
-          // Fallback while loading
           <img
-            alt="playlist_cover"
-            src={safePlaylist.images?.[0]?.url || placeholderImage}
-            className="w-full h-full rounded-lg object-cover"
+            src={
+              safePlaylist.images?.[0]?.url ||
+              mosaicImages[0] ||
+              placeholderImage
+            }
+            alt={safePlaylist.name}
+            className="w-full h-full object-cover rounded-md xs:rounded-lg shadow-xl"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = placeholderImage;
             }}
           />
+        ) : (
+          // 2x2 mosaic
+          <div className="grid grid-cols-2 gap-0.5 w-full h-full rounded-md xs:rounded-lg overflow-hidden shadow-xl">
+            {mosaicImages.slice(0, 4).map((img, index) => (
+              <img
+                key={index}
+                src={img || placeholderImage}
+                alt=""
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = placeholderImage;
+                }}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      <div className="min-w-0">
-        <h3 className="font-semibold text-xs sm:text-sm lg:text-base text-white truncate mb-0.5 sm:mb-1">
+      <div className="space-y-0.5 xs:space-y-1">
+        <h3
+          className="font-semibold text-[11px] xs:text-xs sm:text-sm text-white 
+          truncate xs:whitespace-normal xs:line-clamp-2 leading-tight"
+        >
           {safePlaylist.name}
         </h3>
-        <p className="text-xs sm:text-sm text-gray-300 truncate">
-          by {safePlaylist.owner?.display_name || "Spotify"}
+        <p className="text-[10px] xs:text-xs text-gray-400">
+          {safePlaylist.owner?.display_name || "Spotify"}
         </p>
       </div>
     </div>

@@ -37,16 +37,28 @@ const ArtistCard = ({ track }) => {
 
   return (
     <div
-      className="flex flex-col w-full p-3 sm:p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm animate-slideup rounded-lg cursor-pointer card-hover transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 group"
+      className="flex flex-col w-full p-2 xs:p-3 sm:p-4 bg-white/5 bg-opacity-80 backdrop-blur-sm 
+        animate-slideup rounded-lg cursor-pointer transition-all duration-300 
+        hover:scale-105 hover:shadow-2xl hover:shadow-[#14b8a6]/20 hover:bg-white/10 
+        group"
       onClick={() => navigate(`/artists/${artistId}`)}
     >
-      <img
-        alt="song_img"
-        src={getArtistImage()}
-        onError={handleImageError}
-        className="w-full aspect-square rounded-lg object-cover"
-      />
-      <p className="mt-3 sm:mt-4 font-semibold text-xs sm:text-sm lg:text-base text-white truncate group-hover:text-[#14b8a6] transition-colors duration-200">
+      <div className="relative w-full aspect-square overflow-hidden rounded-lg">
+        <img
+          alt="artist_img"
+          src={getArtistImage()}
+          onError={handleImageError}
+          className="w-full h-full object-cover"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent 
+          opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        />
+      </div>
+      <p
+        className="mt-2 xs:mt-3 sm:mt-4 font-semibold text-[11px] xs:text-xs sm:text-sm lg:text-base 
+        text-white truncate group-hover:text-[#14b8a6] transition-colors duration-200"
+      >
         {artistName}
       </p>
     </div>
