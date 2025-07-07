@@ -210,14 +210,20 @@ const ArtistDetails = () => {
   const displayTopTracks = topTracks?.slice(0, 5) || [];
 
   const StatCard = ({ icon: Icon, label, value, color }) => (
-    <div className="group bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-md rounded-xl p-5 border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-0.5 hover:from-white/[0.10] hover:to-white/[0.04]">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-gray-400 mb-1">{label}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
+    <div className="group bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-md rounded-xl p-3 sm:p-5 border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-0.5 hover:from-white/[0.10] hover:to-white/[0.04]">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5 sm:mb-1">
+            {label}
+          </p>
+          <p className="text-lg sm:text-2xl font-bold text-white truncate">
+            {value}
+          </p>
         </div>
-        <div className={`p-3 rounded-lg bg-gradient-to-br ${color} shadow-lg`}>
-          <Icon className="w-6 h-6 text-white" />
+        <div
+          className={`p-2 sm:p-3 rounded-lg bg-gradient-to-br ${color} shadow-lg flex-shrink-0`}
+        >
+          <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
         </div>
       </div>
     </div>
@@ -226,9 +232,9 @@ const ArtistDetails = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="relative mb-6">
+      <div className="relative mb-4 sm:mb-6">
         {/* Background Image */}
-        <div className="absolute inset-0 h-[450px] overflow-hidden rounded-b-2xl">
+        <div className="absolute inset-0 h-[400px] sm:h-[450px] overflow-hidden rounded-b-2xl">
           <img
             src={artistData?.images?.background || artistData?.avatar}
             alt=""
@@ -238,58 +244,58 @@ const ArtistDetails = () => {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 px-6 md:px-12 py-8">
+        <div className="relative z-10 px-4 sm:px-6 md:px-12 py-6 sm:py-8">
           <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row items-center md:items-end gap-8 mb-8">
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8 mb-6 sm:mb-8">
               {/* Artist Image */}
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-[#14b8a6] to-purple-600 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition duration-500"></div>
                 <img
                   src={artistData?.images?.background || artistData?.avatar}
                   alt={artistData?.name}
-                  className="relative w-48 h-48 md:w-64 md:h-64 rounded-full object-cover shadow-2xl transform transition-transform duration-500 group-hover:scale-105"
+                  className="relative w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 rounded-full object-cover shadow-2xl transform transition-transform duration-500 group-hover:scale-105"
                 />
                 {artistData?.isVerified && (
-                  <div className="absolute bottom-2 right-2 bg-[#14b8a6] rounded-full p-2 shadow-lg">
-                    <HiCheckCircle className="w-8 h-8 text-white" />
+                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#14b8a6] rounded-full p-1.5 sm:p-2 shadow-lg">
+                    <HiCheckCircle className="w-5 h-5 sm:w-8 sm:h-8 text-white" />
                   </div>
                 )}
               </div>
 
               {/* Artist Info */}
               <div className="text-center md:text-left flex-1">
-                <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
-                  <HiCheckCircle className="w-6 h-6 text-[#14b8a6]" />
-                  <span className="text-sm font-medium text-[#14b8a6] uppercase tracking-wider">
+                <div className="flex items-center gap-2 sm:gap-3 justify-center md:justify-start mb-1 sm:mb-2">
+                  <HiCheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-[#14b8a6]" />
+                  <span className="text-xs sm:text-sm font-medium text-[#14b8a6] uppercase tracking-wider">
                     Verified Artist
                   </span>
                 </div>
-                <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-3 sm:mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                   {artistData?.name}
                 </h1>
-                <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start text-gray-300 mb-6">
-                  <span className="flex items-center gap-2">
-                    <RiUserFollowLine className="w-5 h-5" />
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center md:justify-start text-gray-300 mb-4 sm:mb-6">
+                  <span className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+                    <RiUserFollowLine className="w-4 h-4 sm:w-5 sm:h-5" />
                     {formatFollowers(artistData?.followers)} followers
                   </span>
-                  <span className="flex items-center gap-2">
-                    <BsMusicNoteList className="w-5 h-5" />
+                  <span className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+                    <BsMusicNoteList className="w-4 h-4 sm:w-5 sm:h-5" />
                     {topTracks?.length || 0} top tracks
                   </span>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                <div className="flex flex-wrap gap-3 sm:gap-4 justify-center md:justify-start">
                   <button
                     onClick={handlePlayAll}
                     disabled={isLoading("play-all")}
-                    className="group relative flex items-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#14b8a6] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-xl shadow-[#14b8a6]/30 disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className="group relative flex items-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#14b8a6] text-white font-semibold py-2.5 sm:py-3 px-5 sm:px-6 rounded-full transition-all transform hover:scale-105 shadow-xl shadow-[#14b8a6]/30 disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm sm:text-base"
                   >
                     {isLoading("play-all") ? (
                       <LoadingState variant="button" text="Loading..." />
                     ) : (
                       <>
-                        <BsFillPlayFill size={24} />
+                        <BsFillPlayFill size={20} className="sm:w-6 sm:h-6" />
                         <span>Play Top Tracks</span>
                       </>
                     )}
@@ -298,10 +304,10 @@ const ArtistDetails = () => {
                     href={`https://open.spotify.com/artist/${artistId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-full font-medium transition-all border border-white/20 hover:border-white/30 hover:shadow-lg hover:shadow-white/10"
+                    className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-full font-medium transition-all border border-white/20 hover:border-white/30 hover:shadow-lg hover:shadow-white/10 text-sm sm:text-base"
                   >
-                    <BsSpotify className="w-4 h-4" />
-                    Open in Spotify
+                    <BsSpotify className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">Open in</span> Spotify
                     <HiExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -309,7 +315,7 @@ const ArtistDetails = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <StatCard
                 icon={RiUserFollowLine}
                 label="Followers"
@@ -340,19 +346,19 @@ const ArtistDetails = () => {
       </div>
 
       {/* Main Content */}
-      <div className="px-6 md:px-12 pb-12 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 md:px-12 pb-12 max-w-7xl mx-auto">
         {/* Top Tracks Section */}
-        <div className="mb-12 mt-6">
-          <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-[#14b8a6]/20 to-cyan-500/20">
-              <HiOutlineFire className="w-7 h-7 text-[#14b8a6]" />
+        <div className="mb-8 sm:mb-12 mt-4 sm:mt-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-[#14b8a6]/20 to-cyan-500/20">
+              <HiOutlineFire className="w-5 h-5 sm:w-7 sm:h-7 text-[#14b8a6]" />
             </div>
             Popular Tracks
           </h2>
 
-          <div className="bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+          <div className="bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-6 border border-white/10">
             {displayTopTracks.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-1 sm:space-y-3">
                 {displayTopTracks.map((track, i) => {
                   const isActive =
                     isSameTrack(track, currentTrack) && isPlaying;
@@ -360,7 +366,7 @@ const ArtistDetails = () => {
                     <div
                       key={`${track.key || track.id}-${i}`}
                       onClick={() => handlePlayClick(track, i)}
-                      className={`group flex items-center gap-4 p-4 rounded-xl transition-all cursor-pointer ${
+                      className={`group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl transition-all cursor-pointer ${
                         isActive
                           ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent border border-[#14b8a6]/30"
                           : "hover:bg-white/5 border border-transparent hover:border-white/10"
@@ -368,7 +374,7 @@ const ArtistDetails = () => {
                     >
                       {/* Rank */}
                       <div
-                        className={`text-2xl font-bold w-8 text-center ${
+                        className={`text-lg sm:text-2xl font-bold w-6 sm:w-8 text-center hidden xs:block ${
                           isActive ? "text-[#14b8a6]" : "text-gray-400"
                         }`}
                       >
@@ -382,7 +388,7 @@ const ArtistDetails = () => {
                           track?.images?.coverart
                         }
                         alt={track?.title}
-                        className={`w-14 h-14 rounded-lg object-cover shadow-lg transition-all ${
+                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover shadow-lg transition-all flex-shrink-0 ${
                           isActive
                             ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-transparent"
                             : "group-hover:shadow-xl"
@@ -392,7 +398,7 @@ const ArtistDetails = () => {
                       {/* Track Info */}
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`font-medium truncate transition-colors ${
+                          className={`font-medium truncate transition-colors text-sm sm:text-base ${
                             isActive
                               ? "text-[#14b8a6]"
                               : "text-white group-hover:text-[#14b8a6]"
@@ -400,18 +406,18 @@ const ArtistDetails = () => {
                         >
                           {track?.title || track?.name}
                         </p>
-                        <p className="text-gray-400 text-sm truncate">
+                        <p className="text-gray-400 text-xs sm:text-sm truncate">
                           {track?.album?.name || "Single"}
                         </p>
                       </div>
 
                       {/* Duration */}
-                      <span className="text-gray-400 text-sm tabular-nums">
+                      <span className="text-gray-400 text-sm tabular-nums hidden sm:block">
                         {formatTrackDuration(track?.duration_ms)}
                       </span>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         <div onClick={(e) => e.stopPropagation()}>
                           <SongMenu song={track} />
                         </div>
@@ -421,7 +427,7 @@ const ArtistDetails = () => {
                             song={track}
                             handlePause={handlePauseClick}
                             handlePlay={() => handlePlayClick(track, i)}
-                            size={40}
+                            size={35}
                             isLoading={isLoading(`track-${getTrackId(track)}`)}
                           />
                         </div>
@@ -440,24 +446,24 @@ const ArtistDetails = () => {
 
         {/* Albums Section */}
         {displayAlbums.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-                <BsDisc className="w-7 h-7 text-purple-400" />
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                <BsDisc className="w-5 h-5 sm:w-7 sm:h-7 text-purple-400" />
               </div>
               Albums
             </h2>
 
             {/* Dynamic grid */}
             <div
-              className={`grid gap-6 ${
+              className={`grid gap-4 sm:gap-6 ${
                 displayAlbums.length === 1
                   ? "grid-cols-1 max-w-xs mx-auto"
                   : displayAlbums.length === 2
                   ? "grid-cols-2 max-w-2xl mx-auto"
                   : displayAlbums.length === 3
-                  ? "grid-cols-3 max-w-4xl mx-auto"
-                  : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
+                  ? "grid-cols-2 sm:grid-cols-3 max-w-4xl mx-auto"
+                  : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
               }`}
             >
               {displayAlbums.map((album, i) => (
@@ -465,7 +471,7 @@ const ArtistDetails = () => {
                   key={album.id || i}
                   className={`${
                     displayAlbums.length <= 2
-                      ? "max-w-[250px] mx-auto w-full"
+                      ? "max-w-[200px] sm:max-w-[250px] mx-auto w-full"
                       : ""
                   }`}
                 >
@@ -479,14 +485,14 @@ const ArtistDetails = () => {
         {/* Similar Artists Section */}
         {relatedArtists && relatedArtists.length > 0 && (
           <div>
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20">
-                <HiSparkles className="w-7 h-7 text-cyan-400" />
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20">
+                <HiSparkles className="w-5 h-5 sm:w-7 sm:h-7 text-cyan-400" />
               </div>
               Similar Artists
             </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+            <div className="grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
               {relatedArtists.slice(0, 6).map((artist, i) => (
                 <div
                   key={artist.id || i}
