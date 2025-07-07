@@ -21,15 +21,14 @@ const Player = ({
   const isLoadingRef = useRef(false);
   const currentUrlRef = useRef(null);
   const volumeRef = useRef(volume);
+  const pendingPlayRef = useRef(false);
   const { setAudioElement } = useAudioState();
   const { registerAudioElement, cleanupExceptCurrent } = useAudioCleanup();
 
-  // Update volume ref when prop changes
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (ref.current) {
@@ -40,54 +39,66 @@ const Player = ({
     };
   }, []);
 
-  // Register audio element for global state
   useEffect(() => {
     if (ref.current) {
       setAudioElement(ref.current);
       registerAudioElement(ref.current);
-      // Cleanup any other audio instances
       cleanupExceptCurrent(ref.current);
-      // Set initial volume
       ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
     }
-  }, [setAudioElement, registerAudioElement, cleanupExceptCurrent]);
+  }, []);
 
   // Handle source changes
   useEffect(() => {
     if (!ref.current || !songUrl) return;
 
-    // Prevent duplicate loads
-    if (currentUrlRef.current === songUrl && !hasError) return;
+    const audioHasUrl =
+      ref.current.src === songUrl ||
+      (ref.current.src && ref.current.src.includes(songUrl));
 
-    // Clean up previous audio
-    if (ref.current.src) {
-      ref.current.pause();
-      ref.current.currentTime = 0;
+    // Reset error state if new song
+    if (currentUrlRef.current !== songUrl) {
+      setHasError(false);
+      currentUrlRef.current = songUrl;
     }
 
-    currentUrlRef.current = songUrl;
-    isLoadingRef.current = true;
-    setIsReady(false);
-    setHasError(false);
-
-    // Set new source
-    ref.current.src = songUrl;
-    // Ensure volume is set before loading
-    ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
-    ref.current.load();
-
-    if (onLoadStart) {
-      onLoadStart();
+    // Skip if URL already loaded
+    if (audioHasUrl && currentUrlRef.current === songUrl) {
+      return;
     }
-  }, [songUrl, onLoadStart, hasError]);
+
+    // Only reload if actually a different song
+    if (!audioHasUrl) {
+      if (ref.current.src) {
+        ref.current.pause();
+        ref.current.currentTime = 0;
+      }
+
+      isLoadingRef.current = true;
+      setIsReady(false);
+      setHasError(false);
+
+      ref.current.src = songUrl;
+      ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
+      ref.current.load();
+
+      if (onLoadStart) {
+        onLoadStart();
+      }
+    }
+  }, [songUrl]);
 
   // Handle play/pause
   useEffect(() => {
-    if (!ref.current || !songUrl || !isReady || hasError) return;
+    if (!ref.current || !songUrl || hasError) return;
 
     if (isPlaying) {
-      // Ensure volume is set before playing
       ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
+
+      if (!isReady) {
+        pendingPlayRef.current = true;
+        return;
+      }
 
       const playPromise = ref.current.play();
 
@@ -100,6 +111,7 @@ const Player = ({
         });
       }
     } else {
+      pendingPlayRef.current = false;
       ref.current.pause();
     }
   }, [isPlaying, songUrl, isReady, hasError]);
@@ -120,17 +132,22 @@ const Player = ({
     }
   }, [seekTime, isReady]);
 
-  // Event handlers
   const handleCanPlay = () => {
-    if (!isLoadingRef.current) return;
-
-    isLoadingRef.current = false;
     setIsReady(true);
     setHasError(false);
 
-    // Ensure volume is set when audio is ready
     if (ref.current) {
       ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
+    }
+
+    // Execute pending play if needed
+    if (pendingPlayRef.current && ref.current && isPlaying) {
+      pendingPlayRef.current = false;
+      ref.current.play().catch((error) => {
+        if (error.name !== "AbortError") {
+          console.error("Error playing audio after ready:", error);
+        }
+      });
     }
 
     if (onCanPlay) {
@@ -146,7 +163,6 @@ const Player = ({
   };
 
   const handleLoadedData = (e) => {
-    // Set volume when metadata is loaded
     if (ref.current) {
       ref.current.volume = Math.max(0, Math.min(1, volumeRef.current));
     }
@@ -157,12 +173,24 @@ const Player = ({
   };
 
   const handleError = (e) => {
-    if (!ref.current?.src) return;
+    const currentSrc = ref.current?.src || "";
+    const isInvalidSrc =
+      !currentSrc ||
+      currentSrc === "" ||
+      currentSrc === window.location.href ||
+      (currentSrc.startsWith(window.location.origin) &&
+        !currentSrc.includes("/api/"));
 
-    console.error("Audio error:", e.target.error);
-    isLoadingRef.current = false;
-    setHasError(true);
-    setIsReady(false);
+    if (isInvalidSrc) {
+      return;
+    }
+
+    if (e.target.error?.code === 2 || e.target.error?.code === 3) {
+      console.error("Audio error:", e.target.error);
+      isLoadingRef.current = false;
+      setHasError(true);
+      setIsReady(false);
+    }
   };
 
   const handleEnded = () => {
@@ -174,13 +202,14 @@ const Player = ({
     }
   };
 
-  if (!songUrl) {
+  if (!songUrl || songUrl === "") {
     return null;
   }
 
   return (
     <audio
       ref={ref}
+      src={songUrl}
       onEnded={handleEnded}
       onTimeUpdate={onTimeUpdate}
       onLoadedData={handleLoadedData}
