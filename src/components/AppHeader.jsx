@@ -19,7 +19,6 @@ const AppHeader = memo(({ title, subtitle, action, showSearch = false, className
       {mobileMenuOpen && (
         <Portal>
           <div className="fixed inset-0 z-50 md:hidden">
-            {/* Backdrop */}
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
 
             {/* Menu Panel */}
@@ -27,10 +26,10 @@ const AppHeader = memo(({ title, subtitle, action, showSearch = false, className
               {/* Header */}
               <div className="p-6 border-b border-white/10">
                 <div className="flex items-center justify-between">
-                  <img src={logo} alt="logo" className="w-32 h-8 object-contain" />
+                  <img src={logo} alt="logo" className="w-32 h-10 object-contain" />
                   <button
                     onClick={() => setMobileMenuOpen(false)}
-                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                    className="p-2 h-4 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center"
                   >
                     <HiX className="w-5 h-5 text-white" />
                   </button>
