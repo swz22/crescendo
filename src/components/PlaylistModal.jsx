@@ -538,12 +538,17 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           Shuffle Play
                         </span>
                       </div>
-                      <button
-                        onClick={handleAddAllToQueue}
-                        className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-                      >
-                        <HiPlus size={20} />
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={handleAddAllToQueue}
+                          className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                        >
+                          <HiPlus size={20} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          Add to Queue
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -653,12 +658,12 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
             }}
           />
 
-          {/* Slide-up Modal */}
+          {/* Slide-in Modal */}
           <div
             className={`fixed left-0 bottom-0 top-0 z-50 transition-all duration-500 overflow-hidden ${
               isAnimating
-                ? "translate-y-0 opacity-100"
-                : "translate-y-full opacity-0"
+                ? "translate-x-0 opacity-100"
+                : "-translate-x-full opacity-0"
             }`}
             style={{
               right: "380px", // Stop at SidebarPlayer boundary
@@ -798,12 +803,18 @@ const PlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             Shuffle Play
                           </span>
                         </div>
-                        <button
-                          onClick={handleAddAllToQueue}
-                          className="p-2.5 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all border border-white/20 hover:scale-110"
-                        >
-                          <HiPlus size={18} />
-                        </button>
+                        <div className="relative group">
+                          <button
+                            onClick={handleAddAllToQueue}
+                            className="p-2.5 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all border border-white/20 hover:scale-110"
+                            title="Add all to queue"
+                          >
+                            <HiPlus size={18} />
+                          </button>
+                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-white/10">
+                            Add to Queue
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
