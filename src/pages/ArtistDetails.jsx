@@ -42,6 +42,7 @@ import {
   BsMusicNoteList,
 } from "react-icons/bs";
 import { RiAlbumLine, RiUserFollowLine } from "react-icons/ri";
+import { IoArrowBack } from "react-icons/io5";
 
 const ArtistDetails = () => {
   const { id: artistId } = useParams();
@@ -245,6 +246,15 @@ const ArtistDetails = () => {
 
         {/* Hero Content */}
         <div className="relative z-10 px-4 sm:px-6 md:px-12 py-6 sm:py-8">
+          {/* Mobile Back Button */}
+          <div className="sm:hidden absolute top-3 left-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2.5 rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/10 shadow-lg active:scale-95 transition-all duration-200"
+            >
+              <IoArrowBack className="w-5 h-5 text-white" />
+            </button>
+          </div>
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8 mb-6 sm:mb-8">
               {/* Artist Image */}

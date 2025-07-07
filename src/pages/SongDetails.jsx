@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Error, Loader, PlayPause, SongMenu } from "../components";
 import { playTrack, playPause } from "../redux/features/playerSlice";
@@ -22,12 +22,14 @@ import {
 import { BsCalendar3, BsDisc, BsSpotify, BsVinyl } from "react-icons/bs";
 import { SiGenius, SiGoogle } from "react-icons/si";
 import { RiAlbumLine } from "react-icons/ri";
+import { IoArrowBack } from "react-icons/io5";
 
 const SongDetails = () => {
   const dispatch = useDispatch();
   const { getPreviewUrl } = usePreviewUrl();
   const { setLoading, isLoading } = useLoadingState();
   const { songid } = useParams();
+  const navigate = useNavigate();
   const { isPlaying, currentTrack } = useSelector((state) => state.player);
 
   const {
@@ -120,6 +122,16 @@ const SongDetails = () => {
 
   return (
     <div className="flex flex-col w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-16">
+      {/* Mobile Header with Back Button */}
+      <div className="sm:hidden flex items-center justify-between p-3 pt-safe sticky top-0 z-20 bg-gradient-to-b from-[#1a1848] to-transparent backdrop-blur-lg -mx-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2.5 rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/10 shadow-lg active:scale-95 transition-all duration-200"
+        >
+          <IoArrowBack className="w-5 h-5 text-white" />
+        </button>
+      </div>
+
       <div className="py-4 sm:py-6 lg:py-8">
         {/* Header with album art */}
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6 sm:mb-10">
