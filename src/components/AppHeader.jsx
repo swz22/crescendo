@@ -64,14 +64,14 @@ const AppHeader = memo(({ title, subtitle, action, showSearch = false, className
 
       <div
         className={`
-            relative mb-1 sm:mb-6 md:mb-8 
-            ${
-              showSearch
-                ? "bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-sm"
-                : "bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-sm"
-            }
-            ${className}
-          `}
+      relative mb-1 sm:mb-6 md:mb-3 lg:mb-4 
+      ${
+        showSearch
+          ? "bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-sm"
+          : "bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-sm"
+      }
+      ${className}
+    `}
       >
         {/* Mobile Layout - Extended to 768px */}
         <div className="md:hidden">
