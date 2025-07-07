@@ -1,13 +1,7 @@
 import { useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedCountry as setSelectedCountryAction } from "../redux/features/playerSlice";
-import {
-  Error,
-  Loader,
-  ArtistCard,
-  AppHeader,
-  ResponsiveGrid,
-} from "../components";
+import { Error, Loader, ArtistCard, AppHeader, ResponsiveGrid } from "../components";
 import Dropdown from "../components/Dropdown";
 import { usePersistentScroll } from "../hooks/usePersistentScroll";
 import { useGetTopArtistsQuery } from "../redux/services/spotifyCore";
@@ -20,12 +14,9 @@ const TopArtists = () => {
 
   usePersistentScroll();
 
-  const selectedCountryName =
-    countries.find((c) => c.code === selectedCountry)?.name || "United States";
+  const selectedCountryName = countries.find((c) => c.code === selectedCountry)?.name || "United States";
 
-  const { data, isFetching, error } = useGetTopArtistsQuery(
-    selectedCountry || "US"
-  );
+  const { data, isFetching, error } = useGetTopArtistsQuery(selectedCountry || "US");
 
   if (isFetching) return <Loader title="Loading top artists..." />;
   if (error) return <Error />;
@@ -55,15 +46,8 @@ const TopArtists = () => {
             value={selectedCountry}
             onChange={handleCountryChange}
             placeholder="Select Country"
-            renderIcon={(country) => (
-              <Icon icon={`circle-flags:${country.flag}`} className="w-4 h-4" />
-            )}
-            renderLabel={(country) => (
-              <>
-                <span className="hidden xs:inline">{country.name}</span>
-                <span className="xs:hidden">{country.code}</span>
-              </>
-            )}
+            renderIcon={(country) => <Icon icon={`circle-flags:${country.flag}`} className="w-5 h-5" />}
+            renderLabel={(country) => country.name}
             groups={[
               { label: "Popular", items: ["US", "GB"] },
               {
@@ -72,17 +56,14 @@ const TopArtists = () => {
               },
             ]}
             width={200}
-            className="mobile-compact"
+            mobileIconOnly={true}
           />
         }
       />
 
       <ResponsiveGrid type="artists">
         {data?.map((artist) => (
-          <ArtistCard
-            key={artist.adamid || artist.id}
-            track={{ artists: [artist] }}
-          />
+          <ArtistCard key={artist.adamid || artist.id} track={{ artists: [artist] }} />
         ))}
       </ResponsiveGrid>
     </div>

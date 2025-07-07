@@ -23,9 +23,7 @@ const Searchbar = () => {
       <div className="relative group">
         <FiSearch
           className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-all duration-300 ${
-            isFocused
-              ? "text-[#2dd4bf] scale-110"
-              : "text-gray-400 group-hover:text-gray-300"
+            isFocused ? "text-[#2dd4bf] scale-110" : "text-gray-400 group-hover:text-gray-300"
           }`}
         />
         <input

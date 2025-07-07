@@ -5,23 +5,11 @@ import { Icon } from "@iconify/react";
 import { BsFillPlayFill, BsFillPauseFill } from "react-icons/bs";
 import { HiSparkles } from "react-icons/hi";
 
-import {
-  Error,
-  Loader,
-  SongCard,
-  AppHeader,
-  ResponsiveGrid,
-  PlayPause,
-  SongMenu,
-} from "../components";
+import { Error, Loader, SongCard, AppHeader, ResponsiveGrid, PlayPause, SongMenu } from "../components";
 import Dropdown from "../components/Dropdown";
 import MusicLoadingSpinner from "../components/MusicLoadingSpinner";
 
-import {
-  selectGenreListId,
-  playTrack,
-  playPause,
-} from "../redux/features/playerSlice";
+import { selectGenreListId, playTrack, playPause } from "../redux/features/playerSlice";
 import { useGetSongsByGenreQuery } from "../redux/services/spotifyCore";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { usePersistentScroll } from "../hooks/usePersistentScroll";
@@ -41,25 +29,18 @@ import {
 const Discover = () => {
   const dispatch = useDispatch();
   const location = useLocation();
-  const { genreListId, isPlaying, currentTrack } = useSelector(
-    (state) => state.player
-  );
-  const { prefetchPreviewUrl, getPagePrefetchStrategy, getPreviewUrl } =
-    usePreviewUrl();
+  const { genreListId, isPlaying, currentTrack } = useSelector((state) => state.player);
+  const { prefetchPreviewUrl, getPagePrefetchStrategy, getPreviewUrl } = usePreviewUrl();
   const { showToast } = useToast();
 
   const [loadingTracks, setLoadingTracks] = useState({});
   usePersistentScroll();
 
   const selectedGenre = genreListId || "POP";
-  const genreTitle =
-    genres.find(({ value }) => value === selectedGenre)?.title || "Pop";
+  const genreTitle = genres.find(({ value }) => value === selectedGenre)?.title || "Pop";
   const { data, isFetching, error } = useGetSongsByGenreQuery(selectedGenre);
 
-  const sortedGenres = useMemo(
-    () => [...genres].sort((a, b) => a.title.localeCompare(b.title)),
-    []
-  );
+  const sortedGenres = useMemo(() => [...genres].sort((a, b) => a.title.localeCompare(b.title)), []);
 
   useEffect(() => {
     if (!data || isFetching || !data.length) return;
@@ -67,21 +48,12 @@ const Discover = () => {
     if (strategy.maxSongs > 0) {
       const timeoutId = setTimeout(() => {
         data.slice(0, strategy.maxSongs).forEach((song, index) => {
-          setTimeout(
-            () => prefetchPreviewUrl(song, { priority: strategy.priority }),
-            index * strategy.delay
-          );
+          setTimeout(() => prefetchPreviewUrl(song, { priority: strategy.priority }), index * strategy.delay);
         });
       }, 2000);
       return () => clearTimeout(timeoutId);
     }
-  }, [
-    data,
-    isFetching,
-    prefetchPreviewUrl,
-    getPagePrefetchStrategy,
-    location.pathname,
-  ]);
+  }, [data, isFetching, prefetchPreviewUrl, getPagePrefetchStrategy, location.pathname]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -91,6 +63,17 @@ const Discover = () => {
       if (genre) dispatch(selectGenreListId(genre.value));
     }
   }, [location, dispatch]);
+
+  const getGenreLabel = (genre) => {
+    const mobileLabels = {
+      Electronic: "EDM",
+      "R&B/Soul": "R&B",
+      Alternative: "Alt",
+      "Film & TV": "Film",
+    };
+    const isMobile = window.innerWidth < 640;
+    return isMobile ? mobileLabels[genre.title] || genre.title : genre.title;
+  };
 
   const handleGenreChange = (genre) => {
     dispatch(selectGenreListId(genre.value));
@@ -120,10 +103,7 @@ const Discover = () => {
     [dispatch, getPreviewUrl, showToast]
   );
 
-  const handlePauseClick = useCallback(
-    () => dispatch(playPause(false)),
-    [dispatch]
-  );
+  const handlePauseClick = useCallback(() => dispatch(playPause(false)), [dispatch]);
 
   const getAlbumId = (song) => song?.album?.id || null;
 
@@ -143,12 +123,9 @@ const Discover = () => {
             onChange={handleGenreChange}
             placeholder="Select Genre"
             renderIcon={(genre) => (
-              <Icon
-                icon={genreIcons[genre.value] || "mdi:music-note"}
-                className="w-4 h-4 text-[#14b8a6]"
-              />
+              <Icon icon={genreIcons[genre.value] || "mdi:music-note"} className="w-4 h-4 text-[#14b8a6]" />
             )}
-            renderLabel={(genre) => genre.title}
+            renderLabel={getGenreLabel}
             width={160}
           />
         }
@@ -162,15 +139,11 @@ const Discover = () => {
             <div className="relative flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-300 mb-1">Now Playing</p>
-                <h2 className="text-lg font-bold text-white">
-                  {genreTitle} Hits
-                </h2>
+                <h2 className="text-lg font-bold text-white">{genreTitle} Hits</h2>
               </div>
               <div className="flex items-center gap-2">
                 <HiSparkles className="w-5 h-5 text-[#14b8a6] animate-pulse" />
-                <span className="text-sm font-medium text-white">
-                  {data?.length || 0} tracks
-                </span>
+                <span className="text-sm font-medium text-white">{data?.length || 0} tracks</span>
               </div>
             </div>
           </div>
@@ -234,11 +207,7 @@ const Discover = () => {
                 </div>
 
                 <button
-                  onClick={() =>
-                    isCurrentSong && isPlaying
-                      ? handlePauseClick()
-                      : handlePlayClick(song)
-                  }
+                  onClick={() => (isCurrentSong && isPlaying ? handlePauseClick() : handlePlayClick(song))}
                   disabled={isLoading}
                   className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 flex-shrink-0 ${
                     isCurrentSong && isPlaying

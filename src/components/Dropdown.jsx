@@ -3,6 +3,7 @@ import { IoChevronDown } from "react-icons/io5";
 import { RiCloseLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import DropdownPortal from "./DropdownPortal";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 
 const Dropdown = ({
   items = [],
@@ -22,14 +23,14 @@ const Dropdown = ({
   showCloseButton = false,
   closeButtonText = "Close",
   onDropdownClose,
+  mobileIconOnly = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef(null);
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   const selectedItem = items.find((item) =>
-    typeof item === "string"
-      ? item === value
-      : item.value === value || item.code === value
+    typeof item === "string" ? item === value : item.value === value || item.code === value
   );
 
   // Get display label for selected item
@@ -53,11 +54,7 @@ const Dropdown = ({
   const selectedIndex = useMemo(() => {
     const allItems = groups
       ? groups.flatMap((g) =>
-          g.items
-            .map((itemValue) =>
-              items.find((item) => getItemValue(item) === itemValue)
-            )
-            .filter(Boolean)
+          g.items.map((itemValue) => items.find((item) => getItemValue(item) === itemValue)).filter(Boolean)
         )
       : items;
 
@@ -84,6 +81,7 @@ const Dropdown = ({
   };
 
   const itemGroups = prepareItems();
+  const showIconOnly = mobileIconOnly && isMobile;
 
   return (
     <>
@@ -91,24 +89,30 @@ const Dropdown = ({
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className={`inline-flex items-center gap-2 px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] 
+        className={`inline-flex items-center gap-1.5 bg-white/[0.08] hover:bg-white/[0.12] 
           backdrop-blur-md rounded-full transition-all duration-200 border border-white/20 
-          hover:border-white/30 group ${buttonClassName} ${className}`}
+          hover:border-white/30 group ${buttonClassName} ${className}
+          ${isMobile ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"}
+          ${showIconOnly ? "px-2" : ""}`}
       >
         {/* Icon */}
         {renderIcon && selectedItem && (
-          <div className="flex-shrink-0">{renderIcon(selectedItem)}</div>
+          <div className={`flex-shrink-0 ${isMobile && !showIconOnly ? "scale-90" : ""}`}>
+            {renderIcon(selectedItem)}
+          </div>
         )}
 
         {/* Label */}
-        <span className="text-white font-medium text-sm">
-          {selectedItem ? getItemLabel(selectedItem) : placeholder}
-        </span>
+        {!showIconOnly && (
+          <span className={`text-white font-medium ${isMobile ? "text-xs" : "text-sm"}`}>
+            {selectedItem ? getItemLabel(selectedItem) : placeholder}
+          </span>
+        )}
 
         {/* Chevron */}
         <IoChevronDown
-          className={`text-white/60 transition-all duration-200 w-3 h-3 ${
-            isOpen ? "rotate-180" : ""
+          className={`text-white/60 transition-all duration-200 w-3 h-3 ${isOpen ? "rotate-180" : ""} ${
+            showIconOnly ? "ml-0" : ""
           }`}
         />
       </button>
@@ -128,9 +132,7 @@ const Dropdown = ({
         <div className="py-2">
           {showCloseButton && (
             <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
-              <span className="text-white/60 text-xs uppercase tracking-wider">
-                {closeButtonText}
-              </span>
+              <span className="text-white/60 text-xs uppercase tracking-wider">{closeButtonText}</span>
               <button
                 onClick={() => {
                   setIsOpen(false);
@@ -148,13 +150,9 @@ const Dropdown = ({
               {/* Group Label */}
               {group.label && (
                 <>
-                  {group.showDivider && (
-                    <div className="mx-4 my-1 border-t border-white/10" />
-                  )}
+                  {group.showDivider && <div className="mx-4 my-1 border-t border-white/10" />}
                   <div className="px-4 pb-1 pt-1">
-                    <div className="text-[10px] text-white/40 uppercase tracking-wider font-medium">
-                      {group.label}
-                    </div>
+                    <div className="text-[10px] text-white/40 uppercase tracking-wider font-medium">{group.label}</div>
                   </div>
                 </>
               )}
@@ -176,21 +174,13 @@ const Dropdown = ({
                       } ${itemClassName}`}
                     >
                       {/* Item Icon */}
-                      {renderIcon && (
-                        <div className="w-4 h-4 flex-shrink-0">
-                          {renderIcon(item)}
-                        </div>
-                      )}
+                      {renderIcon && <div className="w-4 h-4 flex-shrink-0">{renderIcon(item)}</div>}
 
                       {/* Item Label */}
-                      <span className="text-sm text-left flex-1">
-                        {getItemLabel(item)}
-                      </span>
+                      <span className="text-sm text-left flex-1">{getItemLabel(item)}</span>
 
                       {/* Selected Indicator */}
-                      {isSelected && (
-                        <div className="w-1.5 h-1.5 bg-[#14b8a6] rounded-full" />
-                      )}
+                      {isSelected && <div className="w-1.5 h-1.5 bg-[#14b8a6] rounded-full" />}
                     </button>
                   );
                 })}
