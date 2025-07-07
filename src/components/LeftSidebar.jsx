@@ -6,12 +6,10 @@ import { RiCloseLine } from "react-icons/ri";
 import { FiSearch } from "react-icons/fi";
 import { MdHomeFilled } from "react-icons/md";
 import { IoChevronDown, IoCloseCircle } from "react-icons/io5";
+import { BsSpeedometer2 } from "react-icons/bs";
 import { Icon } from "@iconify/react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  selectGenreListId,
-  setSelectedCountry as setSelectedCountryAction,
-} from "../redux/features/playerSlice";
+import { selectGenreListId, setSelectedCountry as setSelectedCountryAction } from "../redux/features/playerSlice";
 import { links, genres, countries, genreIcons } from "../assets/constants";
 import { logo } from "../assets";
 import { useScrollContainer } from "../context/ScrollContext";
@@ -74,18 +72,16 @@ const NavLinks = () => {
         <button
           onClick={() => setShowPerformanceMonitor(true)}
           className="flex flex-row justify-start items-center my-4 sm:my-6 text-base font-medium 
-            text-gray-300 hover:text-white hover:bg-white/10 border-l-4 border-transparent
-            px-4 py-3 rounded-r-xl transition-all duration-300 group relative overflow-hidden w-full"
+    text-gray-300 hover:text-white hover:bg-white/10 border-l-4 border-transparent
+    px-4 py-3 rounded-r-xl transition-all duration-300 group relative overflow-hidden w-full"
         >
-          <HiOutlineCog className="w-6 h-6 mr-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-180 group-hover:text-white" />
+          <BsSpeedometer2 className="w-6 h-6 mr-3 transition-all duration-300 group-hover:scale-110 group-hover:text-white" />
           <span className="font-semibold relative z-10">Performance</span>
           <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
         </button>
       </div>
 
-      {showPerformanceMonitor && (
-        <PerformanceMonitor onClose={() => setShowPerformanceMonitor(false)} />
-      )}
+      {showPerformanceMonitor && <PerformanceMonitor onClose={() => setShowPerformanceMonitor(false)} />}
     </>
   );
 };
@@ -94,9 +90,7 @@ const SidebarControls = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { genreListId, currentTrack, selectedCountry } = useSelector(
-    (state) => state.player
-  );
+  const { genreListId, currentTrack, selectedCountry } = useSelector((state) => state.player);
 
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -128,22 +122,14 @@ const SidebarControls = () => {
   const showRegionSelector = isTopArtistsPage || isTopAlbumsPage;
 
   const shouldShowControls =
-    isVisible &&
-    (showGenreSelector ||
-      showRegionSelector ||
-      isNewReleasesPage ||
-      isCommunityPlaylistsPage);
+    isVisible && (showGenreSelector || showRegionSelector || isNewReleasesPage || isCommunityPlaylistsPage);
 
   const selectedGenre = genreListId || "POP";
-  const genreTitle =
-    genres.find(({ value }) => value === selectedGenre)?.title || "Pop";
+  const genreTitle = genres.find(({ value }) => value === selectedGenre)?.title || "Pop";
 
-  const selectedCountryName =
-    countries.find((c) => c.code === (selectedCountry || "US"))?.name ||
-    "United States";
+  const selectedCountryName = countries.find((c) => c.code === (selectedCountry || "US"))?.name || "United States";
 
-  const selectedCountryFlag =
-    countries.find((c) => c.code === (selectedCountry || "US"))?.flag || "us";
+  const selectedCountryFlag = countries.find((c) => c.code === (selectedCountry || "US"))?.flag || "us";
 
   const handleSearch = (e) => {
     if (e.key === "Enter" && e.target.value.trim()) {
@@ -161,16 +147,12 @@ const SidebarControls = () => {
     dispatch(setSelectedCountryAction(country.code));
   };
 
-  const sortedGenres = [...genres].sort((a, b) =>
-    a.title.localeCompare(b.title)
-  );
+  const sortedGenres = [...genres].sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <div
       className={`absolute -bottom-1 left-0 right-0 transition-transform duration-500 ease-out ${
-        shouldShowControls
-          ? "translate-y-0"
-          : "translate-y-full pointer-events-none"
+        shouldShowControls ? "translate-y-0" : "translate-y-full pointer-events-none"
       }`}
     >
       <div className="p-4 flex flex-col justify-center">
@@ -183,10 +165,7 @@ const SidebarControls = () => {
               onChange={handleGenreChange}
               placeholder="Select Genre"
               renderIcon={(genre) => (
-                <Icon
-                  icon={genreIcons[genre.value] || "mdi:music-note"}
-                  className="w-4 h-4 text-[#14b8a6]"
-                />
+                <Icon icon={genreIcons[genre.value] || "mdi:music-note"} className="w-4 h-4 text-[#14b8a6]" />
               )}
               renderLabel={(genre) => genre.title}
               width={200}
@@ -206,12 +185,7 @@ const SidebarControls = () => {
               value={selectedCountry || "US"}
               onChange={handleCountryChange}
               placeholder="Select Region"
-              renderIcon={(country) => (
-                <Icon
-                  icon={`circle-flags:${country.flag}`}
-                  className="w-4 h-4"
-                />
-              )}
+              renderIcon={(country) => <Icon icon={`circle-flags:${country.flag}`} className="w-4 h-4" />}
               renderLabel={(country) => country.name}
               width={200}
               placement="bottom-start"
@@ -285,16 +259,8 @@ const MobileSidebar = ({ mobileMenuOpen, setMobileMenuOpen }) => {
         } ${currentTrack?.title ? "pb-32" : "pb-6"}`}
       >
         <div className="flex items-center justify-between mb-10">
-          <img
-            src={logo}
-            alt="logo"
-            className="w-full h-10 object-contain"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <HiOutlineGlobeAlt
-            className="w-6 h-6 cursor-pointer text-white"
-            onClick={() => setMobileMenuOpen(false)}
-          />
+          <img src={logo} alt="logo" className="w-full h-10 object-contain" onClick={() => setMobileMenuOpen(false)} />
+          <HiOutlineGlobeAlt className="w-6 h-6 cursor-pointer text-white" onClick={() => setMobileMenuOpen(false)} />
         </div>
         <NavLinks />
       </div>
@@ -307,10 +273,7 @@ const LeftSidebar = () => {
 
   return (
     <>
-      <MobileSidebar
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
+      <MobileSidebar mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
 
       {/* Desktop Sidebar */}
       <div className="md:flex hidden flex-col w-[240px] py-8 px-4 bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] h-screen overflow-hidden relative">
