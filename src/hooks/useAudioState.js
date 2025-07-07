@@ -40,11 +40,12 @@ export const useAudioState = () => {
   }, [volume]);
 
   const setAudioElement = useCallback((element) => {
-    if (!element || globalAudioElement === element) return;
+    if (!element) return;
 
-    // Clean up previous element's event listeners
+    // Clean up previous element's event listeners if it's a different element
     if (
       globalAudioElement &&
+      globalAudioElement !== element &&
       handlersRef.current.element === globalAudioElement
     ) {
       const handlers = handlersRef.current;
@@ -109,6 +110,14 @@ export const useAudioState = () => {
     const updateBufferingCanPlay = () =>
       notifyListeners({ isBuffering: false });
 
+    // Remove any existing listeners first
+    element.removeEventListener("timeupdate", updateTime);
+    element.removeEventListener("loadedmetadata", updateDuration);
+    element.removeEventListener("durationchange", updateDuration);
+    element.removeEventListener("waiting", updateBufferingWaiting);
+    element.removeEventListener("playing", updateBufferingPlaying);
+    element.removeEventListener("canplay", updateBufferingCanPlay);
+
     // Store handlers for cleanup
     handlersRef.current = {
       element,
@@ -119,14 +128,13 @@ export const useAudioState = () => {
       updateBufferingCanPlay,
     };
 
-    if (element) {
-      element.addEventListener("timeupdate", updateTime);
-      element.addEventListener("loadedmetadata", updateDuration);
-      element.addEventListener("durationchange", updateDuration);
-      element.addEventListener("waiting", updateBufferingWaiting);
-      element.addEventListener("playing", updateBufferingPlaying);
-      element.addEventListener("canplay", updateBufferingCanPlay);
-    }
+    // Always add fresh event listeners
+    element.addEventListener("timeupdate", updateTime);
+    element.addEventListener("loadedmetadata", updateDuration);
+    element.addEventListener("durationchange", updateDuration);
+    element.addEventListener("waiting", updateBufferingWaiting);
+    element.addEventListener("playing", updateBufferingPlaying);
+    element.addEventListener("canplay", updateBufferingCanPlay);
   }, []);
 
   const seek = useCallback(
