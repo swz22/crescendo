@@ -36,6 +36,13 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
   const { currentTrack, isPlaying, activeContext, currentIndex, shuffle } =
     useSelector((state) => state.player);
+
+  // Get current playlist from Redux store
+  const currentPlaylist =
+    useSelector((state) =>
+      state.player.playlists.find((p) => p.id === playlist.id)
+    ) || playlist;
+
   const { getPreviewUrl, prefetchMultiple } = usePreviewUrl();
   const {
     handleRemoveFromPlaylist,
@@ -45,10 +52,8 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
   const [isAnimating, setIsAnimating] = useState(false);
   const [showNowPlaying, setShowNowPlaying] = useState(false);
-  const [selectedTrackIndex, setSelectedTrackIndex] = useState(null);
-  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editName, setEditName] = useState(playlist.name);
+  const [editName, setEditName] = useState(currentPlaylist.name);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [mosaicImages, setMosaicImages] = useState(initialMosaicImages || []);
   const scrollContainerRef = useRef(null);
@@ -60,7 +65,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     "(min-width: 640px) and (max-width: 1479px)"
   );
 
-  const tracks = playlist.tracks || [];
+  const tracks = currentPlaylist.tracks || [];
   const placeholderImage =
     "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE1NTY4Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2EwYWVjMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
 
@@ -114,10 +119,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         // Switch to this playlist context
         dispatch(
           switchContext({
-            contextType: playlist.id,
+            contextType: currentPlaylist.id,
             contextData: {
-              id: playlist.id,
-              name: playlist.name,
+              id: currentPlaylist.id,
+              name: currentPlaylist.name,
               tracks: tracks,
             },
           })
@@ -163,10 +168,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
           dispatch(
             replaceContext({
-              contextType: playlist.id,
+              contextType: currentPlaylist.id,
               tracks: updatedTracks,
               startIndex,
-              playlistData: { ...playlist, tracks: updatedTracks },
+              playlistData: { ...currentPlaylist, tracks: updatedTracks },
             })
           );
           showToast(
@@ -189,10 +194,12 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
       return;
     }
 
+    // Add all tracks to queue
     tracks.forEach((track) => {
       dispatch(addToQueue({ song: track, playNext: false }));
     });
 
+    // Switch to queue context
     dispatch(switchContext({ contextType: "queue" }));
     showToast(`Added ${tracks.length} tracks to queue`);
   };
@@ -226,20 +233,19 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   };
 
   const handleSaveEdit = () => {
-    if (editName.trim() && editName !== playlist.name) {
-      handleRenamePlaylist(playlist.id, editName.trim());
+    if (editName.trim() && editName !== currentPlaylist.name) {
+      handleRenamePlaylist(currentPlaylist.id, editName.trim());
     }
     setIsEditingName(false);
   };
 
   const handleDeleteConfirm = () => {
-    handleDeletePlaylist(playlist.id);
-    setShowDeleteDialog(false);
+    handleDeletePlaylist(currentPlaylist.id);
     handleClose();
   };
 
   const isTrackActive = (track, index) => {
-    if (activeContext !== playlist.id) return false;
+    if (activeContext !== currentPlaylist.id) return false;
     return currentIndex === index;
   };
 
@@ -313,7 +319,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 />
               ) : (
                 <h1 className="text-xl font-bold text-white text-center mb-1">
-                  {playlist.name}
+                  {currentPlaylist.name}
                 </h1>
               )}
               <div className="flex items-center gap-3 text-xs text-gray-400">
@@ -430,8 +436,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         <SongMenu
                           song={track}
                           onRemoveFromPlaylist={() => {
-                            handleRemoveFromPlaylist(playlist.id, i);
-                            setSelectedTrackIndex(null);
+                            handleRemoveFromPlaylist(
+                              currentPlaylist.id,
+                              getTrackId(track)
+                            );
                           }}
                         />
                       </div>
@@ -539,7 +547,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                       />
                     ) : (
                       <h1 className="text-3xl font-bold text-white mb-3">
-                        {playlist.name}
+                        {currentPlaylist.name}
                       </h1>
                     )}
                     <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
@@ -581,6 +589,42 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         </button>
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                           Shuffle Play
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          onClick={handleAddAllToQueue}
+                          className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                          title="Add all to queue"
+                        >
+                          <HiPlus size={20} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          Add to Queue
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          onClick={() => setIsEditingName(true)}
+                          className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                          title="Rename playlist"
+                        >
+                          <HiOutlinePencil size={20} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          Rename
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          onClick={() => setShowDeleteDialog(true)}
+                          className="p-3 rounded-full bg-white/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                          title="Delete playlist"
+                        >
+                          <HiOutlineTrash size={20} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          Delete
                         </span>
                       </div>
                     </div>
@@ -639,8 +683,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               <SongMenu
                                 song={track}
                                 onRemoveFromPlaylist={() => {
-                                  handleRemoveFromPlaylist(playlist.id, i);
-                                  setSelectedTrackIndex(null);
+                                  handleRemoveFromPlaylist(
+                                    currentPlaylist.id,
+                                    getTrackId(track)
+                                  );
                                 }}
                               />
                             </div>
@@ -783,7 +829,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                       />
                     ) : (
                       <h1 className="text-4xl font-bold text-white mb-6 line-clamp-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                        {playlist.name}
+                        {currentPlaylist.name}
                       </h1>
                     )}
 
@@ -951,8 +997,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               <SongMenu
                                 song={track}
                                 onRemoveFromPlaylist={() => {
-                                  handleRemoveFromPlaylist(playlist.id, i);
-                                  setSelectedTrackIndex(null);
+                                  handleRemoveFromPlaylist(
+                                    currentPlaylist.id,
+                                    getTrackId(track)
+                                  );
                                 }}
                               />
                             </div>
@@ -992,7 +1040,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         onClose={() => setShowDeleteDialog(false)}
         onConfirm={handleDeleteConfirm}
         title="Delete Playlist"
-        message={`Are you sure you want to delete "${playlist.name}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${currentPlaylist.name}"? This action cannot be undone.`}
         confirmText="Delete"
         confirmVariant="danger"
       />
