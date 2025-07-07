@@ -393,8 +393,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     key={`${track.key || track.id}-${i}`}
                     ref={isActive ? activeTrackRef : null}
                     onClick={() => handlePlayClick(track, i)}
-                    className={`flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition-all group cursor-pointer ${
-                      isActive ? "bg-white/10" : ""
+                    className={`relative flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-all group cursor-pointer ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#14b8a6]/15 to-transparent before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-[#14b8a6] before:rounded-l-lg"
+                        : ""
                     }`}
                   >
                     <span className="text-gray-400 text-sm w-6 text-center">
@@ -404,9 +406,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     <img
                       src={track.images?.coverart || placeholderImage}
                       alt={track.title}
-                      className={`w-12 h-12 rounded object-cover ${
-                        isActive ? "ring-2 ring-[#14b8a6]" : ""
-                      }`}
+                      className="w-12 h-12 rounded object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = placeholderImage;
@@ -637,8 +637,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           key={`${track.key || track.id}-${i}`}
                           ref={isActive ? activeTrackRef : null}
                           onClick={() => handlePlayClick(track, i)}
-                          className={`flex items-center gap-4 p-3 rounded-lg hover:bg-white/10 transition-all group cursor-pointer ${
-                            isActive ? "bg-white/10" : ""
+                          className={`relative flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-all group cursor-pointer ${
+                            isActive
+                              ? "bg-gradient-to-r from-[#14b8a6]/15 to-transparent before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-[#14b8a6] before:rounded-l-lg"
+                              : ""
                           }`}
                         >
                           <span className="text-gray-400 text-sm w-8 text-center">
@@ -648,9 +650,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           <img
                             src={track.images?.coverart || placeholderImage}
                             alt={track.title}
-                            className={`w-12 h-12 rounded object-cover ${
-                              isActive ? "ring-2 ring-[#14b8a6]" : ""
-                            }`}
+                            className="w-12 h-12 rounded object-cover"
                             onError={(e) => {
                               e.target.onerror = null;
                               e.target.src = placeholderImage;
@@ -937,9 +937,9 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           key={`${track.key || track.id}-${i}`}
                           ref={isActive ? activeTrackRef : null}
                           onClick={() => handlePlayClick(track, i)}
-                          className={`group flex items-center gap-4 p-4 rounded-xl transition-all cursor-pointer ${
+                          className={`relative group flex items-center gap-4 p-4 rounded-xl transition-all cursor-pointer ${
                             isActive
-                              ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent border border-[#14b8a6]/30"
+                              ? "bg-gradient-to-r from-[#14b8a6]/20 to-transparent before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-[#14b8a6] before:rounded-l-xl"
                               : "hover:bg-white/5 border border-transparent hover:border-white/10"
                           }`}
                         >
@@ -957,11 +957,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           <img
                             src={track.images?.coverart || placeholderImage}
                             alt={track.title}
-                            className={`w-12 h-12 rounded-lg object-cover shadow-lg transition-all ${
-                              isActive
-                                ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-transparent"
-                                : "group-hover:shadow-xl"
-                            }`}
+                            className="w-12 h-12 rounded-lg object-cover shadow-lg transition-all group-hover:shadow-xl"
                             onError={(e) => {
                               e.target.onerror = null;
                               e.target.src = placeholderImage;
