@@ -875,3 +875,143 @@ body.modal-open {
   box-shadow: none !important;
   filter: none !important;
 }
+
+/* Extra Small Breakpoint for Mobile */
+@media (min-width: 360px) {
+  .xs\:inline {
+    display: inline;
+  }
+
+  .xs\:block {
+    display: block;
+  }
+
+  .xs\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Mobile-First Responsive Typography */
+@media (max-width: 639px) {
+  .text-xs {
+    font-size: 0.75rem;
+  }
+
+  .text-sm {
+    font-size: 0.8125rem;
+  }
+
+  .text-base {
+    font-size: 0.875rem;
+  }
+
+  .text-lg {
+    font-size: 1rem;
+  }
+
+  .text-xl {
+    font-size: 1.125rem;
+  }
+
+  .text-2xl {
+    font-size: 1.25rem;
+  }
+
+  .text-3xl {
+    font-size: 1.5rem;
+  }
+}
+
+/* Spin animation for vinyl icons */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* Mobile Touch Targets */
+@media (max-width: 639px) {
+  button,
+  a,
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .touch-target-small {
+    position: relative;
+  }
+
+  .touch-target-small::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    z-index: -1;
+  }
+}
+
+/* Mobile Performance Optimizations */
+@media (max-width: 639px) {
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+
+  .shadow-xl {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-2xl {
+    box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .backdrop-blur-xl {
+    backdrop-filter: blur(12px);
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(8px);
+  }
+
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* Mobile Spacing Utilities */
+@media (max-width: 639px) {
+  .mobile-compact {
+    padding: 0.5rem;
+  }
+
+  .mobile-tight {
+    gap: 0.25rem;
+  }
+}
+
+/* Improved Mobile Scrolling */
+@media (max-width: 639px) {
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .scroll-optimize {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+}
