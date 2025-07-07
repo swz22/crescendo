@@ -99,8 +99,7 @@ a,
 
 .card-hover:hover {
   @apply transform -translate-y-2;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    0 0 25px rgba(45, 212, 191, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 25px rgba(45, 212, 191, 0.1);
 }
 
 .play-btn-scale {
@@ -146,7 +145,7 @@ a,
   }
 }
 
-/* Animations */
+/* Animation Keyframes */
 @keyframes rotate {
   from {
     transform: rotate(0deg);
@@ -192,15 +191,6 @@ a,
   }
   to {
     opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
     transform: translateY(0);
   }
 }
@@ -326,8 +316,7 @@ a,
     opacity: 0.3;
   }
   100% {
-    transform: translate(-50%, -50%) translateY(-25px) translateX(10px)
-      rotate(-20deg);
+    transform: translate(-50%, -50%) translateY(-25px) translateX(10px) rotate(-20deg);
     opacity: 0;
   }
 }
@@ -345,8 +334,7 @@ a,
     opacity: 0.2;
   }
   100% {
-    transform: translate(-50%, -50%) translateY(-18px) translateX(-8px)
-      rotate(25deg);
+    transform: translate(-50%, -50%) translateY(-18px) translateX(-8px) rotate(25deg);
     opacity: 0;
   }
 }
@@ -365,11 +353,7 @@ a,
 
 /* Animation Classes */
 .animate-slideup {
-  animation: slideup 0.5s ease;
-}
-
-.animate-slideUp {
-  animation: slideUp 0.3s ease-out;
+  animation: slideup 0.3s ease;
 }
 
 .animate-fadeIn {
@@ -525,11 +509,7 @@ body.modal-open {
   height: 24rem;
   top: 50%;
   right: 0;
-  background: linear-gradient(
-    to bottom right,
-    rgba(59, 130, 246, 0.1),
-    rgba(168, 85, 247, 0.1)
-  );
+  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1));
   border-radius: 9999px;
   filter: blur(3rem);
 }
@@ -541,11 +521,7 @@ body.modal-open {
   height: 24rem;
   bottom: 0;
   left: 50%;
-  background: linear-gradient(
-    to top right,
-    rgba(30, 64, 175, 0.1),
-    rgba(236, 72, 153, 0.1)
-  );
+  background: linear-gradient(to top right, rgba(30, 64, 175, 0.1), rgba(236, 72, 153, 0.1));
   border-radius: 9999px;
   filter: blur(3rem);
 }
@@ -582,8 +558,192 @@ body.modal-open {
   filter: none !important;
 }
 
-/* Mobile Optimizations */
+/* Responsive Breakpoints */
+@media (min-width: 360px) {
+  .xs\:inline {
+    display: inline;
+  }
+
+  .xs\:block {
+    display: block;
+  }
+
+  .xs\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 375px) {
+  .xs\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .xs\:px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .xs\:p-3 {
+    padding: 0.75rem;
+  }
+
+  .xs\:gap-3 {
+    gap: 0.75rem;
+  }
+
+  .xs\:text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .xs\:text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .xs\:text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  .xs\:inline {
+    display: inline;
+  }
+
+  .xs\:hidden {
+    display: none;
+  }
+
+  .xs\:flex-initial {
+    flex: 0 1 auto;
+  }
+
+  .xs\:flex-row {
+    flex-direction: row;
+  }
+
+  .xs\:mt-3 {
+    margin-top: 0.75rem;
+  }
+
+  .xs\:mt-1 {
+    margin-top: 0.25rem;
+  }
+
+  .xs\:w-\[120px\] {
+    width: 120px;
+  }
+
+  .xs\:h-\[120px\] {
+    height: 120px;
+  }
+
+  .xs\:rounded-lg {
+    border-radius: 0.5rem;
+  }
+
+  .xs\:whitespace-normal {
+    white-space: normal;
+  }
+
+  .xs\:line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
+/* Touch-friendly hover states */
+@media (hover: hover) {
+  .hover\:scale-105:hover {
+    transform: scale(1.05);
+  }
+}
+
+@media (hover: none) {
+  .hover\:scale-105:active {
+    transform: scale(1.05);
+  }
+
+  .card-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* Mobile-specific hover states */
+@media (hover: none) and (pointer: coarse) {
+  .hover\:bg-white\/\[0\.12\]:hover {
+    background-color: transparent;
+  }
+
+  .hover\:bg-white\/\[0\.12\]:active {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .hover\:scale-105:active {
+    transform: scale(1.05);
+  }
+}
+
+/* Mobile Specific Styles */
+@media (max-width: 767px) {
+  /* Mobile dropdown styling */
+  .mobile-compact .dropdown-trigger {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-width: auto;
+  }
+
+  .mobile-compact .dropdown-trigger span:first-child {
+    margin-right: 0.375rem;
+  }
+
+  /* Smooth scrolling and touch improvements */
+  .card-hover {
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
+  }
+
+  .custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  .animate-slideup {
+    animation: slideup 0.4s ease-out;
+  }
+
+  /* Active states for mobile */
+  .active\:scale-95:active {
+    transform: scale(0.95);
+  }
+
+  /* Improved text rendering for mobile */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Touch targets and user select */
+  button,
+  .cursor-pointer {
+    touch-action: manipulation;
+  }
+
+  .card-hover,
+  button {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}
+
 @media (max-width: 640px) {
+  /* Scrollbar hiding */
   .custom-scrollbar {
     scrollbar-width: none;
   }
@@ -600,17 +760,10 @@ body.modal-open {
     width: 90vw !important;
     max-width: 380px !important;
   }
-
-  @media (hover: none) {
-    .card-hover:hover {
-      transform: none;
-      box-shadow: none;
-    }
-  }
 }
 
-/* Mobile Touch Targets */
 @media (max-width: 639px) {
+  /* Touch targets */
   button,
   a,
   .clickable {
@@ -622,6 +775,7 @@ body.modal-open {
     transform: none;
   }
 
+  /* Shadow utilities for mobile */
   .shadow-xl {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
@@ -630,6 +784,11 @@ body.modal-open {
     box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1);
   }
 
+  .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Backdrop blur utilities */
   .backdrop-blur-xl {
     backdrop-filter: blur(12px);
   }
@@ -642,6 +801,7 @@ body.modal-open {
     backdrop-filter: blur(4px);
   }
 
+  /* Overflow and scrolling */
   .overflow-y-auto {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
@@ -663,38 +823,8 @@ body.modal-open {
   .group:active {
     transition-duration: 100ms;
   }
-}
 
-/* Touch-friendly hover states */
-@media (hover: hover) {
-  .hover\:scale-105:hover {
-    transform: scale(1.05);
-  }
-}
-
-@media (hover: none) {
-  .hover\:scale-105:active {
-    transform: scale(1.05);
-  }
-}
-
-/* Extra Small Breakpoint */
-@media (min-width: 360px) {
-  .xs\:inline {
-    display: inline;
-  }
-
-  .xs\:block {
-    display: block;
-  }
-
-  .xs\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* Mobile Typography */
-@media (max-width: 639px) {
+  /* Mobile Typography */
   .text-xs {
     font-size: 0.75rem;
   }
@@ -730,32 +860,12 @@ body.modal-open {
   }
 }
 
-/* Mobile-specific hover states */
-@media (hover: none) and (pointer: coarse) {
-  .hover\:bg-white\/\[0\.12\]:hover {
-    background-color: transparent;
-  }
-
-  .hover\:bg-white\/\[0\.12\]:active {
-    background-color: rgba(255, 255, 255, 0.12);
-  }
-}
-
-/* Enhanced shadow utilities for mobile */
-@media (max-width: 639px) {
-  .shadow-lg {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-
-  .shadow-xl {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2),
-      0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  }
-
-  .shadow-2xl {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
-  }
+/* Utility classes */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* Glass effect support */

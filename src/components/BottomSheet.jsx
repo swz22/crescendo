@@ -56,7 +56,7 @@ const BottomSheet = ({ isOpen, onClose, children, title }) => {
       />
       <div
         ref={sheetRef}
-        className="fixed bottom-0 left-0 right-0 bg-[#1e1b4b] rounded-t-3xl shadow-2xl z-[101] animate-slideUp transition-transform"
+        className="fixed bottom-0 left-0 right-0 bg-[#1e1b4b] rounded-t-3xl shadow-2xl z-[101] animate-slideup transition-transform"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
