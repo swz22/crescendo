@@ -135,6 +135,7 @@ const Discover = () => {
       <AppHeader
         title="Discover"
         subtitle="Find your next favorite song"
+        showSearch={true}
         action={
           <Dropdown
             items={sortedGenres}

@@ -48,6 +48,7 @@ const TopArtists = () => {
       <AppHeader
         title="Top Artists"
         subtitle={`Most popular artists in ${selectedCountryName}`}
+        showSearch={true}
         action={
           <Dropdown
             items={sortedCountries}
@@ -57,7 +58,12 @@ const TopArtists = () => {
             renderIcon={(country) => (
               <Icon icon={`circle-flags:${country.flag}`} className="w-4 h-4" />
             )}
-            renderLabel={(country) => country.name}
+            renderLabel={(country) => (
+              <>
+                <span className="hidden xs:inline">{country.name}</span>
+                <span className="xs:hidden">{country.code}</span>
+              </>
+            )}
             groups={[
               { label: "Popular", items: ["US", "GB"] },
               {
@@ -66,6 +72,7 @@ const TopArtists = () => {
               },
             ]}
             width={200}
+            className="mobile-compact"
           />
         }
       />

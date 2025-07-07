@@ -134,6 +134,7 @@ const NewReleases = () => {
       <AppHeader
         title="New Releases"
         subtitle="Fresh music from around the world"
+        showSearch={true}
       />
 
       {/* Hero Section */}

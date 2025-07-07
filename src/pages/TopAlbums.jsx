@@ -51,6 +51,7 @@ const TopAlbums = () => {
       <AppHeader
         title="Top Albums"
         subtitle={`Discover trending albums worldwide`}
+        showSearch={true}
         action={
           <Dropdown
             items={sortedCountries}
@@ -60,7 +61,12 @@ const TopAlbums = () => {
             renderIcon={(country) => (
               <Icon icon={`circle-flags:${country.flag}`} className="w-4 h-4" />
             )}
-            renderLabel={(country) => country.name}
+            renderLabel={(country) => (
+              <>
+                <span className="hidden xs:inline">{country.name}</span>
+                <span className="xs:hidden">{country.code}</span>
+              </>
+            )}
             groups={[
               { label: "Popular", items: ["US", "GB"] },
               {
@@ -69,6 +75,7 @@ const TopAlbums = () => {
               },
             ]}
             width={200}
+            className="mobile-compact"
           />
         }
       />

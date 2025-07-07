@@ -91,6 +91,7 @@ const MyPlaylists = () => {
       <AppHeader
         title="My Playlists"
         subtitle="Your personal music collection"
+        showSearch={true}
       />
 
       {/* Hero Section */}
