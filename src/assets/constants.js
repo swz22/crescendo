@@ -32,7 +32,7 @@ export const links = [
   { name: "Top Albums", to: "/top-albums", icon: HiOutlinePhotograph },
   { name: "New Releases", to: "/new-releases", icon: HiOutlineSparkles },
   { name: "Community Playlists", to: "/playlists", icon: HiOutlineCollection },
-  { name: "My Playlists", to: "/my-playlists", icon: HiOutlineFolderOpen },
+  { name: "Your Playlists", to: "/your-playlists", icon: HiOutlineFolderOpen },
 ];
 
 export const countries = [

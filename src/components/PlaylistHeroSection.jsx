@@ -16,9 +16,7 @@ const PlaylistHeroSection = ({ stats, onCreatePlaylist }) => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
         {/* Title and stats */}
         <div className="w-full sm:w-auto">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-3 sm:mb-4">
-            Your Music Collection
-          </h2>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-3 sm:mb-4">Your Music Collection</h2>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -29,12 +27,8 @@ const PlaylistHeroSection = ({ stats, onCreatePlaylist }) => {
                   <RiFolderMusicLine className="w-4 h-4 sm:w-5 sm:h-5 text-[#14b8a6]" />
                 </div>
                 <div>
-                  <p className="text-[10px] sm:text-xs text-gray-400">
-                    Playlists
-                  </p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">
-                    {stats.playlistCount}
-                  </p>
+                  <p className="text-[10px] sm:text-xs text-gray-400">Playlists</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{stats.playlistCount}</p>
                 </div>
               </div>
             </div>
@@ -46,12 +40,8 @@ const PlaylistHeroSection = ({ stats, onCreatePlaylist }) => {
                   <BsMusicNoteList className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] sm:text-xs text-gray-400">
-                    Total Tracks
-                  </p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">
-                    {stats.totalTracks}
-                  </p>
+                  <p className="text-[10px] sm:text-xs text-gray-400">Total Tracks</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{stats.totalTracks}</p>
                 </div>
               </div>
             </div>
@@ -63,9 +53,7 @@ const PlaylistHeroSection = ({ stats, onCreatePlaylist }) => {
                   <BsClock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] sm:text-xs text-gray-400">
-                    Total Time
-                  </p>
+                  <p className="text-[10px] sm:text-xs text-gray-400">Total Time</p>
                   <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">
                     {formatDuration(stats.totalDuration)}
                   </p>

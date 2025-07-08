@@ -10,7 +10,7 @@ import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { FiSearch, FiFilter } from "react-icons/fi";
 import { HiOutlineSortAscending } from "react-icons/hi";
 
-const MyPlaylists = () => {
+const YourPlaylists = () => {
   const navigate = useNavigate();
   const { playlists } = useSelector((state) => state.player);
   const { handleCreatePlaylist } = usePlaylistManager();
@@ -29,10 +29,7 @@ const MyPlaylists = () => {
   const getPlaylistStats = () => {
     const totalTracks = playlists.reduce((acc, p) => acc + p.tracks.length, 0);
     const totalDuration = playlists.reduce((acc, p) => {
-      const playlistDuration = p.tracks.reduce(
-        (sum, track) => sum + (track.duration_ms || 0),
-        0
-      );
+      const playlistDuration = p.tracks.reduce((sum, track) => sum + (track.duration_ms || 0), 0);
       return acc + playlistDuration;
     }, 0);
 
@@ -44,9 +41,7 @@ const MyPlaylists = () => {
   };
 
   const filteredAndSortedPlaylists = playlists
-    .filter((playlist) =>
-      playlist.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((playlist) => playlist.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
       switch (sortBy) {
         case "name":
@@ -70,7 +65,7 @@ const MyPlaylists = () => {
   };
 
   const handleCreateNewPlaylist = () => {
-    const playlistName = `My Playlist #${playlists.length + 1}`;
+    const playlistName = `Your Playlist #${playlists.length + 1}`;
     const newId = handleCreatePlaylist(playlistName);
   };
 
@@ -88,18 +83,11 @@ const MyPlaylists = () => {
 
   return (
     <div className="flex flex-col">
-      <AppHeader
-        title="My Playlists"
-        subtitle="Your personal music collection"
-        showSearch={true}
-      />
+      <AppHeader title="Your Playlists" subtitle="Your personal music collection" showSearch={true} />
 
       {/* Hero Section */}
       <div className="px-4 sm:px-6 md:px-8 mb-4 sm:mb-6">
-        <PlaylistHeroSection
-          stats={stats}
-          onCreatePlaylist={handleCreateNewPlaylist}
-        />
+        <PlaylistHeroSection stats={stats} onCreatePlaylist={handleCreateNewPlaylist} />
       </div>
 
       {playlists.length > 0 ? (
@@ -127,9 +115,7 @@ const MyPlaylists = () => {
                 >
                   <HiOutlineSortAscending className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="hidden xs:inline">Sort by:</span>
-                  <span className="font-medium">
-                    {sortOptions.find((opt) => opt.value === sortBy)?.label}
-                  </span>
+                  <span className="font-medium">{sortOptions.find((opt) => opt.value === sortBy)?.label}</span>
                 </button>
 
                 {showSortMenu && (
@@ -142,9 +128,7 @@ const MyPlaylists = () => {
                           setShowSortMenu(false);
                         }}
                         className={`w-full px-4 py-2.5 text-left hover:bg-white/10 transition-colors text-sm ${
-                          sortBy === option.value
-                            ? "bg-white/10 text-[#14b8a6]"
-                            : "text-white"
+                          sortBy === option.value ? "bg-white/10 text-[#14b8a6]" : "text-white"
                         }`}
                       >
                         {option.label}
@@ -170,9 +154,7 @@ const MyPlaylists = () => {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-400 text-lg">
-                  No playlists found matching "{searchTerm}"
-                </p>
+                <p className="text-gray-400 text-lg">No playlists found matching "{searchTerm}"</p>
               </div>
             )}
           </div>
@@ -183,14 +165,9 @@ const MyPlaylists = () => {
         </div>
       )}
 
-      {selectedPlaylist && (
-        <UserPlaylistModal
-          playlist={selectedPlaylist}
-          onClose={handleModalClose}
-        />
-      )}
+      {selectedPlaylist && <UserPlaylistModal playlist={selectedPlaylist} onClose={handleModalClose} />}
     </div>
   );
 };
 
-export default MyPlaylists;
+export default YourPlaylists;

@@ -21,7 +21,7 @@ import {
   SongDetails,
   NewReleases,
   CommunityPlaylists,
-  MyPlaylists,
+  YourPlaylists,
 } from "./pages";
 
 const PageLoader = () => (
@@ -39,15 +39,11 @@ const MainContent = () => {
   const { currentTrack, modalOpen } = useSelector((state) => state.player);
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
   const isDesktopView = useMediaQuery("(min-width: 1480px)");
-  const isTabletView = useMediaQuery(
-    "(min-width: 640px) and (max-width: 1479px)"
-  );
+  const isTabletView = useMediaQuery("(min-width: 640px) and (max-width: 1479px)");
 
   // Force scroll to top for detail pages
   useEffect(() => {
-    const isDetailPage = detailRoutes.some((route) =>
-      location.pathname.includes(route)
-    );
+    const isDetailPage = detailRoutes.some((route) => location.pathname.includes(route));
 
     if (isDetailPage && scrollContainerRef.current) {
       // Ensure DOM is ready
@@ -74,7 +70,7 @@ const MainContent = () => {
               <Route path="/top-albums" element={<TopAlbums />} />
               <Route path="/new-releases" element={<NewReleases />} />
               <Route path="/playlists" element={<CommunityPlaylists />} />
-              <Route path="/my-playlists" element={<MyPlaylists />} />
+              <Route path="/your-playlists" element={<YourPlaylists />} />
               <Route path="/albums/:id" element={<AlbumDetails />} />
               <Route path="/artists/:id" element={<ArtistDetails />} />
               <Route path="/songs/:songid" element={<SongDetails />} />
@@ -90,10 +86,7 @@ const MainContent = () => {
         </div>
       )}
       {/* Mobile Queue Sheet */}
-      <NowPlaying
-        isOpen={mobileQueueOpen}
-        onClose={() => setMobileQueueOpen(false)}
-      />
+      <NowPlaying isOpen={mobileQueueOpen} onClose={() => setMobileQueueOpen(false)} />
       {/* Music Player - Hide in tablet and desktop views when modal is open */}
       {currentTrack?.title && (
         <div
