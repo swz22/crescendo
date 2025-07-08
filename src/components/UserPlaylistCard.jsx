@@ -1,26 +1,29 @@
-import { useState, useRef } from "react";
-import { useDispatch } from "react-redux";
+import { useState, useRef, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
-import { replaceContext } from "../redux/features/playerSlice";
-import { BsMusicNoteList, BsThreeDots, BsPlayFill } from "react-icons/bs";
-import { HiOutlinePencil, HiOutlineTrash, HiX, HiCheck } from "react-icons/hi";
+import { replaceContext, playPause } from "../redux/features/playerSlice";
+import { BsMusicNoteList, BsPlayFill, BsPauseFill } from "react-icons/bs";
+import { HiOutlinePencil, HiOutlineTrash, HiX, HiCheck, HiDotsVertical } from "react-icons/hi";
 import { useToast } from "../context/ToastContext";
 import ConfirmDialog from "./ConfirmDialog";
 import { Icon } from "@iconify/react";
+import { isSameTrack } from "../utils/trackUtils";
 
 const UserPlaylistCard = ({ playlist, onClick }) => {
   const dispatch = useDispatch();
   const { showToast } = useToast();
   const { handleDeletePlaylist, handleRenamePlaylist } = usePlaylistManager();
   const { getPreviewUrl } = usePreviewUrl();
-
+  const { isPlaying, activeContext, currentTrack } = useSelector((state) => state.player);
+  const isPlaylistPlaying = isPlaying && activeContext === playlist.id;
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(playlist.name);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const menuRef = useRef(null);
   const inputRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
   const isEmpty = playlist.tracks.length === 0;
 
@@ -45,7 +48,27 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
   };
 
   const mosaicImages = getMosaicImages();
-  const placeholderImage = null;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(event.target)
+      ) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMenu]);
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "";
@@ -62,6 +85,12 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
 
   const handlePlayClick = async (e) => {
     e.stopPropagation();
+
+    if (isPlaylistPlaying) {
+      dispatch(playPause(false));
+      return;
+    }
+
     if (isEmpty) {
       showToast("Playlist is empty", "error");
       return;
@@ -133,13 +162,17 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
           hover:transform hover:scale-[1.02] ${isEmpty ? "opacity-90" : ""}`}
       >
         {/* Playlist Image */}
-        <div className="relative aspect-square rounded-lg overflow-hidden mb-4 bg-gradient-to-br from-gray-800 to-gray-900">
+        <div
+          onClick={!isEditing ? onClick : undefined}
+          className="relative aspect-square rounded-lg overflow-hidden mb-4 bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer"
+        >
           {isEmpty ? (
             // Empty Playlist Design
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2d2467]/40 to-[#1a1848]/60">
               <Icon icon="solar:playlist-minimalistic-2-bold-duotone" className="w-20 h-20 text-white/20" />
             </div>
           ) : mosaicImages.length === 4 ? (
+            // 4-image mosaic
             <div className="grid grid-cols-2 gap-0.5 h-full">
               {mosaicImages.map((img, idx) => (
                 <img
@@ -154,6 +187,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
               ))}
             </div>
           ) : mosaicImages.length > 0 ? (
+            // Single image
             <img
               src={mosaicImages[0]}
               alt={playlist.name}
@@ -170,20 +204,28 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
           )}
 
           {/* Play button */}
-          <button
-            onClick={handlePlayClick}
-            className={`absolute bottom-2 right-2 p-3 bg-[#14b8a6] rounded-full shadow-lg
-              transform translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100
-              transition-all duration-300 hover:scale-110 hover:bg-[#0d9488]
-              ${isEmpty ? "opacity-50 cursor-not-allowed" : ""}`}
-            disabled={isEmpty}
-          >
-            <BsPlayFill className="w-6 h-6 text-white ml-0.5" />
-          </button>
+          {!isEmpty && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlayClick(e);
+              }}
+              className="absolute top-3 right-3 p-3 bg-[#14b8a6] rounded-full shadow-lg
+                opacity-0 group-hover:opacity-100 transform scale-0 group-hover:scale-100
+                transition-all duration-300 hover:scale-110 hover:bg-[#0d9488] z-10"
+              aria-label="Play playlist"
+            >
+              {isPlaylistPlaying ? (
+                <BsPauseFill className="w-5 h-5 text-white ml-0.5" />
+              ) : (
+                <BsPlayFill className="w-5 h-5 text-white ml-0.5" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Playlist Info */}
-        <div className="flex-1">
+        <div onClick={!isEditing ? onClick : undefined} className="flex-1 cursor-pointer">
           {isEditing ? (
             <div className="flex items-center gap-2 mb-2">
               <input
@@ -233,40 +275,49 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
             </div>
 
             {/* Menu Button */}
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMenu(!showMenu);
-                }}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
-              >
-                <BsThreeDots className="w-4 h-4 text-gray-400" />
-              </button>
-
-              {/* Dropdown Menu */}
-              {showMenu && (
-                <div className="absolute right-0 bottom-full mb-2 w-48 bg-[#1a1848] rounded-lg shadow-xl border border-white/10 overflow-hidden z-50">
-                  <button
-                    onClick={handleEditClick}
-                    className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-3"
-                  >
-                    <HiOutlinePencil className="w-4 h-4" />
-                    Rename
-                  </button>
-                  <button
-                    onClick={handleDeleteClick}
-                    className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-red-400 transition-colors flex items-center gap-3"
-                  >
-                    <HiOutlineTrash className="w-4 h-4" />
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              ref={menuButtonRef}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className="p-2 -mr-2 -mb-2 rounded-full hover:bg-white/10 transition-colors"
+              aria-label="Playlist menu"
+            >
+              <HiDotsVertical className="w-4 h-4 text-gray-400 hover:text-white" />
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Dropdown Menu */}
+      {showMenu && menuButtonRef.current && (
+        <div
+          ref={menuRef}
+          style={{
+            position: "fixed",
+            top: menuButtonRef.current.getBoundingClientRect().top - 100,
+            left: menuButtonRef.current.getBoundingClientRect().left - 140,
+            zIndex: 100,
+          }}
+          className="w-48 bg-[#1a1848] rounded-lg shadow-xl border border-white/10 overflow-hidden"
+        >
+          <button
+            onClick={handleEditClick}
+            className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-3"
+          >
+            <HiOutlinePencil className="w-4 h-4" />
+            Rename
+          </button>
+          <button
+            onClick={handleDeleteClick}
+            className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-red-400 transition-colors flex items-center gap-3"
+          >
+            <HiOutlineTrash className="w-4 h-4" />
+            Delete
+          </button>
+        </div>
+      )}
 
       <ConfirmDialog
         isOpen={showDeleteDialog}
