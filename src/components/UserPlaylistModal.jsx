@@ -20,13 +20,7 @@ import SongMenu from "./SongMenu";
 import ModalPlayer from "./ModalPlayer";
 import NowPlaying from "./NowPlaying";
 import { IoClose, IoArrowBack } from "react-icons/io5";
-import {
-  BsMusicNoteBeamed,
-  BsClock,
-  BsShuffle,
-  BsFillPlayFill,
-  BsThreeDots,
-} from "react-icons/bs";
+import { BsMusicNoteBeamed, BsClock, BsShuffle, BsFillPlayFill, BsThreeDots } from "react-icons/bs";
 import { HiPlus, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
 import { useToast } from "../context/ToastContext";
 import { isSameTrack, getTrackId } from "../utils/trackUtils";
@@ -34,21 +28,13 @@ import ConfirmDialog from "./ConfirmDialog";
 
 const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const dispatch = useDispatch();
-  const { currentTrack, isPlaying, activeContext, currentIndex, shuffle } =
-    useSelector((state) => state.player);
+  const { currentTrack, isPlaying, activeContext, currentIndex, shuffle } = useSelector((state) => state.player);
 
   // Get current playlist from Redux store
-  const currentPlaylist =
-    useSelector((state) =>
-      state.player.playlists.find((p) => p.id === playlist.id)
-    ) || playlist;
+  const currentPlaylist = useSelector((state) => state.player.playlists.find((p) => p.id === playlist.id)) || playlist;
 
   const { getPreviewUrl, prefetchMultiple } = usePreviewUrl();
-  const {
-    handleRemoveFromPlaylist,
-    handleRenamePlaylist,
-    handleDeletePlaylist,
-  } = usePlaylistManager();
+  const { handleRemoveFromPlaylist, handleRenamePlaylist, handleDeletePlaylist } = usePlaylistManager();
 
   const [isAnimating, setIsAnimating] = useState(false);
   const [showNowPlaying, setShowNowPlaying] = useState(false);
@@ -61,32 +47,38 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const { showToast } = useToast();
   const { setLoading, isLoading } = useLoadingState();
   const isDesktopScreen = useMediaQuery("(min-width: 1480px)");
-  const isTabletView = useMediaQuery(
-    "(min-width: 640px) and (max-width: 1479px)"
-  );
+  const isTabletView = useMediaQuery("(min-width: 640px) and (max-width: 1479px)");
 
   const tracks = currentPlaylist.tracks || [];
   const placeholderImage =
     "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE1NTY4Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2EwYWVjMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
 
   useEffect(() => {
-    if (!initialMosaicImages && tracks.length > 0) {
+    // Update mosaic images when playlist changes
+    if (initialMosaicImages && initialMosaicImages.length > 0) {
+      setMosaicImages(initialMosaicImages);
+    } else if (tracks.length > 0) {
+      // Generate mosaic images from tracks if not provided
       const imagesToSet = tracks
         .slice(0, 4)
-        .map(
-          (track) =>
-            track.album?.images?.[0]?.url ||
-            track.images?.coverart ||
-            placeholderImage
-        )
+        .map((track) => track.album?.images?.[0]?.url || track.images?.coverart || placeholderImage)
         .filter((img) => img !== placeholderImage);
 
       if (imagesToSet.length > 0) {
-        setMosaicImages(
-          imagesToSet.length === 4
-            ? imagesToSet
-            : Array(4).fill(imagesToSet[0] || placeholderImage)
-        );
+        setMosaicImages(imagesToSet.length === 4 ? imagesToSet : Array(4).fill(imagesToSet[0] || placeholderImage));
+      }
+    }
+  }, [playlist.id, initialMosaicImages]);
+
+  useEffect(() => {
+    if (!initialMosaicImages && tracks.length > 0) {
+      const imagesToSet = tracks
+        .slice(0, 4)
+        .map((track) => track.album?.images?.[0]?.url || track.images?.coverart || placeholderImage)
+        .filter((img) => img !== placeholderImage);
+
+      if (imagesToSet.length > 0) {
+        setMosaicImages(imagesToSet.length === 4 ? imagesToSet : Array(4).fill(imagesToSet[0] || placeholderImage));
       }
     }
   }, [tracks, initialMosaicImages]);
@@ -146,9 +138,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     const loadingKey = shufflePlay ? "shuffle-play" : "play-all";
     setLoading(loadingKey, true);
 
-    const startIndex = shufflePlay
-      ? Math.floor(Math.random() * tracks.length)
-      : 0;
+    const startIndex = shufflePlay ? Math.floor(Math.random() * tracks.length) : 0;
     const firstTrack = tracks[startIndex];
 
     if (firstTrack) {
@@ -170,9 +160,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               playlistData: { ...currentPlaylist, tracks: updatedTracks },
             })
           );
-          showToast(
-            shufflePlay ? "Shuffle playing playlist" : "Playing playlist"
-          );
+          showToast(shufflePlay ? "Shuffle playing playlist" : "Playing playlist");
         } else {
           showToast("No preview available", "error");
         }
@@ -219,10 +207,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
   const getTotalDuration = () => {
     if (!tracks) return "0 min";
-    const totalMs = tracks.reduce(
-      (acc, track) => acc + (track.duration_ms || 0),
-      0
-    );
+    const totalMs = tracks.reduce((acc, track) => acc + (track.duration_ms || 0), 0);
     const hours = Math.floor(totalMs / 3600000);
     const minutes = Math.floor((totalMs % 3600000) / 60000);
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes} min`;
@@ -250,9 +235,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
       {/* Mobile Full Screen Modal */}
       <div
         className={`sm:hidden fixed inset-0 z-40 bg-gradient-to-b from-[#1a1848] to-[#0f0b2d] transition-all duration-500 ${
-          isAnimating
-            ? "translate-x-0 opacity-100"
-            : "translate-x-full opacity-0"
+          isAnimating ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
         }`}
       >
         <div className="flex flex-col h-full pb-safe">
@@ -266,9 +249,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
             >
               <IoArrowBack className="w-5 h-5 text-white" />
             </button>
-            <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">
-              My Playlist
-            </h2>
+            <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">My Playlist</h2>
             <div className="w-[42px]" /> {/* Spacer for balance */}
           </div>
 
@@ -332,24 +313,18 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     autoFocus
                   />
                 ) : (
-                  <h1 className="text-[22px] font-bold text-white mb-2 line-clamp-2">
-                    {currentPlaylist.name}
-                  </h1>
+                  <h1 className="text-[22px] font-bold text-white mb-2 line-clamp-2">{currentPlaylist.name}</h1>
                 )}
 
                 {/* Stats */}
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-2">
                     <BsMusicNoteBeamed className="w-4 h-4 text-[#14b8a6]" />
-                    <span className="text-sm text-white/80">
-                      {tracks?.length || 0} songs
-                    </span>
+                    <span className="text-sm text-white/80">{tracks?.length || 0} songs</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <BsClock className="w-4 h-4 text-purple-400" />
-                    <span className="text-sm text-white/80">
-                      {getTotalDuration()}
-                    </span>
+                    <span className="text-sm text-white/80">{getTotalDuration()}</span>
                   </div>
                 </div>
               </div>
@@ -400,11 +375,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               } 
               active:scale-95 disabled:opacity-70`}
                 >
-                  {isLoading("shuffle-play") ? (
-                    <MusicLoadingSpinner size="sm" />
-                  ) : (
-                    <BsShuffle size={18} />
-                  )}
+                  {isLoading("shuffle-play") ? <MusicLoadingSpinner size="sm" /> : <BsShuffle size={18} />}
                 </button>
 
                 <button
@@ -447,9 +418,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 <div className="text-center py-12">
                   <BsMusicNoteBeamed className="w-12 h-12 text-white/20 mx-auto mb-4" />
                   <p className="text-white/60">Your playlist is empty</p>
-                  <p className="text-white/40 text-sm mt-2">
-                    Add some tracks to get started
-                  </p>
+                  <p className="text-white/40 text-sm mt-2">Add some tracks to get started</p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -472,11 +441,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         <div
                           className={`flex items-center justify-center w-7 h-7 rounded-lg
                     text-xs font-semibold transition-all duration-200
-                    ${
-                      isActive
-                        ? "bg-[#14b8a6]/20 text-[#14b8a6]"
-                        : "bg-white/[0.06] text-white/50"
-                    }`}
+                    ${isActive ? "bg-[#14b8a6]/20 text-[#14b8a6]" : "bg-white/[0.06] text-white/50"}`}
                         >
                           {i + 1}
                         </div>
@@ -500,9 +465,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           >
                             {track.title}
                           </p>
-                          <p className="text-white/50 text-xs truncate">
-                            {track.subtitle}
-                          </p>
+                          <p className="text-white/50 text-xs truncate">{track.subtitle}</p>
                         </div>
 
                         {/* Action buttons */}
@@ -511,10 +474,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                             <SongMenu
                               song={track}
                               onRemoveFromPlaylist={() => {
-                                handleRemoveFromPlaylist(
-                                  currentPlaylist.id,
-                                  getTrackId(track)
-                                );
+                                handleRemoveFromPlaylist(currentPlaylist.id, getTrackId(track));
                               }}
                             />
                           </div>
@@ -524,9 +484,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               handlePause={handlePauseClick}
                               handlePlay={() => handlePlayClick(track, i)}
                               size={34}
-                              isLoading={isLoading(
-                                `track-${getTrackId(track)}`
-                              )}
+                              isLoading={isLoading(`track-${getTrackId(track)}`)}
                             />
                           </div>
                         </div>
@@ -544,9 +502,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         <div className="hidden sm:block">
           <div
             className={`fixed inset-0 z-30 transition-all duration-300 ${
-              isAnimating
-                ? "bg-black/60 backdrop-blur-sm"
-                : "bg-transparent pointer-events-none"
+              isAnimating ? "bg-black/60 backdrop-blur-sm" : "bg-transparent pointer-events-none"
             }`}
             onClick={handleBackdropClick}
           />
@@ -564,10 +520,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
             <div className="flex flex-col h-full overflow-hidden rounded-2xl">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-white/10">
-                <button
-                  onClick={handleClose}
-                  className="p-2 rounded-full bg-black/20 hover:bg-black/40 transition-all"
-                >
+                <button onClick={handleClose} className="p-2 rounded-full bg-black/20 hover:bg-black/40 transition-all">
                   <IoArrowBack className="w-5 h-5 text-white" />
                 </button>
                 <div className="w-9" />
@@ -608,25 +561,19 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
                   {/* Info */}
                   <div className="flex-1 flex flex-col justify-center">
-                    <p className="text-sm text-[#14b8a6] font-medium mb-2">
-                      MY PLAYLIST
-                    </p>
+                    <p className="text-sm text-[#14b8a6] font-medium mb-2">MY PLAYLIST</p>
                     {isEditingName ? (
                       <input
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         onBlur={handleSaveEdit}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleSaveEdit()
-                        }
+                        onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
                         className="text-3xl font-bold text-white bg-white/10 rounded px-3 py-1 mb-3 max-w-[300px]"
                         autoFocus
                       />
                     ) : (
-                      <h1 className="text-3xl font-bold text-white mb-3">
-                        {currentPlaylist.name}
-                      </h1>
+                      <h1 className="text-3xl font-bold text-white mb-3">{currentPlaylist.name}</h1>
                     )}
                     <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
                       <span>{tracks?.length || 0} songs</span>
@@ -654,16 +601,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           onClick={() => handlePlayAll(true)}
                           disabled={isLoading("shuffle-play")}
                           className={`p-3 rounded-full transition-all ${
-                            shuffle
-                              ? "bg-white/10 text-[#14b8a6]"
-                              : "bg-white/10 text-white hover:bg-white/20"
+                            shuffle ? "bg-white/10 text-[#14b8a6]" : "bg-white/10 text-white hover:bg-white/20"
                           } disabled:opacity-80 disabled:cursor-not-allowed`}
                         >
-                          {isLoading("shuffle-play") ? (
-                            <MusicLoadingSpinner size="sm" />
-                          ) : (
-                            <BsShuffle size={20} />
-                          )}
+                          {isLoading("shuffle-play") ? <MusicLoadingSpinner size="sm" /> : <BsShuffle size={20} />}
                         </button>
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                           Shuffle Play
@@ -725,9 +666,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               : ""
                           }`}
                         >
-                          <span className="text-gray-400 text-sm w-8 text-center">
-                            {i + 1}
-                          </span>
+                          <span className="text-gray-400 text-sm w-8 text-center">{i + 1}</span>
 
                           <img
                             src={track.images?.coverart || placeholderImage}
@@ -740,16 +679,10 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           />
 
                           <div className="flex-1 min-w-0">
-                            <p
-                              className={`font-medium truncate ${
-                                isActive ? "text-[#14b8a6]" : "text-white"
-                              }`}
-                            >
+                            <p className={`font-medium truncate ${isActive ? "text-[#14b8a6]" : "text-white"}`}>
                               {track.title}
                             </p>
-                            <p className="text-gray-400 text-sm truncate">
-                              {track.subtitle}
-                            </p>
+                            <p className="text-gray-400 text-sm truncate">{track.subtitle}</p>
                           </div>
 
                           <span className="text-gray-400 text-sm hidden md:block">
@@ -761,10 +694,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               <SongMenu
                                 song={track}
                                 onRemoveFromPlaylist={() => {
-                                  handleRemoveFromPlaylist(
-                                    currentPlaylist.id,
-                                    getTrackId(track)
-                                  );
+                                  handleRemoveFromPlaylist(currentPlaylist.id, getTrackId(track));
                                 }}
                               />
                             </div>
@@ -774,9 +704,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                 handlePause={handlePauseClick}
                                 handlePlay={() => handlePlayClick(track, i)}
                                 size={35}
-                                isLoading={isLoading(
-                                  `track-${getTrackId(track)}`
-                                )}
+                                isLoading={isLoading(`track-${getTrackId(track)}`)}
                               />
                             </div>
                           </div>
@@ -788,9 +716,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               </div>
 
               {/* Modal Player */}
-              {isTabletView && currentTrack && (
-                <ModalPlayer onOpenNowPlaying={() => setShowNowPlaying(true)} />
-              )}
+              {isTabletView && currentTrack && <ModalPlayer onOpenNowPlaying={() => setShowNowPlaying(true)} />}
             </div>
           </div>
         </div>
@@ -801,9 +727,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         <div className="hidden sm:block">
           <div
             className={`fixed top-0 left-0 bottom-0 z-40 transition-all duration-300 ${
-              isAnimating
-                ? "bg-black/70 backdrop-blur-md"
-                : "bg-transparent pointer-events-none"
+              isAnimating ? "bg-black/70 backdrop-blur-md" : "bg-transparent pointer-events-none"
             }`}
             onClick={handleBackdropClick}
             style={{
@@ -814,16 +738,12 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
           {/* Slide-in Modal */}
           <div
             className={`fixed left-0 bottom-0 top-0 z-50 transition-all duration-500 overflow-hidden ${
-              isAnimating
-                ? "translate-x-0 opacity-100"
-                : "-translate-x-full opacity-0"
+              isAnimating ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
             }`}
             style={{
               right: "380px",
               background: "linear-gradient(135deg, #1a1848 0%, #0f0b2d 100%)",
-              boxShadow: isAnimating
-                ? "0 0 50px rgba(20, 184, 166, 0.15)"
-                : "none",
+              boxShadow: isAnimating ? "0 0 50px rgba(20, 184, 166, 0.15)" : "none",
             }}
           >
             {/* Subtle gradient overlay */}
@@ -848,8 +768,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     <div className="absolute -inset-1 bg-gradient-to-r from-[#14b8a6] to-purple-600 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-500"></div>
                     <div className="relative w-72 h-72 rounded-3xl overflow-hidden shadow-2xl">
                       {mosaicImages.length === 4 ? (
-                        mosaicImages.every((img) => img === mosaicImages[0]) &&
-                        mosaicImages[0] !== placeholderImage ? (
+                        mosaicImages.every((img) => img === mosaicImages[0]) && mosaicImages[0] !== placeholderImage ? (
                           <img
                             alt="playlist_cover"
                             src={mosaicImages[0]}
@@ -890,18 +809,14 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   </div>
 
                   <div className="text-center px-4 mt-8">
-                    <p className="text-sm text-[#14b8a6] font-semibold mb-3 tracking-wider uppercase">
-                      My Playlist
-                    </p>
+                    <p className="text-sm text-[#14b8a6] font-semibold mb-3 tracking-wider uppercase">My Playlist</p>
                     {isEditingName ? (
                       <input
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         onBlur={handleSaveEdit}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleSaveEdit()
-                        }
+                        onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
                         className="text-4xl font-bold text-white bg-white/10 rounded px-3 py-1 mb-6 text-center max-w-[320px] mx-auto"
                         autoFocus
                       />
@@ -933,10 +848,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           <LoadingState variant="button" text="Loading..." />
                         ) : (
                           <>
-                            <BsFillPlayFill
-                              size={24}
-                              className="relative z-10"
-                            />
+                            <BsFillPlayFill size={24} className="relative z-10" />
                             <span className="relative z-10">Play All</span>
                           </>
                         )}
@@ -953,11 +865,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                 : "bg-white/10 text-white hover:bg-white/20 border-white/20"
                             } disabled:opacity-80 disabled:cursor-not-allowed hover:scale-110`}
                           >
-                            {isLoading("shuffle-play") ? (
-                              <MusicLoadingSpinner size="sm" />
-                            ) : (
-                              <BsShuffle size={18} />
-                            )}
+                            {isLoading("shuffle-play") ? <MusicLoadingSpinner size="sm" /> : <BsShuffle size={18} />}
                           </button>
                           <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-white/10">
                             Shuffle Play
@@ -1049,16 +957,12 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           <div className="flex-1 min-w-0">
                             <p
                               className={`font-medium truncate transition-colors ${
-                                isActive
-                                  ? "text-[#14b8a6]"
-                                  : "text-white group-hover:text-[#14b8a6]"
+                                isActive ? "text-[#14b8a6]" : "text-white group-hover:text-[#14b8a6]"
                               }`}
                             >
                               {track.title}
                             </p>
-                            <p className="text-gray-400 text-sm truncate">
-                              {track.subtitle}
-                            </p>
+                            <p className="text-gray-400 text-sm truncate">{track.subtitle}</p>
                           </div>
 
                           <span className="text-gray-400 text-sm tabular-nums">
@@ -1071,10 +975,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               <SongMenu
                                 song={track}
                                 onRemoveFromPlaylist={() => {
-                                  handleRemoveFromPlaylist(
-                                    currentPlaylist.id,
-                                    getTrackId(track)
-                                  );
+                                  handleRemoveFromPlaylist(currentPlaylist.id, getTrackId(track));
                                 }}
                               />
                             </div>
@@ -1084,9 +985,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                 handlePause={handlePauseClick}
                                 handlePlay={() => handlePlayClick(track, i)}
                                 size={40}
-                                isLoading={isLoading(
-                                  `track-${getTrackId(track)}`
-                                )}
+                                isLoading={isLoading(`track-${getTrackId(track)}`)}
                               />
                             </div>
                           </div>
@@ -1102,12 +1001,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
       )}
 
       {/* Now Playing Modal */}
-      {showNowPlaying && (
-        <NowPlaying
-          isOpen={showNowPlaying}
-          onClose={() => setShowNowPlaying(false)}
-        />
-      )}
+      {showNowPlaying && <NowPlaying isOpen={showNowPlaying} onClose={() => setShowNowPlaying(false)} />}
 
       <ConfirmDialog
         isOpen={showDeleteDialog}
