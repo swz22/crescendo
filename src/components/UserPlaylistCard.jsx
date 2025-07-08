@@ -210,15 +210,15 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                 e.stopPropagation();
                 handlePlayClick(e);
               }}
-              className="absolute top-3 right-3 p-3 bg-[#14b8a6] rounded-full shadow-lg
-                opacity-0 group-hover:opacity-100 transform scale-0 group-hover:scale-100
-                transition-all duration-300 hover:scale-110 hover:bg-[#0d9488] z-10"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-3.5 bg-[#14b8a6]/90 rounded-full shadow-lg shadow-black/25
+                opacity-100 scale-100 sm:opacity-0 sm:scale-0 sm:group-hover:opacity-100 sm:group-hover:scale-100
+                transition-all duration-300 hover:scale-110 hover:bg-[#0d9488]/90 z-10"
               aria-label="Play playlist"
             >
               {isPlaylistPlaying ? (
-                <BsPauseFill className="w-5 h-5 text-white ml-0.5" />
+                <BsPauseFill className="w-6 h-6 text-white ml-0.5" />
               ) : (
-                <BsPlayFill className="w-5 h-5 text-white ml-0.5" />
+                <BsPlayFill className="w-6 h-6 text-white ml-0.5" />
               )}
             </button>
           )}
@@ -227,7 +227,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
         {/* Playlist Info */}
         <div onClick={!isEditing ? onClick : undefined} className="flex-1 cursor-pointer">
           {isEditing ? (
-            <div className="flex items-center gap-2 mb-2">
+            <div className="relative mb-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -237,28 +237,30 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                   if (e.key === "Enter") handleSaveEdit();
                   if (e.key === "Escape") handleCancelEdit();
                 }}
-                className="flex-1 bg-white/10 text-white px-2 py-1 rounded text-sm
+                className="w-full bg-white/10 text-white px-2 py-1 pr-20 rounded text-sm
                   border border-white/20 focus:border-[#14b8a6] focus:outline-none"
                 onClick={(e) => e.stopPropagation()}
               />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSaveEdit();
-                }}
-                className="p-1 hover:bg-white/10 rounded transition-colors"
-              >
-                <HiCheck className="w-4 h-4 text-[#14b8a6]" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCancelEdit();
-                }}
-                className="p-1 hover:bg-white/10 rounded transition-colors"
-              >
-                <HiX className="w-4 h-4 text-red-500" />
-              </button>
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSaveEdit();
+                  }}
+                  className="p-1 hover:bg-white/10 rounded transition-colors"
+                >
+                  <HiCheck className="w-4 h-4 text-[#14b8a6]" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancelEdit();
+                  }}
+                  className="p-1 hover:bg-white/10 rounded transition-colors"
+                >
+                  <HiX className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
             </div>
           ) : (
             <h3 className="font-semibold text-white truncate mb-1 group-hover:text-[#14b8a6] transition-colors">
@@ -296,22 +298,22 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
           ref={menuRef}
           style={{
             position: "fixed",
-            top: menuButtonRef.current.getBoundingClientRect().top - 100,
-            left: menuButtonRef.current.getBoundingClientRect().left - 140,
+            top: menuButtonRef.current.getBoundingClientRect().bottom + 8,
+            left: menuButtonRef.current.getBoundingClientRect().left - 120,
             zIndex: 100,
           }}
-          className="w-48 bg-[#1a1848] rounded-lg shadow-xl border border-white/10 overflow-hidden"
+          className="w-36 bg-[#1a1848] rounded-lg shadow-xl border border-white/10 overflow-hidden"
         >
           <button
             onClick={handleEditClick}
-            className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-3"
+            className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-2.5"
           >
             <HiOutlinePencil className="w-4 h-4" />
             Rename
           </button>
           <button
             onClick={handleDeleteClick}
-            className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-red-400 transition-colors flex items-center gap-3"
+            className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-red-400 transition-colors flex items-center gap-2.5"
           >
             <HiOutlineTrash className="w-4 h-4" />
             Delete
