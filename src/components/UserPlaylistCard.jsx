@@ -7,6 +7,7 @@ import { BsMusicNoteList, BsThreeDots, BsPlayFill } from "react-icons/bs";
 import { HiOutlinePencil, HiOutlineTrash, HiX, HiCheck } from "react-icons/hi";
 import { useToast } from "../context/ToastContext";
 import ConfirmDialog from "./ConfirmDialog";
+import { Icon } from "@iconify/react";
 
 const UserPlaylistCard = ({ playlist, onClick }) => {
   const dispatch = useDispatch();
@@ -21,7 +22,11 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
   const menuRef = useRef(null);
   const inputRef = useRef(null);
 
+  const isEmpty = playlist.tracks.length === 0;
+
   const getMosaicImages = () => {
+    if (isEmpty) return [];
+
     const images = [];
     const seenAlbums = new Set();
 
@@ -57,7 +62,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
 
   const handlePlayClick = async (e) => {
     e.stopPropagation();
-    if (playlist.tracks.length === 0) {
+    if (isEmpty) {
       showToast("Playlist is empty", "error");
       return;
     }
@@ -122,14 +127,19 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
     <>
       <div
         onClick={!isEditing ? onClick : undefined}
-        className="group relative flex flex-col p-4 rounded-xl bg-white/[0.03] backdrop-blur-sm 
+        className={`group relative flex flex-col p-4 rounded-xl bg-white/[0.03] backdrop-blur-sm 
           hover:bg-white/[0.08] border border-white/10 hover:border-white/20 
           transition-all duration-300 cursor-pointer hover:shadow-xl hover:shadow-black/20
-          hover:transform hover:scale-[1.02]"
+          hover:transform hover:scale-[1.02] ${isEmpty ? "opacity-90" : ""}`}
       >
         {/* Playlist Image */}
         <div className="relative aspect-square rounded-lg overflow-hidden mb-4 bg-gradient-to-br from-gray-800 to-gray-900">
-          {mosaicImages.length === 4 ? (
+          {isEmpty ? (
+            // Empty Playlist Design
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2d2467]/40 to-[#1a1848]/60">
+              <Icon icon="solar:playlist-minimalistic-2-bold-duotone" className="w-20 h-20 text-white/20" />
+            </div>
+          ) : mosaicImages.length === 4 ? (
             <div className="grid grid-cols-2 gap-0.5 h-full">
               {mosaicImages.map((img, idx) => (
                 <img
@@ -153,15 +163,20 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
               }}
             />
           ) : (
+            // Fallback if no images
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
               <BsMusicNoteList className="w-16 h-16 text-white/20" />
             </div>
           )}
+
+          {/* Play button */}
           <button
             onClick={handlePlayClick}
-            className="absolute bottom-2 right-2 p-3 bg-[#14b8a6] rounded-full shadow-lg
+            className={`absolute bottom-2 right-2 p-3 bg-[#14b8a6] rounded-full shadow-lg
               transform translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100
-              transition-all duration-300 hover:scale-110 hover:bg-[#0d9488]"
+              transition-all duration-300 hover:scale-110 hover:bg-[#0d9488]
+              ${isEmpty ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={isEmpty}
           >
             <BsPlayFill className="w-6 h-6 text-white ml-0.5" />
           </button>
@@ -170,10 +185,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
         {/* Playlist Info */}
         <div className="flex-1">
           {isEditing ? (
-            <div
-              className="flex items-center gap-2"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="flex items-center gap-2 mb-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -183,84 +195,79 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                   if (e.key === "Enter") handleSaveEdit();
                   if (e.key === "Escape") handleCancelEdit();
                 }}
-                className="flex-1 bg-white/10 border border-white/20 rounded px-2 py-1 text-white
-                  outline-none focus:bg-white/20 focus:border-[#14b8a6]/50"
+                className="flex-1 bg-white/10 text-white px-2 py-1 rounded text-sm
+                  border border-white/20 focus:border-[#14b8a6] focus:outline-none"
+                onClick={(e) => e.stopPropagation()}
               />
               <button
-                onClick={handleSaveEdit}
-                className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveEdit();
+                }}
+                className="p-1 hover:bg-white/10 rounded transition-colors"
               >
-                <HiCheck className="w-5 h-5" />
+                <HiCheck className="w-4 h-4 text-[#14b8a6]" />
               </button>
               <button
-                onClick={handleCancelEdit}
-                className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancelEdit();
+                }}
+                className="p-1 hover:bg-white/10 rounded transition-colors"
               >
-                <HiX className="w-5 h-5" />
+                <HiX className="w-4 h-4 text-red-500" />
               </button>
             </div>
           ) : (
-            <>
-              <h3 className="font-semibold text-white truncate mb-1">
-                {playlist.name}
-              </h3>
-              <p className="text-sm text-gray-400">
-                {playlist.tracks.length}{" "}
-                {playlist.tracks.length === 1 ? "track" : "tracks"}
-              </p>
-              {playlist.createdAt && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Created {formatDate(playlist.createdAt)}
-                </p>
-              )}
-            </>
+            <h3 className="font-semibold text-white truncate mb-1 group-hover:text-[#14b8a6] transition-colors">
+              {playlist.name}
+            </h3>
           )}
-        </div>
 
-        {/* Menu Button */}
-        {!isEditing && (
-          <div className="absolute top-4 right-4">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              className="p-2 rounded-full bg-black/20 opacity-0 group-hover:opacity-100
-                hover:bg-black/40 transition-all duration-200"
-            >
-              <BsThreeDots className="w-5 h-5 text-white" />
-            </button>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-400">
+                {playlist.tracks.length} {playlist.tracks.length === 1 ? "track" : "tracks"}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">{formatDate(playlist.createdAt)}</p>
+            </div>
 
-            {/* Dropdown Menu */}
-            {showMenu && (
-              <div
-                ref={menuRef}
-                className="absolute right-0 mt-2 w-48 bg-[#1e1b4b]/98 backdrop-blur-xl 
-                  rounded-lg shadow-xl border border-white/20 overflow-hidden z-20"
+            {/* Menu Button */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                className="p-2 rounded-full hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
               >
-                <button
-                  onClick={handleEditClick}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-white hover:bg-white/10 
-                    transition-colors text-left"
-                >
-                  <HiOutlinePencil className="w-4 h-4" />
-                  <span>Rename</span>
-                </button>
-                <button
-                  onClick={handleDeleteClick}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 
-                    transition-colors text-left"
-                >
-                  <HiOutlineTrash className="w-4 h-4" />
-                  <span>Delete</span>
-                </button>
-              </div>
-            )}
+                <BsThreeDots className="w-4 h-4 text-gray-400" />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showMenu && (
+                <div className="absolute right-0 bottom-full mb-2 w-48 bg-[#1a1848] rounded-lg shadow-xl border border-white/10 overflow-hidden z-50">
+                  <button
+                    onClick={handleEditClick}
+                    className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-3"
+                  >
+                    <HiOutlinePencil className="w-4 h-4" />
+                    Rename
+                  </button>
+                  <button
+                    onClick={handleDeleteClick}
+                    className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-white/10 hover:text-red-400 transition-colors flex items-center gap-3"
+                  >
+                    <HiOutlineTrash className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
@@ -268,7 +275,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
         title="Delete Playlist"
         message={`Are you sure you want to delete "${playlist.name}"? This action cannot be undone.`}
         confirmText="Delete"
-        isDestructive
+        confirmVariant="danger"
       />
     </>
   );
