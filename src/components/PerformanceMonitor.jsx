@@ -563,6 +563,42 @@ const PerformanceMonitor = ({ onClose }) => {
             </div>
           </div>
         </div>
+
+        <ConfirmDialog
+          isOpen={showClearCacheDialog}
+          onClose={() => setShowClearCacheDialog(false)}
+          onConfirm={handleClearCache}
+          title="Clear Preview Cache?"
+          message="This will remove all cached preview URLs and performance data. You'll need to reload previews for songs you play."
+          confirmText="Clear Cache"
+          cancelText="Cancel"
+          variant="warning"
+          icon={FiDatabase}
+          details={[
+            `${stats.cached} cached preview URLs will be removed`,
+            "Performance monitoring data will be reset",
+            "Your playlists and preferences will be preserved",
+          ]}
+        />
+
+        <ConfirmDialog
+          isOpen={showResetDialog}
+          onClose={() => setShowResetDialog(false)}
+          onConfirm={handleResetApp}
+          title="Reset Crescendo?"
+          message="This will completely reset the app to its initial state. All your data will be permanently deleted."
+          confirmText="Reset Everything"
+          cancelText="Cancel"
+          variant="danger"
+          icon={HiLightningBolt}
+          details={[
+            "All playlists will be deleted",
+            "Play history will be cleared",
+            "App preferences will be reset",
+            "Cached data will be removed",
+            "This action cannot be undone",
+          ]}
+        />
       </>
     );
   }
