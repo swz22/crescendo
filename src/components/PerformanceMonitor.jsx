@@ -553,7 +553,7 @@ const PerformanceMonitor = ({ onClose }) => {
                   </button>
                   <button
                     onClick={() => setShowResetDialog(true)}
-                    className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 active:bg-gray-900 text-white font-medium rounded-lg transition-colors border border-white/10 flex items-center justify-center gap-2 text-sm"
+                    className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                   >
                     <FiActivity className="w-4 h-4" />
                     Reset All
