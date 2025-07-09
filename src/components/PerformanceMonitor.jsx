@@ -27,6 +27,9 @@ const PerformanceMonitor = ({ onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const resetTimeoutRef = useRef(null);
 
   const [stats, setStats] = useState({
     cached: 0,
@@ -39,6 +42,7 @@ const PerformanceMonitor = ({ onClose }) => {
     usedJSHeapSize: 0,
     totalJSHeapSize: 0,
     jsHeapSizeLimit: 0,
+    isUnavailable: false,
   });
 
   const [networkStats, setNetworkStats] = useState({
@@ -60,6 +64,9 @@ const PerformanceMonitor = ({ onClose }) => {
   const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
 
+  const hasMemoryAPI =
+    typeof performance !== "undefined" && performance.memory && performance.memory.jsHeapSizeLimit > 0;
+
   useEffect(() => {
     setIsMounted(true);
     setTimeout(() => {
@@ -79,14 +86,30 @@ const PerformanceMonitor = ({ onClose }) => {
   }, []);
 
   const calculateScore = (stats, memoryStats, networkStats) => {
-    if (!stats || !memoryStats) return 0;
+    if (!stats) return 0;
 
     const cacheRatio = stats.cached / (stats.cached + stats.failed + 1);
-    const memoryHealth = 1 - memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit;
-    const circuitHealth = stats.circuitBreakerOpen ? 0.5 : 1;
-    const networkHealth = Math.min(networkStats.latency / 100, 1);
 
-    const score = Math.round((cacheRatio * 0.4 + memoryHealth * 0.3 + circuitHealth * 0.2 + networkHealth * 0.1) * 100);
+    // Handle memory health differently if API is unavailable
+    let memoryHealth = 0.7;
+    if (hasMemoryAPI && memoryStats.jsHeapSizeLimit > 0) {
+      memoryHealth = 1 - memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit;
+    }
+
+    const circuitHealth = stats.circuitBreakerOpen ? 0.5 : 1;
+    const networkHealth = Math.max(0, Math.min(1, 1 - networkStats.latency / 200));
+
+    const weights = hasMemoryAPI
+      ? { cache: 0.4, memory: 0.3, circuit: 0.2, network: 0.1 }
+      : { cache: 0.5, memory: 0, circuit: 0.3, network: 0.2 };
+
+    const score = Math.round(
+      (cacheRatio * weights.cache +
+        memoryHealth * weights.memory +
+        circuitHealth * weights.circuit +
+        networkHealth * weights.network) *
+        100
+    );
 
     return Math.max(0, Math.min(100, score));
   };
@@ -96,12 +119,20 @@ const PerformanceMonitor = ({ onClose }) => {
       const cacheStats = previewUrlManager.getCacheStats();
       setStats(cacheStats);
 
-      // Memory stats
-      if (performance.memory) {
+      // Memory stats with Safari/iOS fallback
+      if (hasMemoryAPI) {
         setMemoryStats({
           usedJSHeapSize: performance.memory.usedJSHeapSize,
           totalJSHeapSize: performance.memory.totalJSHeapSize,
           jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
+          isUnavailable: false,
+        });
+      } else {
+        setMemoryStats({
+          usedJSHeapSize: 0,
+          totalJSHeapSize: 0,
+          jsHeapSizeLimit: 0,
+          isUnavailable: true,
         });
       }
 
@@ -117,9 +148,9 @@ const PerformanceMonitor = ({ onClose }) => {
           ...prev,
           {
             cache: (cacheStats.cached / (cacheStats.cached + cacheStats.failed + 1)) * 100,
-            memory: performance.memory
+            memory: hasMemoryAPI
               ? (1 - performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100
-              : 50,
+              : 70,
             network: Math.random() * 100,
           },
         ];
@@ -139,7 +170,7 @@ const PerformanceMonitor = ({ onClose }) => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [hasMemoryAPI]);
 
   // Update performance score
   useEffect(() => {
@@ -251,10 +282,6 @@ const PerformanceMonitor = ({ onClose }) => {
     }, 300);
   };
 
-  const [isResetting, setIsResetting] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const resetTimeoutRef = useRef(null);
-
   const handleClearCache = () => {
     previewUrlManager.clearCache();
     setMemoryFlowData([]);
@@ -287,8 +314,8 @@ const PerformanceMonitor = ({ onClose }) => {
   };
 
   const getPerformanceRating = () => {
-    if (performanceScore >= 80) return "Excellent Performance";
-    if (performanceScore >= 60) return "Good Performance";
+    if (performanceScore >= 80) return "Excellent";
+    if (performanceScore >= 60) return "Good";
     return "Needs Optimization";
   };
 
@@ -342,8 +369,9 @@ const PerformanceMonitor = ({ onClose }) => {
         <div
           className="fixed inset-0 z-[70] bg-gray-900/95 backdrop-blur-xl"
           style={{
-            transform: `translateY(${isAnimating ? "0%" : "100%"})`,
-            transition: "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
+            opacity: isAnimating ? 1 : 0,
+            pointerEvents: isAnimating ? "auto" : "none",
+            transition: "opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
           }}
         >
           {/* Gradient overlay */}
@@ -366,8 +394,8 @@ const PerformanceMonitor = ({ onClose }) => {
           </div>
 
           {/* Scrollable Content */}
-          <div className="h-[calc(100vh-64px-80px)] overflow-y-auto">
-            <div className="p-4 pb-2 space-y-4">
+          <div className="h-[calc(100vh-64px)] overflow-y-auto">
+            <div className="p-4 pb-8 space-y-4">
               {/* Performance Score */}
               <div className="relative overflow-hidden bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-xl border border-white/10">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10" />
@@ -380,9 +408,7 @@ const PerformanceMonitor = ({ onClose }) => {
                       </span>
                       <span className="text-gray-400 text-lg">/100</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {performanceScore >= 80 ? "Excellent" : performanceScore >= 60 ? "Good" : "Needs Optimization"}
-                    </p>
+                    <p className="text-xs text-gray-400 mt-1">{getPerformanceRating()}</p>
                     {/* Wave Visualization */}
                     <div className="h-12 w-full mt-3">
                       <svg viewBox="0 0 200 40" className="w-full h-full" preserveAspectRatio="none">
@@ -405,74 +431,73 @@ const PerformanceMonitor = ({ onClose }) => {
                 </div>
               </div>
 
-              {/* Cache & Network Stats */}
-              <div className="grid grid-cols-1 gap-4">
-                {/* Cache Stats */}
-                <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-white/10 overflow-hidden">
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <FiDatabase className="w-4 h-4 text-blue-400" />
-                      <h3 className="text-base font-semibold text-white">Cache Status</h3>
+              {/* Cache Stats */}
+              <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-white/10 overflow-hidden">
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FiDatabase className="w-4 h-4 text-blue-400" />
+                    <h3 className="text-base font-semibold text-white">Cache Status</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Cached</span>
+                      <span className="text-blue-400 font-semibold text-sm">{stats.cached}</span>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Cached</span>
-                        <span className="text-blue-400 font-semibold text-sm">{stats.cached}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Pending</span>
+                      <span className="text-yellow-400 font-semibold text-sm">{stats.pending}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Failed</span>
+                      <span className="text-red-400 font-semibold text-sm">{stats.failed}</span>
+                    </div>
+                    {stats.circuitBreakerOpen && (
+                      <div className="mt-2 p-2 bg-red-900/20 border border-red-500/20 rounded-lg">
+                        <span className="text-xs text-red-400">Circuit breaker active</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Pending</span>
-                        <span className="text-yellow-400 font-semibold text-sm">{stats.pending}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Failed</span>
-                        <span className="text-red-400 font-semibold text-sm">{stats.failed}</span>
-                      </div>
-                      {stats.circuitBreakerOpen && (
-                        <div className="mt-2 p-2 bg-red-900/20 border border-red-500/20 rounded-lg">
-                          <span className="text-xs text-red-400">Circuit breaker active</span>
-                        </div>
-                      )}
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Network Stats */}
+              <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-white/10 overflow-hidden">
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FiWifi className="w-4 h-4 text-green-400" />
+                    <h3 className="text-base font-semibold text-white">Network</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Latency</span>
+                      <span
+                        className={`font-semibold text-sm ${
+                          networkStats.latency < 100
+                            ? "text-green-400"
+                            : networkStats.latency < 300
+                            ? "text-yellow-400"
+                            : "text-red-400"
+                        }`}
+                      >
+                        {networkStats.latency.toFixed(0)}ms
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Bandwidth</span>
+                      <span className="text-green-400 font-semibold text-sm">
+                        {networkStats.bandwidth.toFixed(0)} Mbps
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Requests/min</span>
+                      <span className="text-purple-400 font-semibold text-sm">{networkStats.requestsPerMin}</span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Network Stats */}
-                <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-white/10 overflow-hidden">
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <FiWifi className="w-4 h-4 text-green-400" />
-                      <h3 className="text-base font-semibold text-white">Network</h3>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Latency</span>
-                        <span
-                          className={`font-semibold text-sm ${
-                            networkStats.latency < 100
-                              ? "text-green-400"
-                              : networkStats.latency < 300
-                              ? "text-yellow-400"
-                              : "text-red-400"
-                          }`}
-                        >
-                          {networkStats.latency.toFixed(0)}ms
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Bandwidth</span>
-                        <span className="text-green-400 font-semibold text-sm">
-                          {networkStats.bandwidth.toFixed(0)} Mbps
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Requests/min</span>
-                        <span className="text-purple-400 font-semibold text-sm">{networkStats.requestsPerMin}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Memory Usage */}
+              {/* Memory Usage - Handle Safari/iOS gracefully */}
+              {hasMemoryAPI ? (
                 <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-white/10 overflow-hidden">
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-3">
@@ -484,7 +509,7 @@ const PerformanceMonitor = ({ onClose }) => {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-gray-400 text-sm">Heap Used</span>
                           <span className="text-yellow-400 font-semibold text-sm">
-                            {(memoryStats.usedJSHeapSize / 1024 / 1024).toFixed(1)} MB
+                            {formatBytes(memoryStats.usedJSHeapSize)}
                           </span>
                         </div>
                         <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
@@ -497,32 +522,44 @@ const PerformanceMonitor = ({ onClose }) => {
                         </div>
                       </div>
                       <div className="text-xs text-gray-400 text-center">
-                        {(memoryStats.jsHeapSizeLimit / 1024 / 1024).toFixed(0)} MB limit
+                        {formatBytes(memoryStats.jsHeapSizeLimit)} limit
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+              ) : (
+                <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-white/10 overflow-hidden">
+                  <div className="p-4">
+                    <div className="flex items-center gap-2">
+                      <HiChip className="w-4 h-4 text-gray-400" />
+                      <div className="flex-1">
+                        <h3 className="text-base font-semibold text-white">Memory Usage</h3>
+                        <p className="text-xs text-gray-400 mt-1">Not available on this device</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-          {/* Mobile Footer */}
-          <div className="sticky bottom-0 bg-gray-900/95 backdrop-blur-lg border-t border-white/10 p-4">
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowClearCacheDialog(true)}
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
-              >
-                <FiDatabase className="w-4 h-4" />
-                Clear Cache
-              </button>
-              <button
-                onClick={() => setShowResetDialog(true)}
-                className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 active:bg-gray-900 text-white font-medium rounded-lg transition-colors border border-white/10 flex items-center justify-center gap-2 text-sm"
-              >
-                <FiActivity className="w-4 h-4" />
-                Reset All
-              </button>
+              {/* Actions */}
+              <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-white/10 overflow-hidden p-4">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClearCacheDialog(true)}
+                    className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                  >
+                    <FiDatabase className="w-4 h-4" />
+                    Clear Cache
+                  </button>
+                  <button
+                    onClick={() => setShowResetDialog(true)}
+                    className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 active:bg-gray-900 text-white font-medium rounded-lg transition-colors border border-white/10 flex items-center justify-center gap-2 text-sm"
+                  >
+                    <FiActivity className="w-4 h-4" />
+                    Reset All
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -686,20 +723,24 @@ const PerformanceMonitor = ({ onClose }) => {
                   </div>
                 </div>
 
-                <div className="bg-white/[0.03] backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-500/20 rounded-lg">
-                        <HiChip className="w-5 h-5 text-blue-400" />
+                {hasMemoryAPI && (
+                  <div className="bg-white/[0.03] backdrop-blur-md rounded-2xl p-4 border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/20 rounded-lg">
+                          <HiChip className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">Memory Usage</p>
+                          <p className="text-xs text-white/60">Heap utilization</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-white font-medium">Memory Usage</p>
-                        <p className="text-xs text-white/60">Heap utilization</p>
-                      </div>
+                      <span className="text-2xl font-bold text-blue-400">
+                        {formatBytes(memoryStats.usedJSHeapSize)}
+                      </span>
                     </div>
-                    <span className="text-2xl font-bold text-blue-400">{formatBytes(memoryStats.usedJSHeapSize)}</span>
                   </div>
-                </div>
+                )}
 
                 <div className="bg-white/[0.03] backdrop-blur-md rounded-2xl p-4 border border-white/10">
                   <div className="flex items-center justify-between">
@@ -786,109 +827,113 @@ const PerformanceMonitor = ({ onClose }) => {
               </div>
 
               {/* Memory Usage Radial Gauge */}
-              <div className="bg-white/[0.03] backdrop-blur-md rounded-3xl p-6 border border-white/10">
-                <h3 className="text-lg font-medium text-white mb-4">Memory Analysis</h3>
+              {hasMemoryAPI && (
+                <div className="bg-white/[0.03] backdrop-blur-md rounded-3xl p-6 border border-white/10">
+                  <h3 className="text-lg font-medium text-white mb-4">Memory Analysis</h3>
 
-                {/* Main Gauge */}
-                <div className="relative flex justify-center mb-6">
-                  <div className="relative w-64 h-32">
-                    {/* Background arc */}
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 120">
-                      <path
-                        d="M 20 100 A 80 80 0 0 1 180 100"
-                        fill="none"
-                        stroke="rgba(255,255,255,0.1)"
-                        strokeWidth="16"
-                      />
-                      {/* Gradient arc based on memory usage */}
-                      <path
-                        d="M 20 100 A 80 80 0 0 1 180 100"
-                        fill="none"
-                        stroke={`url(#${memoryGradientId})`}
-                        strokeWidth="16"
-                        strokeDasharray={`${(memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit) * 251} 251`}
-                        strokeLinecap="round"
-                        className="transition-all duration-1000"
-                      />
-                      <defs>
-                        <linearGradient id={memoryGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#22c55e" />
-                          <stop offset="50%" stopColor="#3b82f6" />
-                          <stop
-                            offset="100%"
-                            stopColor={
-                              memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit > 0.8
-                                ? "#ef4444"
-                                : memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit > 0.6
-                                ? "#f59e0b"
-                                : "#a855f7"
-                            }
-                          />
-                        </linearGradient>
-                      </defs>
-                    </svg>
+                  {/* Main Gauge */}
+                  <div className="relative flex justify-center mb-6">
+                    <div className="relative w-64 h-32">
+                      {/* Background arc */}
+                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 120">
+                        <path
+                          d="M 20 100 A 80 80 0 0 1 180 100"
+                          fill="none"
+                          stroke="rgba(255,255,255,0.1)"
+                          strokeWidth="16"
+                        />
+                        {/* Gradient arc based on memory usage */}
+                        <path
+                          d="M 20 100 A 80 80 0 0 1 180 100"
+                          fill="none"
+                          stroke={`url(#${memoryGradientId})`}
+                          strokeWidth="16"
+                          strokeDasharray={`${(memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit) * 251} 251`}
+                          strokeLinecap="round"
+                          className="transition-all duration-1000"
+                        />
+                        <defs>
+                          <linearGradient id={memoryGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#22c55e" />
+                            <stop offset="50%" stopColor="#3b82f6" />
+                            <stop
+                              offset="100%"
+                              stopColor={
+                                memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit > 0.8
+                                  ? "#ef4444"
+                                  : memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit > 0.6
+                                  ? "#f59e0b"
+                                  : "#a855f7"
+                              }
+                            />
+                          </linearGradient>
+                        </defs>
+                      </svg>
 
-                    {/* Center content */}
-                    <div className="absolute inset-0 flex items-end justify-center pb-4">
-                      <div className="text-center">
-                        <div className="text-5xl font-bold text-white mb-1">
-                          {Math.round((memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit) * 100)}%
+                      {/* Center content */}
+                      <div className="absolute inset-0 flex items-end justify-center pb-4">
+                        <div className="text-center">
+                          <div className="text-5xl font-bold text-white mb-1">
+                            {Math.round((memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit) * 100)}%
+                          </div>
+                          <div className="text-sm text-white/60">Memory Utilization</div>
                         </div>
-                        <div className="text-sm text-white/60">Memory Utilization</div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Memory Stats Grid */}
-                <div className="grid grid-cols-3 gap-4 p-4 bg-black/30 rounded-2xl">
-                  <div className="text-center">
-                    <div className="text-xs text-white/60 mb-1">Active Memory</div>
-                    <div className="text-xl font-bold text-cyan-400">{formatBytes(memoryStats.usedJSHeapSize)}</div>
-                  </div>
-                  <div className="text-center border-x border-white/10">
-                    <div className="text-xs text-white/60 mb-1">Available</div>
-                    <div className="text-xl font-bold text-green-400">
-                      {formatBytes(memoryStats.jsHeapSizeLimit - memoryStats.usedJSHeapSize)}
+                  {/* Memory Stats Grid */}
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-black/30 rounded-2xl">
+                    <div className="text-center">
+                      <div className="text-xs text-white/60 mb-1">Active Memory</div>
+                      <div className="text-xl font-bold text-cyan-400">{formatBytes(memoryStats.usedJSHeapSize)}</div>
+                    </div>
+                    <div className="text-center border-x border-white/10">
+                      <div className="text-xs text-white/60 mb-1">Available</div>
+                      <div className="text-xl font-bold text-green-400">
+                        {formatBytes(memoryStats.jsHeapSizeLimit - memoryStats.usedJSHeapSize)}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-white/60 mb-1">System Limit</div>
+                      <div className="text-xl font-bold text-purple-400">
+                        {formatBytes(memoryStats.jsHeapSizeLimit)}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xs text-white/60 mb-1">System Limit</div>
-                    <div className="text-xl font-bold text-purple-400">{formatBytes(memoryStats.jsHeapSizeLimit)}</div>
-                  </div>
-                </div>
 
-                {/* Memory Health Status */}
-                <div className="mt-4 p-3 bg-white/[0.03] rounded-xl flex items-center justify-between">
-                  <span className="text-sm text-white/80">System Health</span>
-                  <div
-                    className={`flex items-center gap-2 ${
-                      memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.6
-                        ? "text-green-400"
-                        : memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.8
-                        ? "text-yellow-400"
-                        : "text-red-400"
-                    }`}
-                  >
+                  {/* Memory Health Status */}
+                  <div className="mt-4 p-3 bg-white/[0.03] rounded-xl flex items-center justify-between">
+                    <span className="text-sm text-white/80">System Health</span>
                     <div
-                      className={`w-2 h-2 rounded-full animate-pulse ${
+                      className={`flex items-center gap-2 ${
                         memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.6
-                          ? "bg-green-400"
+                          ? "text-green-400"
                           : memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.8
-                          ? "bg-yellow-400"
-                          : "bg-red-400"
+                          ? "text-yellow-400"
+                          : "text-red-400"
                       }`}
-                    />
-                    <span className="text-sm font-medium">
-                      {memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.6
-                        ? "Optimal Performance"
-                        : memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.8
-                        ? "Moderate Usage"
-                        : "High Memory Pressure"}
-                    </span>
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full animate-pulse ${
+                          memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.6
+                            ? "bg-green-400"
+                            : memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.8
+                            ? "bg-yellow-400"
+                            : "bg-red-400"
+                        }`}
+                      />
+                      <span className="text-sm font-medium">
+                        {memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.6
+                          ? "Optimal Performance"
+                          : memoryStats.usedJSHeapSize / memoryStats.jsHeapSizeLimit < 0.8
+                          ? "Moderate Usage"
+                          : "High Memory Pressure"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
