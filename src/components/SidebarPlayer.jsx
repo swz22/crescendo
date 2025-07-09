@@ -20,6 +20,7 @@ import {
 import { usePreviewUrl } from "../hooks/usePreviewUrl";
 import { useSongNavigation } from "../hooks/useSongNavigation";
 import { useAudioState } from "../hooks/useAudioState";
+import { useDragDrop } from "../hooks/useDragDrop";
 import PlaylistDropdown from "./PlaylistDropdown";
 import PlaylistManager from "./PlaylistManager";
 import { showOnboardingModal } from "./OnboardingModal";
@@ -36,6 +37,7 @@ import {
 } from "react-icons/bs";
 import { HiOutlineLightBulb } from "react-icons/hi";
 import { HiOutlineQueueList } from "react-icons/hi2";
+import { RiDraggable } from "react-icons/ri";
 
 const SidebarPlayer = () => {
   const dispatch = useDispatch();
@@ -54,9 +56,23 @@ const SidebarPlayer = () => {
   const [showClearQueueDialog, setShowClearQueueDialog] = useState(false);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [playlistMosaicImages, setPlaylistMosaicImages] = useState([]);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   const scrollContainerRef = useRef(null);
   const activeTrackRef = useRef(null);
   const { duration, currentTime, seek } = useAudioState();
+
+  // Drag and drop functionality
+  const {
+    draggedIndex,
+    dragOverIndex,
+    isDragging,
+    handleDragStart,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
+    handleDragEnd,
+  } = useDragDrop(activeContext);
 
   const handleClearQueue = () => {
     dispatch(clearQueue());
@@ -445,112 +461,161 @@ const SidebarPlayer = () => {
                       (currentTrack?.title === track.title && currentTrack?.subtitle === track.subtitle);
 
                     const trackId = track.key || track.id || track.track_id;
+                    const isDraggedOver = dragOverIndex === index && draggedIndex !== index;
+                    const isBeingDragged = draggedIndex === index;
 
                     return (
-                      <div
-                        key={trackId || `track-${index}`}
-                        ref={isActive ? activeTrackRef : null}
-                        className={`group flex items-center gap-3 p-4 rounded-xl transition-all duration-200 cursor-pointer relative overflow-hidden ${
-                          isActive
-                            ? "bg-gradient-to-r from-[#14b8a6]/30 via-[#14b8a6]/20 to-transparent border-l-4 border-[#14b8a6] shadow-lg shadow-[#14b8a6]/10"
-                            : "hover:bg-white/10 hover:pl-5 border-l-4 border-transparent"
-                        }`}
-                        onMouseEnter={() => {
-                          if (!isPreviewCached(track)) {
-                            prefetchPreviewUrl(track, { priority: "high" });
-                          }
-                        }}
-                      >
-                        <span
-                          className={`text-sm w-8 text-center flex-shrink-0 font-medium ${
-                            isCurrentSong ? "text-[#14b8a6]" : "text-gray-500 group-hover:text-gray-300"
-                          }`}
-                        >
-                          {isCurrentSong && isPlaying ? (
-                            <div className="flex justify-center gap-[2px]">
-                              {[...Array(3)].map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse"
-                                  style={{ animationDelay: `${i * 75}ms` }}
-                                />
-                              ))}
-                            </div>
-                          ) : (
-                            index + 1
-                          )}
-                        </span>
+                      <div key={trackId || `track-${index}`} className="relative">
+                        {/* Drop Indicator Line */}
+                        {isDraggedOver && (
+                          <div className="absolute -top-0.5 left-0 right-0 h-1 bg-[#14b8a6] rounded-full shadow-[0_0_10px_rgba(20,184,166,0.8)] animate-pulse z-10" />
+                        )}
 
                         <div
-                          className="relative w-12 h-12 flex-shrink-0 group/art"
-                          onClick={() => handlePlayClick(track, index)}
+                          ref={isActive ? activeTrackRef : null}
+                          data-track-index={index}
+                          draggable={canModify}
+                          onDragStart={(e) => canModify && handleDragStart(e, index)}
+                          onDragEnter={(e) => canModify && handleDragEnter(e, index)}
+                          onDragLeave={handleDragLeave}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => canModify && handleDrop(e, index)}
+                          onDragEnd={handleDragEnd}
+                          onMouseEnter={() => {
+                            setHoveredIndex(index);
+                            if (!isPreviewCached(track)) {
+                              prefetchPreviewUrl(track, { priority: "high" });
+                            }
+                          }}
+                          onMouseLeave={() => setHoveredIndex(null)}
+                          className={`group flex items-center gap-3 p-4 rounded-xl transition-all duration-200 cursor-pointer relative overflow-hidden ${
+                            isActive
+                              ? "bg-gradient-to-r from-[#14b8a6]/30 via-[#14b8a6]/20 to-transparent border-l-4 border-[#14b8a6] shadow-lg shadow-[#14b8a6]/10"
+                              : "hover:bg-white/10 hover:pl-5 border-l-4 border-transparent"
+                          } ${isBeingDragged ? "opacity-40 scale-[0.98] shadow-inner" : ""}`}
                         >
-                          <img
-                            src={track.images?.coverart || placeholderImage}
-                            alt={track.title || "Unknown"}
-                            className={`w-full h-full rounded-lg object-cover shadow-lg transition-all duration-300 ${
-                              isCurrentSong ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-[#0f0e2e]" : ""
-                            }`}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = placeholderImage;
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-black/60 rounded-lg opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
-                            {isCurrentSong && isPlaying ? (
-                              <BsFillPauseFill className="text-white w-5 h-5" />
-                            ) : (
-                              <BsFillPlayFill className="text-white w-5 h-5" />
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex-1 min-w-0" onClick={() => handlePlayClick(track, index)}>
-                          <p
-                            className={`font-medium truncate transition-colors ${
-                              isActive ? "text-[#14b8a6]" : "text-white group-hover:text-[#14b8a6]"
-                            }`}
-                          >
-                            {track.title || "Unknown Title"}
-                          </p>
-                          <p className="text-gray-400 text-sm truncate group-hover:text-gray-300 transition-colors">
-                            {track.subtitle || "Unknown Artist"}
-                          </p>
-                        </div>
-
-                        <span className="text-gray-400 text-sm font-medium bg-black/20 px-2.5 py-1 rounded-lg group-hover:bg-black/30 transition-all">
-                          {formatTime((track.duration_ms || 0) / 1000)}
-                        </span>
-
-                        {canModify && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              dispatch(removeFromContext({ trackIndex: index }));
-                            }}
-                            className="opacity-70 hover:opacity-100 transition-all duration-200 p-1.5 bg-white/10 hover:bg-red-500/20 rounded-lg group/remove"
-                          >
-                            <svg
-                              className="w-4 h-4 text-gray-400 group-hover/remove:text-red-400 transition-colors"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                          {/* Drag Handle */}
+                          {canModify && (
+                            <div
+                              className={`absolute left-0 top-1/2 -translate-y-1/2 transition-all duration-200 ${
+                                hoveredIndex === index || isBeingDragged ? "opacity-100" : "opacity-0"
+                              }`}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
+                              <RiDraggable
+                                size={16}
+                                className={`${isBeingDragged ? "text-[#14b8a6]" : "text-white/30"}`}
                               />
-                            </svg>
-                          </button>
-                        )}
-                        {isCurrentSong && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#14b8a6] animate-pulse" />
-                        )}
+                            </div>
+                          )}
+
+                          <span
+                            className={`text-sm w-8 text-center flex-shrink-0 font-medium ${
+                              isCurrentSong ? "text-[#14b8a6]" : "text-gray-500 group-hover:text-gray-300"
+                            } ${canModify ? "ml-4" : ""}`}
+                          >
+                            {isCurrentSong && isPlaying ? (
+                              <div className="flex justify-center gap-[2px]">
+                                {[...Array(3)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-[2px] h-3 bg-[#14b8a6] rounded-full animate-pulse"
+                                    style={{ animationDelay: `${i * 75}ms` }}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              index + 1
+                            )}
+                          </span>
+
+                          <div
+                            className="relative w-12 h-12 flex-shrink-0 group/art"
+                            onClick={() => handlePlayClick(track, index)}
+                          >
+                            <img
+                              src={track.images?.coverart || placeholderImage}
+                              alt={track.title || "Unknown"}
+                              className={`w-full h-full rounded-lg object-cover shadow-lg transition-all duration-300 ${
+                                isCurrentSong ? "ring-2 ring-[#14b8a6] ring-offset-2 ring-offset-[#0f0e2e]" : ""
+                              }`}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = placeholderImage;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/60 rounded-lg opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
+                              {isCurrentSong && isPlaying ? (
+                                <BsFillPauseFill className="text-white w-5 h-5" />
+                              ) : (
+                                <BsFillPlayFill className="text-white w-5 h-5" />
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 min-w-0" onClick={() => handlePlayClick(track, index)}>
+                            <p
+                              className={`font-medium truncate transition-colors ${
+                                isActive ? "text-[#14b8a6]" : "text-white group-hover:text-[#14b8a6]"
+                              }`}
+                            >
+                              {track.title || "Unknown Title"}
+                            </p>
+                            <p className="text-gray-400 text-sm truncate group-hover:text-gray-300 transition-colors">
+                              {track.subtitle || "Unknown Artist"}
+                            </p>
+                          </div>
+
+                          <span className="text-gray-400 text-sm font-medium bg-black/20 px-2.5 py-1 rounded-lg group-hover:bg-black/30 transition-all">
+                            {formatTime((track.duration_ms || 0) / 1000)}
+                          </span>
+
+                          {canModify && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(removeFromContext({ trackId }));
+                              }}
+                              className="opacity-70 hover:opacity-100 transition-all duration-200 p-1.5 bg-white/10 hover:bg-red-500/20 rounded-lg group/remove"
+                            >
+                              <svg
+                                className="w-4 h-4 text-gray-400 group-hover/remove:text-red-400 transition-colors"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                          {isCurrentSong && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#14b8a6] animate-pulse" />
+                          )}
+                        </div>
                       </div>
                     );
                   })}
+
+                  {/* Drop zone for last position */}
+                  {canModify && isDragging && draggedIndex !== tracks.length - 1 && (
+                    <div
+                      data-track-index={tracks.length}
+                      onDragEnter={(e) => handleDragEnter(e, tracks.length)}
+                      onDragLeave={handleDragLeave}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, tracks.length)}
+                      className="relative h-16 flex items-center justify-center"
+                    >
+                      {dragOverIndex === tracks.length && (
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-[#14b8a6] rounded-full shadow-[0_0_10px_rgba(20,184,166,0.8)] animate-pulse z-10" />
+                      )}
+                      <div className="text-white/20 text-sm">Drop here to move to the end</div>
+                    </div>
+                  )}
                 </div>
                 {activeContext === "queue" && tracks.length > 0 && (
                   <div className="mt-6 mx-3">

@@ -89,19 +89,13 @@ const playerSlice = createSlice({
         if (state.shuffle && tracks.length > 1) {
           newIndex = getNextShuffleIndex(state.currentIndex, tracks.length);
         } else {
-          newIndex =
-            state.currentIndex === tracks.length - 1
-              ? 0
-              : state.currentIndex + 1;
+          newIndex = state.currentIndex === tracks.length - 1 ? 0 : state.currentIndex + 1;
         }
       } else {
         if (state.shuffle && tracks.length > 1) {
           newIndex = getNextShuffleIndex(state.currentIndex, tracks.length);
         } else {
-          newIndex =
-            state.currentIndex === 0
-              ? tracks.length - 1
-              : state.currentIndex - 1;
+          newIndex = state.currentIndex === 0 ? tracks.length - 1 : state.currentIndex - 1;
         }
       }
 
@@ -118,15 +112,11 @@ const playerSlice = createSlice({
 
       if (fromContext === "recently_played") {
         state.activeContext = "recently_played";
-        const index = state.recentlyPlayed.findIndex(
-          (t) => getTrackId(t) === getTrackId(track)
-        );
+        const index = state.recentlyPlayed.findIndex((t) => getTrackId(t) === getTrackId(track));
         state.currentIndex = index >= 0 ? index : 0;
       } else {
         const trackId = getTrackId(track);
-        const existingIndex = state.queue.findIndex(
-          (t) => getTrackId(t) === trackId
-        );
+        const existingIndex = state.queue.findIndex((t) => getTrackId(t) === trackId);
 
         if (existingIndex >= 0) {
           state.queue.splice(existingIndex, 1);
@@ -147,8 +137,7 @@ const playerSlice = createSlice({
     },
 
     playFromContext: (state, action) => {
-      const { contextType, trackIndex, playlistData, trackWithPreview } =
-        action.payload;
+      const { contextType, trackIndex, playlistData, trackWithPreview } = action.payload;
 
       if (contextType === "album" && playlistData) {
         state.albumContext = {
@@ -169,12 +158,7 @@ const playerSlice = createSlice({
       state.activeContext = contextType;
       const tracks = getCurrentContextTracks(state);
 
-      if (
-        tracks &&
-        tracks.length > 0 &&
-        trackIndex >= 0 &&
-        trackIndex < tracks.length
-      ) {
+      if (tracks && tracks.length > 0 && trackIndex >= 0 && trackIndex < tracks.length) {
         if (trackWithPreview && trackWithPreview.preview_url) {
           tracks[trackIndex] = trackWithPreview;
 
@@ -202,12 +186,7 @@ const playerSlice = createSlice({
     },
 
     replaceContext: (state, action) => {
-      const {
-        contextType,
-        tracks,
-        startIndex = 0,
-        playlistData,
-      } = action.payload;
+      const { contextType, tracks, startIndex = 0, playlistData } = action.payload;
 
       if (contextType === "queue") {
         state.queue = tracks;
@@ -241,20 +220,16 @@ const playerSlice = createSlice({
       const { song, playNext = false } = action.payload;
       const trackId = getTrackId(song);
 
-      const existingIndex = state.queue.findIndex(
-        (t) => getTrackId(t) === trackId
-      );
+      const existingIndex = state.queue.findIndex((t) => getTrackId(t) === trackId);
       if (existingIndex >= 0) {
         state.queue.splice(existingIndex, 1);
       }
 
       if (playNext && state.currentTrack) {
         const currentTrackId = getTrackId(state.currentTrack);
-        const currentQueueIndex = state.queue.findIndex(
-          (t) => getTrackId(t) === currentTrackId
-        );
+        const currentQueueIndex = state.queue.findIndex((t) => getTrackId(t) === currentTrackId);
 
-        if (currentQueueIndex >= 0) {
+        if (state.activeContext === "queue" && currentQueueIndex >= 0) {
           state.queue.splice(currentQueueIndex + 1, 0, song);
         } else {
           state.queue.unshift(song);
@@ -267,36 +242,27 @@ const playerSlice = createSlice({
     },
 
     removeFromContext: (state, action) => {
-      const { trackIndex } = action.payload;
-      const context = state.activeContext;
-
-      // Can't remove from these contexts
-      if (
-        context === "recently_played" ||
-        context === "album" ||
-        context === "community_playlist"
-      ) {
-        return;
-      }
+      const { trackId, contextType } = action.payload;
+      const context = contextType || state.activeContext;
 
       if (context === "queue") {
-        if (trackIndex >= 0 && trackIndex < state.queue.length) {
-          state.queue.splice(trackIndex, 1);
+        const index = state.queue.findIndex((t) => getTrackId(t) === trackId);
+        if (index >= 0) {
+          state.queue.splice(index, 1);
 
-          if (trackIndex < state.currentIndex) {
-            state.currentIndex--;
-          } else if (trackIndex === state.currentIndex) {
-            if (state.queue.length === 0) {
-              state.currentIndex = -1;
-              state.currentTrack = null;
-              state.isPlaying = false;
-              state.isActive = false;
-            } else {
-              state.currentIndex = Math.min(
-                state.currentIndex,
-                state.queue.length - 1
-              );
-              state.currentTrack = state.queue[state.currentIndex];
+          if (state.activeContext === "queue") {
+            if (index < state.currentIndex) {
+              state.currentIndex--;
+            } else if (index === state.currentIndex) {
+              if (state.queue.length === 0) {
+                state.currentTrack = null;
+                state.isPlaying = false;
+                state.isActive = false;
+                state.currentIndex = -1;
+              } else {
+                state.currentIndex = Math.min(state.currentIndex, state.queue.length - 1);
+                state.currentTrack = state.queue[state.currentIndex];
+              }
             }
           }
 
@@ -304,31 +270,29 @@ const playerSlice = createSlice({
         }
       } else if (context.startsWith("playlist_")) {
         const playlist = state.playlists.find((p) => p.id === context);
-        if (
-          playlist &&
-          trackIndex >= 0 &&
-          trackIndex < playlist.tracks.length
-        ) {
-          playlist.tracks.splice(trackIndex, 1);
+        if (playlist) {
+          const index = playlist.tracks.findIndex((t) => getTrackId(t) === trackId);
+          if (index >= 0) {
+            playlist.tracks.splice(index, 1);
 
-          if (trackIndex < state.currentIndex) {
-            state.currentIndex--;
-          } else if (trackIndex === state.currentIndex) {
-            if (playlist.tracks.length === 0) {
-              state.currentIndex = -1;
-              state.currentTrack = null;
-              state.isPlaying = false;
-              state.isActive = false;
-            } else {
-              state.currentIndex = Math.min(
-                state.currentIndex,
-                playlist.tracks.length - 1
-              );
-              state.currentTrack = playlist.tracks[state.currentIndex];
+            if (state.activeContext === context && index <= state.currentIndex) {
+              if (index < state.currentIndex) {
+                state.currentIndex--;
+              } else if (index === state.currentIndex) {
+                if (playlist.tracks.length === 0) {
+                  state.currentIndex = -1;
+                  state.currentTrack = null;
+                  state.isPlaying = false;
+                  state.isActive = false;
+                } else {
+                  state.currentIndex = Math.min(state.currentIndex, playlist.tracks.length - 1);
+                  state.currentTrack = playlist.tracks[state.currentIndex];
+                }
+              }
             }
-          }
 
-          saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
+            saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
+          }
         }
       }
     },
@@ -400,22 +364,64 @@ const playerSlice = createSlice({
       const playlist = state.playlists.find((p) => p.id === playlistId);
 
       if (playlist) {
-        const index = playlist.tracks.findIndex(
-          (t) => getTrackId(t) === trackId
-        );
+        const index = playlist.tracks.findIndex((t) => getTrackId(t) === trackId);
         if (index >= 0) {
           playlist.tracks.splice(index, 1);
 
-          if (
-            state.activeContext === playlistId &&
-            index < state.currentIndex
-          ) {
+          if (state.activeContext === playlistId && index < state.currentIndex) {
             state.currentIndex--;
           }
 
           saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
         }
       }
+    },
+
+    // Reorder queue tracks
+    reorderQueue: (state, action) => {
+      const { oldIndex, newIndex } = action.payload;
+
+      if (oldIndex === newIndex) return;
+
+      const [movedTrack] = state.queue.splice(oldIndex, 1);
+      state.queue.splice(newIndex, 0, movedTrack);
+
+      if (state.activeContext === "queue") {
+        if (state.currentIndex === oldIndex) {
+          state.currentIndex = newIndex;
+        } else if (oldIndex < state.currentIndex && newIndex >= state.currentIndex) {
+          state.currentIndex--;
+        } else if (oldIndex > state.currentIndex && newIndex <= state.currentIndex) {
+          state.currentIndex++;
+        }
+      }
+
+      saveToStorage(StorageKeys.QUEUE, state.queue);
+    },
+
+    //Reorder playlist tracks
+    reorderPlaylistTracks: (state, action) => {
+      const { playlistId, oldIndex, newIndex } = action.payload;
+
+      if (oldIndex === newIndex) return;
+
+      const playlist = state.playlists.find((p) => p.id === playlistId);
+      if (!playlist) return;
+
+      const [movedTrack] = playlist.tracks.splice(oldIndex, 1);
+      playlist.tracks.splice(newIndex, 0, movedTrack);
+
+      if (state.activeContext === playlistId) {
+        if (state.currentIndex === oldIndex) {
+          state.currentIndex = newIndex;
+        } else if (oldIndex < state.currentIndex && newIndex >= state.currentIndex) {
+          state.currentIndex--;
+        } else if (oldIndex > state.currentIndex && newIndex <= state.currentIndex) {
+          state.currentIndex++;
+        }
+      }
+
+      saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
     },
 
     // Playback modes
@@ -465,9 +471,7 @@ const playerSlice = createSlice({
 
           default:
             if (state.activeContext.startsWith("playlist_")) {
-              const playlist = state.playlists.find(
-                (p) => p.id === state.activeContext
-              );
+              const playlist = state.playlists.find((p) => p.id === state.activeContext);
               if (playlist?.tracks?.[state.currentIndex]) {
                 playlist.tracks[state.currentIndex] = track;
                 saveToStorage(StorageKeys.PLAYLISTS, state.playlists);
@@ -513,9 +517,7 @@ function getCurrentContextTracks(state) {
       return state.communityPlaylist?.tracks || [];
     default:
       if (state.activeContext.startsWith("playlist_")) {
-        const playlist = state.playlists.find(
-          (p) => p.id === state.activeContext
-        );
+        const playlist = state.playlists.find((p) => p.id === state.activeContext);
         return playlist?.tracks || [];
       }
       return [];
@@ -526,9 +528,7 @@ function addToRecentlyPlayed(state, track) {
   if (!track) return;
 
   const trackId = getTrackId(track);
-  const existingIndex = state.recentlyPlayed.findIndex(
-    (t) => getTrackId(t) === trackId
-  );
+  const existingIndex = state.recentlyPlayed.findIndex((t) => getTrackId(t) === trackId);
 
   if (existingIndex === 0) {
     return;
@@ -574,6 +574,8 @@ export const {
   renamePlaylist,
   addToPlaylist,
   removeFromPlaylist,
+  reorderQueue,
+  reorderPlaylistTracks,
   toggleShuffle,
   toggleRepeat,
   selectGenreListId,
