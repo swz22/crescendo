@@ -15,12 +15,14 @@ const AppHeader = memo(({ title, subtitle, action, showSearch = false, className
   const [isMenuAnimating, setIsMenuAnimating] = useState(false);
 
   const handleNavClick = () => {
-    setMobileMenuOpen(false);
+    closeMenu();
   };
 
   const handlePerformanceClick = () => {
-    setShowPerformanceMonitor(true);
-    setMobileMenuOpen(false);
+    closeMenu();
+    setTimeout(() => {
+      setShowPerformanceMonitor(true);
+    }, 350);
   };
 
   const openMenu = () => {
