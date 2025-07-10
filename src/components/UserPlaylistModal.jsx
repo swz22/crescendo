@@ -52,7 +52,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
   const { showToast } = useToast();
   const { setLoading, isLoading } = useLoadingState();
   const isDesktopScreen = useMediaQuery("(min-width: 1480px)");
-  const isTabletView = useMediaQuery("(min-width: 640px) and (max-width: 1479px)");
+  const isTabletView = useMediaQuery("(min-width: 769px) and (max-width: 1479px)");
 
   const tracks = currentPlaylist.tracks || [];
   const placeholderImage =
@@ -236,7 +236,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
     <>
       {/* Mobile Full Screen Modal */}
       <div
-        className={`sm:hidden fixed inset-0 z-[100] bg-gradient-to-b from-[#1a1848] to-[#0f0b2d] transition-all duration-500 ${
+        className={`md:hidden fixed inset-0 z-[100] bg-gradient-to-b from-[#1a1848] to-[#0f0b2d] transition-all duration-500 ${
           isAnimating ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -466,7 +466,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
       {/* Tablet View */}
       {isTabletView && (
-        <div className="hidden sm:block desktop:hidden">
+        <div className="hidden md:block desktop:hidden">
           <div
             className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
               isAnimating ? "opacity-100" : "opacity-0"
@@ -710,18 +710,18 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                 )}
                               </div>
 
-                              <div className="flex-1 min-w-0">
-                                <p className={`font-medium truncate ${isActive ? "text-[#14b8a6]" : "text-white"}`}>
-                                  {track.title}
+                              <div className="flex-1 min-w-0 mr-2">
+                                <p className={`font-medium ${isActive ? "text-[#14b8a6]" : "text-white"}`}>
+                                  <span className="block truncate pr-2">{track.title}</span>
                                 </p>
-                                <p className="text-gray-400 text-sm truncate">{track.subtitle}</p>
+                                <p className="text-gray-400 text-sm line-clamp-1">{track.subtitle}</p>
                               </div>
 
-                              <span className="text-gray-400 text-sm hidden md:block">
+                              <span className="text-gray-400 text-sm hidden lg:block">
                                 {formatDuration(track.duration_ms)}
                               </span>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
                                 <div onClick={(e) => e.stopPropagation()}>
                                   <SongMenu
                                     song={track}
@@ -735,7 +735,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                     song={track}
                                     handlePause={handlePauseClick}
                                     handlePlay={() => handlePlayClick(track, i)}
-                                    size={35}
+                                    size={32}
                                     isLoading={isLoading(`track-${getTrackId(track)}`)}
                                   />
                                 </div>
