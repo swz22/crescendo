@@ -70,7 +70,22 @@ const NowPlaying = ({ isOpen, onClose }) => {
   // Mouse drag state for tablet
   const [mouseStartTime, setMouseStartTime] = useState(null);
   const [isMouseDragging, setIsMouseDragging] = useState(false);
-  const isTabletView = window.innerWidth >= 640;
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+  const isTabletView = viewportWidth >= 640;
+
+  // Auto-scroll refs
+  const scrollIntervalRef = useRef(null);
+  const autoScrollZoneRef = useRef(null);
+
+  // Update viewport width on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Add touch event listeners to prevent scroll while dragging
   useEffect(() => {
@@ -205,35 +220,86 @@ const NowPlaying = ({ isOpen, onClose }) => {
     } else {
       setDragOffset({ x: touch.clientX, y: touch.clientY });
 
-      const scrollTop = scrollRef.current?.scrollTop || 0;
-      const containerRect = scrollRef.current?.getBoundingClientRect();
+      const container = scrollRef.current;
+      if (!container) return;
 
-      if (containerRect) {
-        const relativeY = touch.clientY - containerRect.top + scrollTop;
-        const overIndex = Math.floor(relativeY / 76);
-        const clampedIndex = Math.max(0, Math.min(tracks.length - 1, overIndex));
+      const scrollTop = container.scrollTop;
+      const containerRect = container.getBoundingClientRect();
 
-        if (clampedIndex !== mobileDragOverIndex) {
-          setMobileDragOverIndex(clampedIndex);
-          if (navigator.vibrate) {
-            navigator.vibrate(10);
-          }
+      const relativeY = touch.clientY - containerRect.top + scrollTop;
+      const overIndex = Math.floor(relativeY / 76);
+      const clampedIndex = Math.max(0, Math.min(tracks.length - 1, overIndex));
+
+      if (clampedIndex !== mobileDragOverIndex) {
+        setMobileDragOverIndex(clampedIndex);
+        if (navigator.vibrate) {
+          navigator.vibrate(10);
         }
       }
 
-      // Auto-scroll if near edges
-      if (containerRect) {
-        const scrollSpeed = 5;
-        if (touch.clientY < containerRect.top + 50) {
-          scrollRef.current.scrollTop -= scrollSpeed;
-        } else if (touch.clientY > containerRect.bottom - 50) {
-          scrollRef.current.scrollTop += scrollSpeed;
+      // Improved auto-scroll with continuous scrolling
+      const edgeZoneSize = 100;
+      const maxScrollSpeed = 16;
+      const minSpeedRatio = 0.2;
+      let currentZone = null;
+      let scrollSpeed = 0;
+
+      if (touch.clientY < containerRect.top + edgeZoneSize) {
+        // Top edge - scroll up
+        currentZone = "top";
+        const distanceFromEdge = touch.clientY - containerRect.top;
+        const speedRatio = 1 - Math.max(0, distanceFromEdge) / edgeZoneSize;
+        const adjustedRatio = minSpeedRatio + speedRatio * (1 - minSpeedRatio);
+        scrollSpeed = -Math.round(maxScrollSpeed * adjustedRatio);
+      } else if (touch.clientY > containerRect.bottom - edgeZoneSize) {
+        // Bottom edge - scroll down
+        currentZone = "bottom";
+        const distanceFromEdge = containerRect.bottom - touch.clientY;
+        const speedRatio = 1 - Math.max(0, distanceFromEdge) / edgeZoneSize;
+        const adjustedRatio = minSpeedRatio + speedRatio * (1 - minSpeedRatio);
+        scrollSpeed = Math.round(maxScrollSpeed * adjustedRatio);
+      }
+
+      // Start or stop continuous scrolling based on zone
+      if (currentZone && currentZone !== autoScrollZoneRef.current) {
+        if (scrollIntervalRef.current) {
+          cancelAnimationFrame(scrollIntervalRef.current);
         }
+
+        // Start new scroll interval
+        const smoothScroll = () => {
+          if (container && scrollSpeed !== 0) {
+            const currentScroll = container.scrollTop;
+            const maxScroll = container.scrollHeight - container.clientHeight;
+            const newScroll = Math.max(0, Math.min(maxScroll, currentScroll + scrollSpeed));
+
+            if (Math.abs(scrollSpeed) > 0) {
+              container.scrollBy({
+                top: scrollSpeed,
+                behavior: "instant",
+              });
+            }
+            scrollIntervalRef.current = requestAnimationFrame(smoothScroll);
+          }
+        };
+
+        scrollIntervalRef.current = requestAnimationFrame(smoothScroll);
+        autoScrollZoneRef.current = currentZone;
+      } else if (!currentZone && scrollIntervalRef.current) {
+        cancelAnimationFrame(scrollIntervalRef.current);
+        scrollIntervalRef.current = null;
+        autoScrollZoneRef.current = null;
       }
     }
   };
 
   const handleTrackTouchEnd = (e, track) => {
+    if (scrollIntervalRef.current) {
+      cancelAnimationFrame(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+      autoScrollZoneRef.current = null;
+    }
+
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
@@ -267,6 +333,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
     setInitialTouchOffset({ x: 0, y: 0 });
     setTouchStartTime(null);
   };
+
   const handleTrackMouseDown = (e, index, track) => {
     if (!isTabletView || !canModify) return;
 
@@ -303,20 +370,60 @@ const NowPlaying = ({ isOpen, onClose }) => {
       if (clampedIndex !== mobileDragOverIndex) {
         setMobileDragOverIndex(clampedIndex);
       }
-    }
 
-    // Auto-scroll if near edges
-    if (containerRect) {
-      const scrollSpeed = 5;
-      if (e.clientY < containerRect.top + 50) {
-        scrollRef.current.scrollTop -= scrollSpeed;
-      } else if (e.clientY > containerRect.bottom - 50) {
-        scrollRef.current.scrollTop += scrollSpeed;
+      // Auto-scroll for mouse
+      const edgeZoneSize = 100;
+      const maxScrollSpeed = 16;
+      const minSpeedRatio = 0.2;
+      let currentZone = null;
+      let scrollSpeed = 0;
+
+      if (e.clientY < containerRect.top + edgeZoneSize) {
+        currentZone = "top";
+        const distanceFromEdge = e.clientY - containerRect.top;
+        const speedRatio = 1 - Math.max(0, distanceFromEdge) / edgeZoneSize;
+        const adjustedRatio = minSpeedRatio + speedRatio * (1 - minSpeedRatio);
+        scrollSpeed = -Math.round(maxScrollSpeed * adjustedRatio);
+      } else if (e.clientY > containerRect.bottom - edgeZoneSize) {
+        currentZone = "bottom";
+        const distanceFromEdge = containerRect.bottom - e.clientY;
+        const speedRatio = 1 - Math.max(0, distanceFromEdge) / edgeZoneSize;
+        const adjustedRatio = minSpeedRatio + speedRatio * (1 - minSpeedRatio);
+        scrollSpeed = Math.round(maxScrollSpeed * adjustedRatio);
+      }
+
+      if (currentZone && currentZone !== autoScrollZoneRef.current) {
+        if (scrollIntervalRef.current) {
+          cancelAnimationFrame(scrollIntervalRef.current);
+        }
+
+        const smoothScroll = () => {
+          if (scrollRef.current && scrollSpeed !== 0) {
+            scrollRef.current.scrollBy({
+              top: scrollSpeed,
+              behavior: "instant",
+            });
+            scrollIntervalRef.current = requestAnimationFrame(smoothScroll);
+          }
+        };
+
+        scrollIntervalRef.current = requestAnimationFrame(smoothScroll);
+        autoScrollZoneRef.current = currentZone;
+      } else if (!currentZone && scrollIntervalRef.current) {
+        cancelAnimationFrame(scrollIntervalRef.current);
+        scrollIntervalRef.current = null;
+        autoScrollZoneRef.current = null;
       }
     }
   };
 
   const handleTrackMouseUp = (e, track) => {
+    if (scrollIntervalRef.current) {
+      cancelAnimationFrame(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+      autoScrollZoneRef.current = null;
+    }
+
     if (!isMouseDragging) {
       const mouseDuration = Date.now() - mouseStartTime;
       if (mouseDuration < 250) {
@@ -465,7 +572,6 @@ const NowPlaying = ({ isOpen, onClose }) => {
   };
 
   if (!isMounted && !isOpen) return null;
-
   return (
     <>
       {/* Backdrop */}
@@ -485,100 +591,72 @@ const NowPlaying = ({ isOpen, onClose }) => {
         className="fixed inset-0 z-[70] bg-gradient-to-b from-[#1e1b4b] via-[#2d2467]/95 to-[#0f172a] will-change-transform"
         style={{
           transform: `translateY(${isOpen && isMounted ? dragY : window.innerHeight || 1000}px)`,
-          transition: isDragging ? "none" : "transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-          touchAction: "pan-x pan-down",
+          transition: isDragging ? "none" : "transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        {/* Glass overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+        {/* Drag Handle */}
+        <div className="sticky top-0 z-10 px-4 pt-3 pb-2">
+          <div className="flex items-center justify-between">
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors -ml-2">
+              <HiChevronDown className="w-6 h-6 text-white/70" />
+            </button>
 
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-[#14b8a6] rounded-full filter blur-3xl" />
-          <div className="absolute bottom-40 right-10 w-40 h-40 bg-[#0891b2] rounded-full filter blur-3xl" />
-        </div>
-
-        {/* Header */}
-        <div
-          className="relative z-10"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          style={{ touchAction: "pan-y" }}
-        >
-          {/* Safe area padding and Drag Handle */}
-          <div className="pt-6 pb-4">
-            <div className="flex items-center justify-center">
-              <div className="w-12 h-1 bg-white/50 rounded-full shadow-lg" />
-            </div>
-          </div>
-
-          {/* Context Bar */}
-          <div className="px-4 pb-3">
-            <div className="flex items-center justify-between">
+            {/* Context Switcher */}
+            <div className="relative">
               <button
                 onClick={() => setShowContextMenu(!showContextMenu)}
-                className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-white/[0.08] to-white/[0.05] backdrop-blur-xl hover:from-white/[0.12] hover:to-white/[0.08] rounded-full transition-all border border-white/10 text-sm shadow-lg shadow-black/20"
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full"
               >
-                <div className="p-1 bg-white/10 rounded-full">
+                <div className="flex items-center gap-2">
                   {getContextIcon(allContexts.find((c) => c.id === activeContext)?.icon)}
+                  <span className="text-sm font-medium text-white">{contextName}</span>
                 </div>
-                <span className="font-semibold text-white">{contextName}</span>
-                <span className="text-xs text-white/50 font-medium">({tracks.length})</span>
                 <HiChevronDown
-                  className={`w-3 h-3 text-white/50 transition-transform duration-200 ${
-                    showContextMenu ? "rotate-180" : ""
-                  }`}
+                  className={`w-4 h-4 text-white/70 transition-transform ${showContextMenu ? "rotate-180" : ""}`}
                 />
               </button>
 
-              <div className="flex items-center gap-2">
-                {activeContext === "queue" && tracks.length > 0 && (
-                  <button
-                    onClick={() => setShowClearQueueDialog(true)}
-                    className="flex items-center gap-2 px-3.5 py-2 bg-white/[0.08] backdrop-blur-xl hover:bg-white/[0.12] rounded-full transition-all border border-white/10 shadow-lg shadow-black/20"
-                  >
-                    <HiOutlineTrash className="w-4 h-4 text-white/70" />
-                    <span className="text-sm font-medium text-white">Clear All</span>
-                  </button>
-                )}
-                <button
-                  onClick={onClose}
-                  className="hidden sm:flex p-2.5 bg-white/[0.08] backdrop-blur-xl hover:bg-white/[0.12] rounded-full transition-all border border-white/10 shadow-lg shadow-black/20"
-                >
-                  <HiX className="w-5 h-5 text-white/70" />
-                </button>
-              </div>
+              {/* Context Menu Dropdown */}
+              {showContextMenu && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-[#2d2467] rounded-xl p-2 shadow-xl z-20 w-48 whitespace-nowrap">
+                  {allContexts.map((context) => (
+                    <button
+                      key={context.id}
+                      onClick={() => handleContextSwitch(context.id)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                        activeContext === context.id
+                          ? "bg-white/20 text-white"
+                          : "text-white/70 hover:bg-white/10 hover:text-white"
+                      }`}
+                    >
+                      {getContextIcon(context.icon)}
+                      <span className="text-xs font-medium flex-1 text-left">{context.name}</span>
+                      {context.trackCount > 0 && <span className="text-xs text-white/50">{context.trackCount}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Context Menu Dropdown */}
-            {showContextMenu && (
-              <div className="absolute left-4 right-4 mt-2 bg-gradient-to-b from-[#2d2467]/98 to-[#1e1b4b]/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-20 animate-slideInDown">
-                {allContexts.map((context) => (
-                  <button
-                    key={context.id}
-                    onClick={() => handleContextSwitch(context.id)}
-                    className={`w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/10 transition-all ${
-                      context.id === activeContext ? "bg-white/10" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-1.5 bg-white/10 rounded-full">{getContextIcon(context.icon)}</div>
-                      <span className="font-medium text-white text-sm">{context.name}</span>
-                    </div>
-                    <span className="text-xs text-white/50">({context.trackCount})</span>
-                  </button>
-                ))}
-              </div>
+            {activeContext === "queue" && tracks.length > 0 && (
+              <button
+                onClick={() => setShowClearQueueDialog(true)}
+                className="p-2 rounded-full hover:bg-white/10 transition-colors text-red-400"
+              >
+                <HiOutlineTrash className="w-5 h-5" />
+              </button>
             )}
           </div>
         </div>
 
-        {/* Current Track */}
+        {/* Current Track Info */}
         {currentTrack && (
-          <div className="px-4 pb-6">
-            <div className="bg-gradient-to-r from-white/[0.08] to-white/[0.05] backdrop-blur-xl rounded-2xl p-4 border border-white/10 shadow-xl">
-              <div className="flex items-center gap-4">
+          <div className="px-6 py-4">
+            <div className="bg-white/5 rounded-2xl p-4">
+              <div className="flex items-center gap-4 mb-3">
                 <img
                   src={currentTrack.images?.coverart || currentTrack.album?.images?.[0]?.url}
                   alt={currentTrack.title}
@@ -662,10 +740,13 @@ const NowPlaying = ({ isOpen, onClose }) => {
           ) : (
             <div
               ref={scrollRef}
-              className="overflow-y-auto h-[calc(100vh-360px)] custom-scrollbar"
-              style={{ touchAction: mobileDragIndex !== null ? "none" : "auto" }}
+              className="overflow-y-auto custom-scrollbar"
+              style={{
+                height: "calc(100vh - 280px)",
+                touchAction: mobileDragIndex !== null ? "none" : "auto",
+              }}
             >
-              <div className="relative" style={{ height: tracks.length * 76 }}>
+              <div className="relative pb-20" style={{ height: tracks.length * 76 + 80 }}>
                 {tracks.map((track, index) => {
                   if (!track) return null;
 
@@ -681,7 +762,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
                     const scrollTop = scrollRef.current?.scrollTop || 0;
                     const containerRect = scrollRef.current?.getBoundingClientRect() || { top: 0 };
                     const dragY = dragOffset.y - containerRect.top - initialTouchOffset.y + scrollTop;
-                    draggedTransform = `translate3d(0, ${dragY}px, 0) scale(1.05)`;
+                    draggedTransform = `translate3d(0, ${dragY}px, 0)`;
                   }
 
                   return (
@@ -711,7 +792,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
                         isActive
                           ? "bg-gradient-to-r from-[#14b8a6]/30 via-[#14b8a6]/20 to-transparent"
                           : isDraggedItem
-                          ? "bg-[#2d2467] shadow-2xl shadow-black/50"
+                          ? "bg-[#2d2467]/90 shadow-xl shadow-black/30"
                           : "bg-white/[0.03] hover:bg-white/[0.08]"
                       }`}
                     >
@@ -746,7 +827,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
                           {track.title}
                         </p>
                         <p
-                          className={`text-sm truncate select-none ${isActive ? "text-[#14b8a6]/70" : "text-white/60"}`}
+                          className={`text-sm truncate select-none ${isActive ? "text-[#14b8a6]/70" : "text-white/50"}`}
                         >
                           {track.subtitle}
                         </p>
@@ -756,9 +837,9 @@ const NowPlaying = ({ isOpen, onClose }) => {
                       {canModify && !isDraggedItem && (
                         <button
                           onClick={(e) => handleRemoveTrack(index, e)}
-                          className="p-2 rounded-full hover:bg-white/10 transition-all"
+                          className="p-2 text-white/30 hover:text-red-400 transition-colors"
                         >
-                          <HiX className="w-5 h-5 text-white/40 hover:text-white/60" />
+                          <HiX className="w-4 h-4" />
                         </button>
                       )}
                     </div>
