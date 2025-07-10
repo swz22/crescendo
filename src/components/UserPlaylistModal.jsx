@@ -742,9 +742,14 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
               boxShadow: isAnimating ? "0 0 50px rgba(20, 184, 166, 0.15)" : "none",
             }}
           >
-            <div className="h-full flex">
+            {/* Subtle gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6]/5 via-transparent to-purple-600/5 pointer-events-none"></div>
+            <div className="h-full flex relative">
               {/* Left Panel */}
-              <div className="w-[400px] 2xl:w-[450px] p-8 border-r border-white/10 flex flex-col">
+              <div className="w-[400px] 2xl:w-[450px] flex-shrink-0 p-6 2xl:p-8 flex flex-col relative">
+                <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-20 right-10 w-40 h-40 bg-[#14b8a6]/20 rounded-full blur-3xl"></div>
+
                 <button
                   onClick={handleClose}
                   className="absolute top-6 left-6 p-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all z-20 border border-white/10"
@@ -754,28 +759,32 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
                 <div className="flex-1 flex flex-col items-center justify-center">
                   {/* Playlist Image */}
-                  <div className="relative w-72 h-72 rounded-3xl overflow-hidden shadow-2xl mb-6">
-                    {tracks.length === 0 ? (
-                      <div className="w-full h-full bg-gradient-to-br from-[#2d2467]/60 to-[#1a1848]/80 flex items-center justify-center">
-                        <Icon icon="solar:playlist-minimalistic-2-bold-duotone" className="w-32 h-32 text-white/25" />
-                      </div>
-                    ) : mosaicImages.length === 4 ? (
-                      <div className="grid grid-cols-2 gap-0.5 w-full h-full">
-                        {mosaicImages.map((img, idx) => (
-                          <img key={idx} src={img} alt="" className="w-full h-full object-cover" />
-                        ))}
-                      </div>
-                    ) : (
-                      <img
-                        src={mosaicImages[0] || placeholderImage}
-                        alt={currentPlaylist.name}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-[#14b8a6] to-purple-600 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-500"></div>
+                    <div className="relative w-72 h-72 rounded-3xl overflow-hidden shadow-2xl">
+                      {tracks.length === 0 ? (
+                        <div className="w-full h-full bg-gradient-to-br from-[#2d2467]/60 to-[#1a1848]/80 flex items-center justify-center">
+                          <Icon icon="solar:playlist-minimalistic-2-bold-duotone" className="w-32 h-32 text-white/25" />
+                        </div>
+                      ) : mosaicImages.length === 4 ? (
+                        <div className="grid grid-cols-2 gap-0.5 w-full h-full">
+                          {mosaicImages.map((img, idx) => (
+                            <img key={idx} src={img} alt="" className="w-full h-full object-cover" />
+                          ))}
+                        </div>
+                      ) : (
+                        <img
+                          src={mosaicImages[0] || placeholderImage}
+                          alt={currentPlaylist.name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
                   </div>
 
                   {/* Playlist Details */}
-                  <div className="text-center">
+                  <div className="text-center mt-8">
+                    <p className="text-sm text-[#14b8a6] font-semibold mb-3 tracking-wider uppercase">Your Playlist</p>
                     {isEditingName ? (
                       <input
                         type="text"
@@ -783,16 +792,21 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         onChange={(e) => setEditName(e.target.value)}
                         onBlur={handleSaveEdit}
                         onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
-                        className="text-3xl font-bold text-white bg-white/10 rounded px-3 py-1 mb-3 max-w-[300px]"
+                        className="text-4xl font-bold text-white bg-white/10 rounded px-4 py-2 mb-4 max-w-[350px]"
                         autoFocus
                       />
                     ) : (
-                      <h1 className="text-3xl font-bold text-white mb-3">{currentPlaylist.name}</h1>
+                      <h1 className="text-4xl font-bold text-white mb-6">{currentPlaylist.name}</h1>
                     )}
-                    <div className="flex items-center gap-4 text-sm text-gray-400 mb-6 justify-center">
-                      <span>{tracks.length} songs</span>
-                      <span>•</span>
-                      <span>{getTotalDuration()}</span>
+                    <div className="flex items-center justify-center gap-5 text-sm text-gray-300 mb-8">
+                      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
+                        <BsMusicNoteBeamed className="text-[#14b8a6]" />
+                        <span>{tracks.length} songs</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
+                        <BsClock className="text-purple-400" />
+                        <span>{getTotalDuration()}</span>
+                      </div>
                     </div>
 
                     {/* Action Buttons */}
@@ -923,22 +937,8 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   </div>
                 ) : (
                   <>
-                    {/* Track List Header */}
-                    <div className="sticky top-0 bg-gradient-to-b from-[#1a1848]/95 to-transparent backdrop-blur-sm p-4 pb-2 z-10">
-                      <div className="grid grid-cols-[1fr_100px_140px] gap-4 px-4 text-xs text-gray-400 uppercase tracking-wider">
-                        <div className="flex items-center gap-4">
-                          <span className="w-12">#</span>
-                          <span>Title</span>
-                        </div>
-                        <div className="text-center">
-                          <BsClock className="w-4 h-4 mx-auto" />
-                        </div>
-                        <div className="text-right">Actions</div>
-                      </div>
-                    </div>
-
                     {/* Track List */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar" ref={scrollContainerRef}>
+                    <div className="flex-1 mt-20 overflow-y-auto custom-scrollbar" ref={scrollContainerRef}>
                       <div className="p-4 pt-0">
                         {tracks.map((track, i) => {
                           const isActive = isTrackActive(track, i);
