@@ -92,18 +92,18 @@ const YourPlaylists = () => {
 
       {playlists.length > 0 ? (
         <>
-          {/* Search and Sort Bar */}
+          {/* Search and Filter Bar - Fixed for proper mobile/tablet/desktop breakpoints */}
           <div className="px-4 sm:px-6 md:px-8 mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="flex flex-col md:flex-col lg:flex-row gap-3 lg:gap-4">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search your playlists..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 sm:pl-12 pr-4 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-full text-white placeholder-gray-400 focus:bg-white/10 focus:border-[#14b8a6]/50 focus:outline-none transition-all text-sm sm:text-base"
+                  className="w-full pl-10 pr-4 py-2.5 lg:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:bg-white/[0.15] focus:border-[#14b8a6]/50 transition-all text-sm lg:text-base"
                 />
               </div>
 
@@ -111,15 +111,16 @@ const YourPlaylists = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowSortMenu(!showSortMenu)}
-                  className="flex items-center gap-2 px-4 py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full text-white transition-all w-full sm:w-auto justify-center text-sm sm:text-base"
+                  className="flex items-center gap-2 px-4 py-2.5 lg:py-3 bg-white/10 border border-white/20 rounded-xl text-white hover:bg-white/[0.15] transition-all w-full lg:w-auto justify-center lg:justify-start text-sm lg:text-base"
                 >
-                  <HiOutlineSortAscending className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden xs:inline">Sort by:</span>
-                  <span className="font-medium">{sortOptions.find((opt) => opt.value === sortBy)?.label}</span>
+                  <HiOutlineSortAscending className="w-4 h-4 lg:w-5 lg:h-5" />
+                  <span className="hidden lg:inline">Sort by:</span>
+                  <span className="capitalize">{sortOptions.find((opt) => opt.value === sortBy)?.label}</span>
                 </button>
 
+                {/* Dropdown Menu */}
                 {showSortMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-[#1e1b4b]/98 backdrop-blur-xl rounded-lg shadow-xl border border-white/20 overflow-hidden z-10">
+                  <div className="absolute top-full mt-2 right-0 lg:left-0 w-48 bg-[#1e1b4b] border border-white/20 rounded-xl shadow-2xl z-10 overflow-hidden">
                     {sortOptions.map((option) => (
                       <button
                         key={option.value}
@@ -127,7 +128,7 @@ const YourPlaylists = () => {
                           setSortBy(option.value);
                           setShowSortMenu(false);
                         }}
-                        className={`w-full px-4 py-2.5 text-left hover:bg-white/10 transition-colors text-sm ${
+                        className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-all text-sm ${
                           sortBy === option.value ? "bg-white/10 text-[#14b8a6]" : "text-white"
                         }`}
                       >
@@ -140,10 +141,10 @@ const YourPlaylists = () => {
             </div>
           </div>
 
-          {/* Playlists Grid */}
+          {/* Playlists Grid - Fixed responsive breakpoints */}
           <div className="px-4 sm:px-6 md:px-8 pb-8 sm:pb-12">
             {filteredAndSortedPlaylists.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 xl:gap-6">
                 {filteredAndSortedPlaylists.map((playlist) => (
                   <UserPlaylistCard
                     key={playlist.id}
@@ -154,7 +155,7 @@ const YourPlaylists = () => {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-400 text-lg">No playlists found matching "{searchTerm}"</p>
+                <p className="text-gray-400 text-base lg:text-lg">No playlists found matching "{searchTerm}"</p>
               </div>
             )}
           </div>
