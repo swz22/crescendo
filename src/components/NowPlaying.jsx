@@ -67,6 +67,11 @@ const NowPlaying = ({ isOpen, onClose }) => {
   const [initialTouchOffset, setInitialTouchOffset] = useState({ x: 0, y: 0 });
   const [trackPositions, setTrackPositions] = useState({});
 
+  // Mouse drag state for tablet
+  const [mouseStartTime, setMouseStartTime] = useState(null);
+  const [isMouseDragging, setIsMouseDragging] = useState(false);
+  const isTabletView = window.innerWidth >= 640;
+
   // Add touch event listeners to prevent scroll while dragging
   useEffect(() => {
     const container = scrollRef.current;
@@ -262,6 +267,108 @@ const NowPlaying = ({ isOpen, onClose }) => {
     setInitialTouchOffset({ x: 0, y: 0 });
     setTouchStartTime(null);
   };
+  const handleTrackMouseDown = (e, index, track) => {
+    if (!isTabletView || !canModify) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    setInitialTouchOffset({ x: offsetX, y: offsetY });
+    setMouseStartTime(Date.now());
+    setDragOffset({ x: e.clientX, y: e.clientY });
+    setIsMouseDragging(true);
+
+    // Start drag immediately for mouse
+    setMobileDragIndex(index);
+    setMobileDragOverIndex(index);
+
+    // Prevent text selection
+    e.preventDefault();
+  };
+
+  const handleTrackMouseMove = (e) => {
+    if (!isMouseDragging || mobileDragIndex === null) return;
+
+    setDragOffset({ x: e.clientX, y: e.clientY });
+
+    const scrollTop = scrollRef.current?.scrollTop || 0;
+    const containerRect = scrollRef.current?.getBoundingClientRect();
+
+    if (containerRect) {
+      const relativeY = e.clientY - containerRect.top + scrollTop;
+      const overIndex = Math.floor(relativeY / 76);
+      const clampedIndex = Math.max(0, Math.min(tracks.length - 1, overIndex));
+
+      if (clampedIndex !== mobileDragOverIndex) {
+        setMobileDragOverIndex(clampedIndex);
+      }
+    }
+
+    // Auto-scroll if near edges
+    if (containerRect) {
+      const scrollSpeed = 5;
+      if (e.clientY < containerRect.top + 50) {
+        scrollRef.current.scrollTop -= scrollSpeed;
+      } else if (e.clientY > containerRect.bottom - 50) {
+        scrollRef.current.scrollTop += scrollSpeed;
+      }
+    }
+  };
+
+  const handleTrackMouseUp = (e, track) => {
+    if (!isMouseDragging) {
+      const mouseDuration = Date.now() - mouseStartTime;
+      if (mouseDuration < 250) {
+        handlePlayTrack(track);
+      }
+    } else if (mobileDragIndex !== null && mobileDragOverIndex !== null && mobileDragIndex !== mobileDragOverIndex) {
+      if (activeContext === "queue") {
+        dispatch(reorderQueue({ oldIndex: mobileDragIndex, newIndex: mobileDragOverIndex }));
+      } else if (activeContext.startsWith("playlist_")) {
+        dispatch(
+          reorderPlaylistTracks({
+            playlistId: activeContext,
+            oldIndex: mobileDragIndex,
+            newIndex: mobileDragOverIndex,
+          })
+        );
+      }
+    }
+
+    // Reset state
+    setMobileDragIndex(null);
+    setMobileDragOverIndex(null);
+    setDragOffset({ x: 0, y: 0 });
+    setInitialTouchOffset({ x: 0, y: 0 });
+    setMouseStartTime(null);
+    setIsMouseDragging(false);
+  };
+
+  // Global mouse event listeners for tablet
+  useEffect(() => {
+    if (!isTabletView) return;
+
+    const handleGlobalMouseMove = (e) => {
+      handleTrackMouseMove(e);
+    };
+
+    const handleGlobalMouseUp = (e) => {
+      if (isMouseDragging) {
+        handleTrackMouseUp(e, null);
+      }
+    };
+
+    if (isMouseDragging) {
+      document.addEventListener("mousemove", handleGlobalMouseMove);
+      document.addEventListener("mouseup", handleGlobalMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleGlobalMouseMove);
+      document.removeEventListener("mouseup", handleGlobalMouseUp);
+    };
+  }, [isMouseDragging, mobileDragIndex, mobileDragOverIndex, isTabletView]);
 
   const handlePlayTrack = async (track) => {
     const trackWithPreview = await getPreviewUrl(track);
@@ -585,6 +692,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
                       onTouchMove={handleTrackTouchMove}
                       onTouchEnd={(e) => handleTrackTouchEnd(e, track)}
                       onTouchCancel={(e) => handleTrackTouchEnd(e, track)}
+                      onMouseDown={(e) => handleTrackMouseDown(e, index, track)}
                       style={{
                         position: "absolute",
                         top: 0,
@@ -597,6 +705,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
                           ? "none"
                           : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease",
                         touchAction: isDraggedItem ? "none" : "auto",
+                        cursor: canModify && isTabletView ? (isDraggedItem ? "grabbing" : "grab") : "pointer",
                       }}
                       className={`flex items-center gap-3 px-3 py-2 rounded-xl h-[60px] ${
                         isActive
