@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { HiX, HiChevronDown, HiOutlineTrash } from "react-icons/hi";
-import {
-  BsFillPlayFill,
-  BsFillPauseFill,
-  BsShuffle,
-  BsArrowRepeat,
-  BsMusicNoteList,
-} from "react-icons/bs";
+import { BsFillPlayFill, BsFillPauseFill, BsShuffle, BsArrowRepeat, BsMusicNoteList } from "react-icons/bs";
 import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
 import { HiOutlineClock, HiOutlineQueueList } from "react-icons/hi2";
 import { CgMenuLeft } from "react-icons/cg";
+import { RiDraggable } from "react-icons/ri";
 import {
   removeFromContext,
   navigateInContext,
@@ -20,6 +15,8 @@ import {
   toggleRepeat,
   switchContext,
   clearQueue,
+  reorderQueue,
+  reorderPlaylistTracks,
 } from "../redux/features/playerSlice";
 import {
   selectCurrentContextTracks,
@@ -34,14 +31,9 @@ import ConfirmDialog from "./ConfirmDialog";
 
 const NowPlaying = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const {
-    activeContext,
-    currentTrack,
-    currentIndex,
-    isPlaying,
-    shuffle,
-    repeat,
-  } = useSelector((state) => state.player);
+  const { activeContext, currentTrack, currentIndex, isPlaying, shuffle, repeat } = useSelector(
+    (state) => state.player
+  );
 
   const tracks = useSelector(selectCurrentContextTracks);
   const contextName = useSelector(selectCurrentContextName);
@@ -50,59 +42,250 @@ const NowPlaying = ({ isOpen, onClose }) => {
 
   const { duration, currentTime, seek } = useAudioState();
   const { handleNextSong, handlePrevSong, isNavigating } = useSongNavigation();
+  const { getPreviewUrl } = usePreviewUrl();
 
   const [isDragging, setIsDragging] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(null);
+  const [isRemoving, setIsRemoving] = useState({});
+  const [showClearQueueDialog, setShowClearQueueDialog] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
-  const [showClearQueueDialog, setShowClearQueueDialog] = useState(false);
 
-  const startYRef = useRef(0);
+  const dismissZoneHeight = 100;
   const sheetRef = useRef(null);
+  const startYRef = useRef(0);
   const scrollRef = useRef(null);
-  const activeTrackRef = useRef(null);
 
-  const { prefetchPreviewUrl, isPreviewCached, getPreviewUrl } =
-    usePreviewUrl();
+  // Mobile drag state
+  const [mobileDragIndex, setMobileDragIndex] = useState(null);
+  const [mobileDragOverIndex, setMobileDragOverIndex] = useState(null);
+  const [longPressTimer, setLongPressTimer] = useState(null);
+  const [touchStartTime, setTouchStartTime] = useState(null);
 
-  const placeholderImage =
-    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE1NTY4Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2EwYWVjMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
+  // Interactive reordering state
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [initialTouchOffset, setInitialTouchOffset] = useState({ x: 0, y: 0 });
+  const [trackPositions, setTrackPositions] = useState({});
+
+  // Add touch event listeners to prevent scroll while dragging
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const handleTouchMoveNonPassive = (e) => {
+      // Only prevent default if actively dragging
+      if (mobileDragIndex !== null) {
+        e.preventDefault();
+      }
+    };
+
+    container.addEventListener("touchmove", handleTouchMoveNonPassive, { passive: false });
+
+    return () => {
+      container.removeEventListener("touchmove", handleTouchMoveNonPassive);
+    };
+  }, [mobileDragIndex]);
 
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
-      document.body.style.overflow = "hidden";
-
-      // Disable pull-to-refresh
-      document.body.style.overscrollBehavior = "contain";
-
-      // Auto-scroll to active track after animation
-      setTimeout(() => {
-        if (activeTrackRef.current && scrollRef.current) {
-          activeTrackRef.current.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }
-      }, 300);
+      setDragY(0);
     } else {
-      document.body.style.overflow = "";
-      document.body.style.overscrollBehavior = "";
+      const timer = setTimeout(() => {
+        setIsMounted(false);
+        setDragY(0);
+        setIsRemoving({});
+        setShowContextMenu(false);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
-      // Reset mounted state after close animation
-      setTimeout(() => setIsMounted(false), 800);
+  // Auto-scroll to center current track
+  useEffect(() => {
+    if (currentIndex >= 0 && currentIndex < tracks.length && scrollRef.current) {
+      const trackHeight = 76;
+      const containerHeight = scrollRef.current.clientHeight;
+      const trackTop = currentIndex * trackHeight;
+      const scrollTarget = trackTop - containerHeight / 2 + trackHeight / 2;
+
+      // Smooth scroll
+      scrollRef.current.scrollTo({
+        top: Math.max(0, scrollTarget),
+        behavior: "smooth",
+      });
+    }
+  }, [currentIndex, tracks.length]);
+
+  // Initialize track positions
+  useEffect(() => {
+    const positions = {};
+    tracks.forEach((_, index) => {
+      positions[index] = index * 76;
+    });
+    setTrackPositions(positions);
+  }, [tracks.length]);
+
+  // Calculate dynamic positions during drag
+  const getAnimatedPosition = (index) => {
+    if (mobileDragIndex === null) return trackPositions[index] || 0;
+
+    let position = index;
+
+    if (mobileDragIndex !== null && mobileDragOverIndex !== null) {
+      if (index === mobileDragIndex) {
+        return null;
+      }
+
+      // Calculate shifted positions for other items
+      if (mobileDragIndex < mobileDragOverIndex) {
+        // Dragging down
+        if (index > mobileDragIndex && index <= mobileDragOverIndex) {
+          position = index - 1;
+        }
+      } else if (mobileDragIndex > mobileDragOverIndex) {
+        // Dragging up
+        if (index >= mobileDragOverIndex && index < mobileDragIndex) {
+          position = index + 1;
+        }
+      }
     }
 
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.overscrollBehavior = "";
-    };
-  }, [isOpen, currentIndex]);
+    return position * 76;
+  };
+
+  const handleTrackTouchStart = (e, index, track) => {
+    const touch = e.touches[0];
+    const element = e.currentTarget;
+    const rect = element.getBoundingClientRect();
+
+    // Store touch position relative to the element
+    const offsetX = touch.clientX - rect.left;
+    const offsetY = touch.clientY - rect.top;
+
+    setInitialTouchOffset({ x: offsetX, y: offsetY });
+    setTouchStartTime(Date.now());
+
+    // Store initial touch position for move detection
+    setDragOffset({ x: touch.clientX, y: touch.clientY });
+
+    if (!canModify) return;
+
+    const timer = setTimeout(() => {
+      // Start drag on long press
+      setMobileDragIndex(index);
+      setMobileDragOverIndex(index);
+
+      if (navigator.vibrate) {
+        navigator.vibrate([30, 50, 30]);
+      }
+    }, 250);
+
+    setLongPressTimer(timer);
+  };
+
+  const handleTrackTouchMove = (e) => {
+    const touch = e.touches[0];
+
+    if (mobileDragIndex === null) {
+      // Cancel long press if moved too much
+      const moveThreshold = 10;
+      const deltaX = Math.abs(touch.clientX - dragOffset.x);
+      const deltaY = Math.abs(touch.clientY - dragOffset.y);
+
+      if ((deltaX > moveThreshold || deltaY > moveThreshold) && longPressTimer) {
+        clearTimeout(longPressTimer);
+        setLongPressTimer(null);
+      }
+    } else {
+      setDragOffset({ x: touch.clientX, y: touch.clientY });
+
+      const scrollTop = scrollRef.current?.scrollTop || 0;
+      const containerRect = scrollRef.current?.getBoundingClientRect();
+
+      if (containerRect) {
+        const relativeY = touch.clientY - containerRect.top + scrollTop;
+        const overIndex = Math.floor(relativeY / 76);
+        const clampedIndex = Math.max(0, Math.min(tracks.length - 1, overIndex));
+
+        if (clampedIndex !== mobileDragOverIndex) {
+          setMobileDragOverIndex(clampedIndex);
+          if (navigator.vibrate) {
+            navigator.vibrate(10);
+          }
+        }
+      }
+
+      // Auto-scroll if near edges
+      if (containerRect) {
+        const scrollSpeed = 5;
+        if (touch.clientY < containerRect.top + 50) {
+          scrollRef.current.scrollTop -= scrollSpeed;
+        } else if (touch.clientY > containerRect.bottom - 50) {
+          scrollRef.current.scrollTop += scrollSpeed;
+        }
+      }
+    }
+  };
+
+  const handleTrackTouchEnd = (e, track) => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+
+    const touchDuration = Date.now() - touchStartTime;
+    const wasTap = touchDuration < 250 && mobileDragIndex === null;
+
+    if (wasTap) {
+      handlePlayTrack(track);
+    } else if (mobileDragIndex !== null && mobileDragOverIndex !== null && mobileDragIndex !== mobileDragOverIndex) {
+      if (navigator.vibrate) {
+        navigator.vibrate(20);
+      }
+
+      if (activeContext === "queue") {
+        dispatch(reorderQueue({ oldIndex: mobileDragIndex, newIndex: mobileDragOverIndex }));
+      } else if (activeContext.startsWith("playlist_")) {
+        dispatch(
+          reorderPlaylistTracks({
+            playlistId: activeContext,
+            oldIndex: mobileDragIndex,
+            newIndex: mobileDragOverIndex,
+          })
+        );
+      }
+    }
+    setMobileDragIndex(null);
+    setMobileDragOverIndex(null);
+    setDragOffset({ x: 0, y: 0 });
+    setInitialTouchOffset({ x: 0, y: 0 });
+    setTouchStartTime(null);
+  };
+
+  const handlePlayTrack = async (track) => {
+    const trackWithPreview = await getPreviewUrl(track);
+    if (trackWithPreview?.preview_url) {
+      const trackIndex = tracks.findIndex(
+        (t) => (t.key || t.id || t.track_id) === (track.key || track.id || track.track_id)
+      );
+      dispatch(
+        playFromContext({
+          contextType: activeContext,
+          trackIndex: trackIndex >= 0 ? trackIndex : 0,
+          trackWithPreview,
+        })
+      );
+    }
+  };
 
   const handleTouchStart = (e) => {
-    setIsDragging(true);
-    startYRef.current = e.touches[0].clientY;
+    const touchY = e.touches[0].clientY;
+
+    if (touchY < dismissZoneHeight) {
+      setIsDragging(true);
+      startYRef.current = touchY;
+    }
   };
 
   const handleTouchMove = (e) => {
@@ -112,46 +295,31 @@ const NowPlaying = ({ isOpen, onClose }) => {
   };
 
   const handleTouchEnd = () => {
+    if (!isDragging) return;
     setIsDragging(false);
-    if (dragY > 50) {
+
+    if (dragY > 150) {
       onClose();
-    }
-    setDragY(0);
-  };
-
-  const handlePlayClick = async (index) => {
-    if (currentIndex === index) {
-      dispatch(playPause(!isPlaying));
     } else {
-      const track = tracks[index];
-      if (!track) return;
-
-      try {
-        const songWithPreview = await getPreviewUrl(track);
-        if (songWithPreview?.preview_url) {
-          dispatch(
-            playFromContext({
-              contextType: activeContext,
-              trackIndex: index,
-              trackWithPreview: songWithPreview,
-            })
-          );
-          dispatch(playPause(true));
-        }
-      } catch (error) {
-        console.error("Error getting preview URL:", error);
-      }
+      setDragY(0);
     }
   };
 
-  const handleRemoveTrack = async (index, e) => {
-    e.stopPropagation();
-    if (!canModify) return;
+  const handlePlayPause = () => {
+    dispatch(playPause(!isPlaying));
+  };
 
-    setIsRemoving(index);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    dispatch(removeFromContext({ trackIndex: index }));
-    setIsRemoving(null);
+  const handleRemoveTrack = (index, e) => {
+    e.stopPropagation();
+    const trackId = tracks[index]?.key || tracks[index]?.id;
+    if (!trackId) return;
+
+    setIsRemoving({ [trackId]: true });
+
+    setTimeout(() => {
+      dispatch(removeFromContext({ trackId, contextType: activeContext }));
+      setIsRemoving({ [trackId]: false });
+    }, 300);
   };
 
   const handleContextSwitch = (contextId) => {
@@ -164,33 +332,38 @@ const NowPlaying = ({ isOpen, onClose }) => {
     setShowClearQueueDialog(false);
   };
 
+  const getContextIcon = (icon) => {
+    switch (icon) {
+      case "queue":
+        return <HiOutlineQueueList className="w-3.5 h-3.5 text-white/70" />;
+      case "clock":
+        return <HiOutlineClock className="w-3.5 h-3.5 text-white/70" />;
+      default:
+        return <BsMusicNoteList className="w-3.5 h-3.5 text-white/70" />;
+    }
+  };
+
   const formatTime = (seconds) => {
-    if (!seconds || isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const getContextIcon = (iconType) => {
-    switch (iconType) {
-      case "queue":
-        return <CgMenuLeft className="w-4 h-4" />;
-      case "clock":
-        return <HiOutlineClock className="w-4 h-4" />;
-      default:
-        return <BsMusicNoteList className="w-4 h-4" />;
-    }
+  const seekToPosition = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    const newTime = percentage * duration;
+    seek(newTime);
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-
-  if (!isOpen) return null;
+  if (!isMounted && !isOpen) return null;
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] will-change-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
         style={{
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? "auto" : "none",
@@ -204,12 +377,8 @@ const NowPlaying = ({ isOpen, onClose }) => {
         ref={sheetRef}
         className="fixed inset-0 z-[70] bg-gradient-to-b from-[#1e1b4b] via-[#2d2467]/95 to-[#0f172a] will-change-transform"
         style={{
-          transform: `translateY(${
-            isOpen && isMounted ? dragY : window.innerHeight || 1000
-          }px)`,
-          transition: isDragging
-            ? "none"
-            : "transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          transform: `translateY(${isOpen && isMounted ? dragY : window.innerHeight || 1000}px)`,
+          transition: isDragging ? "none" : "transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
           touchAction: "pan-x pan-down",
         }}
       >
@@ -228,6 +397,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          style={{ touchAction: "pan-y" }}
         >
           {/* Safe area padding and Drag Handle */}
           <div className="pt-6 pb-4">
@@ -244,14 +414,10 @@ const NowPlaying = ({ isOpen, onClose }) => {
                 className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-white/[0.08] to-white/[0.05] backdrop-blur-xl hover:from-white/[0.12] hover:to-white/[0.08] rounded-full transition-all border border-white/10 text-sm shadow-lg shadow-black/20"
               >
                 <div className="p-1 bg-white/10 rounded-full">
-                  {getContextIcon(
-                    allContexts.find((c) => c.id === activeContext)?.icon
-                  )}
+                  {getContextIcon(allContexts.find((c) => c.id === activeContext)?.icon)}
                 </div>
                 <span className="font-semibold text-white">{contextName}</span>
-                <span className="text-xs text-white/50 font-medium">
-                  ({tracks.length})
-                </span>
+                <span className="text-xs text-white/50 font-medium">({tracks.length})</span>
                 <HiChevronDown
                   className={`w-3 h-3 text-white/50 transition-transform duration-200 ${
                     showContextMenu ? "rotate-180" : ""
@@ -263,345 +429,254 @@ const NowPlaying = ({ isOpen, onClose }) => {
                 {activeContext === "queue" && tracks.length > 0 && (
                   <button
                     onClick={() => setShowClearQueueDialog(true)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-white/[0.08] to-white/[0.05] hover:from-red-500/20 hover:to-red-600/20 hover:text-red-400 backdrop-blur-xl rounded-full text-white font-medium transition-all border border-white/10 hover:border-red-500/30 text-sm shadow-lg shadow-black/20"
+                    className="flex items-center gap-2 px-3.5 py-2 bg-white/[0.08] backdrop-blur-xl hover:bg-white/[0.12] rounded-full transition-all border border-white/10 shadow-lg shadow-black/20"
                   >
-                    <HiOutlineTrash className="w-3.5 h-3.5" />
-                    Clear All
+                    <HiOutlineTrash className="w-4 h-4 text-white/70" />
+                    <span className="text-sm font-medium text-white">Clear All</span>
                   </button>
                 )}
-
-                {/* Close button - visible on non-mobile screens */}
                 <button
                   onClick={onClose}
-                  className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-white/[0.08] hover:bg-white/[0.15] transition-all border border-white/10"
+                  className="hidden sm:flex p-2.5 bg-white/[0.08] backdrop-blur-xl hover:bg-white/[0.12] rounded-full transition-all border border-white/10 shadow-lg shadow-black/20"
                 >
-                  <HiX className="w-5 h-5 text-white/70 hover:text-white" />
+                  <HiX className="w-5 h-5 text-white/70" />
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Current Track & Controls */}
-          {currentTrack && (
-            <div className="px-4 pb-3 border-b border-white/10">
-              <div className="flex items-center gap-3 mb-3">
+            {/* Context Menu Dropdown */}
+            {showContextMenu && (
+              <div className="absolute left-4 right-4 mt-2 bg-gradient-to-b from-[#2d2467]/98 to-[#1e1b4b]/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-20 animate-slideInDown">
+                {allContexts.map((context) => (
+                  <button
+                    key={context.id}
+                    onClick={() => handleContextSwitch(context.id)}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/10 transition-all ${
+                      context.id === activeContext ? "bg-white/10" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-white/10 rounded-full">{getContextIcon(context.icon)}</div>
+                      <span className="font-medium text-white text-sm">{context.name}</span>
+                    </div>
+                    <span className="text-xs text-white/50">({context.trackCount})</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Current Track */}
+        {currentTrack && (
+          <div className="px-4 pb-6">
+            <div className="bg-gradient-to-r from-white/[0.08] to-white/[0.05] backdrop-blur-xl rounded-2xl p-4 border border-white/10 shadow-xl">
+              <div className="flex items-center gap-4">
                 <img
-                  src={currentTrack.images?.coverart || placeholderImage}
+                  src={currentTrack.images?.coverart || currentTrack.album?.images?.[0]?.url}
                   alt={currentTrack.title}
-                  className="w-16 h-16 rounded-xl shadow-2xl shadow-black/50 ring-2 ring-white/10"
+                  className="w-16 h-16 rounded-xl shadow-lg object-cover"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-base text-white truncate">
-                    {currentTrack.title}
-                  </p>
-                  <p className="text-sm text-white/60 truncate">
-                    {currentTrack.subtitle}
-                  </p>
+                  <p className="font-bold text-white text-lg truncate">{currentTrack.title}</p>
+                  <p className="text-white/60 text-sm truncate">{currentTrack.subtitle}</p>
                 </div>
               </div>
 
               {/* Seek Bar */}
-              <div className="mb-3">
-                <div className="relative w-full h-1.5 bg-black/30 rounded-full overflow-hidden group backdrop-blur-sm">
-                  <div className="absolute inset-0 bg-white/10 rounded-full" />
-                  <div
-                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#14b8a6] via-[#0891b2] to-[#14b8a6] rounded-full transition-all duration-300 shadow-lg shadow-[#14b8a6]/50"
-                    style={{ width: `${progressPercent}%` }}
-                  >
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 100}
-                    value={currentTime || 0}
-                    onChange={(e) => seek(e.target.value)}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                  />
+              <div className="mt-3 relative">
+                <div className="flex justify-between text-xs text-white/50 mb-1">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
                 </div>
-                <div className="flex justify-between mt-1.5">
-                  <span className="text-[10px] text-white/50 tabular-nums font-medium">
-                    {formatTime(currentTime)}
-                  </span>
-                  <span className="text-[10px] text-white/50 tabular-nums font-medium">
-                    {formatTime(duration)}
-                  </span>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden cursor-pointer" onClick={seekToPosition}>
+                  <div
+                    className="h-full bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full transition-all duration-300"
+                    style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                  />
                 </div>
               </div>
 
               {/* Control Buttons */}
-              <div className="flex items-center justify-center gap-5">
+              <div className="flex items-center justify-center gap-3 mt-4">
                 <button
-                  onClick={() => dispatch(toggleShuffle())}
-                  className={`p-1.5 rounded-full transition-all ${
-                    shuffle
-                      ? "bg-[#14b8a6]/20 text-[#14b8a6] shadow-lg shadow-[#14b8a6]/20"
-                      : "text-white/40 hover:text-white hover:bg-white/10"
+                  onClick={() => dispatch(toggleRepeat())}
+                  className={`p-2 rounded-lg transition-all ${
+                    repeat ? "text-[#14b8a6]" : "text-white/40 hover:text-white/60"
                   }`}
                 >
-                  <BsShuffle size={16} />
+                  <BsArrowRepeat className="w-5 h-5" />
                 </button>
-
                 <button
                   onClick={handlePrevSong}
                   disabled={isNavigating}
-                  className="p-1.5 text-white hover:scale-110 transition-all disabled:opacity-50"
+                  className="p-2 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95 disabled:opacity-50"
                 >
-                  <MdSkipPrevious size={24} />
+                  <MdSkipPrevious className="w-7 h-7" />
                 </button>
-
                 <button
-                  onClick={() => dispatch(playPause(!isPlaying))}
-                  className="relative p-3 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full text-white shadow-2xl shadow-[#14b8a6]/40 hover:shadow-[#14b8a6]/60 hover:scale-105 transition-all group"
+                  onClick={handlePlayPause}
+                  className="p-3.5 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full text-white shadow-xl shadow-[#14b8a6]/30 hover:shadow-[#14b8a6]/50 transition-all hover:scale-110 active:scale-95"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full blur-lg opacity-60 group-hover:opacity-80 transition-opacity" />
-                  <div className="relative">
-                    {isPlaying ? (
-                      <BsFillPauseFill size={20} />
-                    ) : (
-                      <BsFillPlayFill size={20} className="translate-x-0.5" />
-                    )}
-                  </div>
+                  {isPlaying ? <BsFillPauseFill className="w-7 h-7" /> : <BsFillPlayFill className="w-7 h-7" />}
                 </button>
-
                 <button
                   onClick={handleNextSong}
                   disabled={isNavigating}
-                  className="p-1.5 text-white hover:scale-110 transition-all disabled:opacity-50"
+                  className="p-2 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95 disabled:opacity-50"
                 >
-                  <MdSkipNext size={24} />
+                  <MdSkipNext className="w-7 h-7" />
                 </button>
-
                 <button
-                  onClick={() => dispatch(toggleRepeat())}
-                  className={`p-1.5 rounded-full transition-all ${
-                    repeat
-                      ? "bg-[#14b8a6]/20 text-[#14b8a6] shadow-lg shadow-[#14b8a6]/20"
-                      : "text-white/40 hover:text-white hover:bg-white/10"
+                  onClick={() => dispatch(toggleShuffle())}
+                  className={`p-2 rounded-lg transition-all ${
+                    shuffle ? "text-[#14b8a6]" : "text-white/40 hover:text-white/60"
                   }`}
                 >
-                  <BsArrowRepeat size={16} />
+                  <BsShuffle className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Context Menu Dropdown */}
-        {showContextMenu && (
-          <div
-            className="absolute top-28 left-4 right-4 bg-gradient-to-b from-[#1e1b4b] to-[#1a1745] backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden z-50 animate-slideInDown"
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-          >
-            <div className="absolute inset-0 bg-white/[0.02] pointer-events-none" />
-            <div className="relative max-h-72 overflow-y-auto">
-              {allContexts.map((context) => (
-                <button
-                  key={context.id}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleContextSwitch(context.id);
-                  }}
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleContextSwitch(context.id);
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 active:bg-white/20 transition-all cursor-pointer ${
-                    activeContext === context.id ? "bg-[#14b8a6]/20" : ""
-                  }`}
-                >
-                  <div
-                    className={
-                      activeContext === context.id
-                        ? "text-[#14b8a6]"
-                        : "text-white/70"
-                    }
-                  >
-                    {getContextIcon(context.icon)}
-                  </div>
-                  <span
-                    className={`flex-1 text-left font-medium ${
-                      activeContext === context.id
-                        ? "text-[#14b8a6]"
-                        : "text-white"
-                    }`}
-                  >
-                    {context.name}
-                  </span>
-                  <span
-                    className={`text-sm ${
-                      activeContext === context.id
-                        ? "text-[#14b8a6]"
-                        : "text-white/50"
-                    }`}
-                  >
-                    {context.trackCount}
-                  </span>
-                  {activeContext === context.id && (
-                    <div className="w-2 h-2 bg-[#14b8a6] rounded-full animate-pulse" />
-                  )}
-                </button>
-              ))}
             </div>
           </div>
         )}
 
         {/* Track List */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto pb-6 pt-1"
-          style={{ maxHeight: "calc(100vh - 260px)" }}
-        >
+        <div className="flex-1 overflow-hidden px-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-white">{activeContext === "queue" ? "Up Next" : "Tracks"}</h3>
+            <span className="text-sm text-white/50">{tracks.length} tracks</span>
+          </div>
+
           {tracks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-white/40 px-8 py-16">
-              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                <HiOutlineQueueList className="w-10 h-10" />
-              </div>
-              <p className="text-xl font-semibold mb-2 text-white/60">
-                {activeContext === "queue"
-                  ? "Your queue is empty"
-                  : "No tracks available"}
-              </p>
-              <p className="text-sm text-center text-white/40 max-w-xs">
-                {activeContext === "queue"
-                  ? "Add songs to your queue to see them here"
-                  : "Select a different playlist or album to view tracks"}
-              </p>
+            <div className="flex flex-col items-center justify-center py-20">
+              <CgMenuLeft className="w-16 h-16 text-white/20 mb-4" />
+              <p className="text-white/50 text-center">No tracks in {contextName.toLowerCase()}</p>
             </div>
           ) : (
-            <div className="px-4 py-1 space-y-1">
-              {tracks.map((track, index) => {
-                if (!track) return null;
-                const isActive = currentIndex === index;
+            <div
+              ref={scrollRef}
+              className="overflow-y-auto h-[calc(100vh-360px)] custom-scrollbar"
+              style={{ touchAction: mobileDragIndex !== null ? "none" : "auto" }}
+            >
+              <div className="relative" style={{ height: tracks.length * 76 }}>
+                {tracks.map((track, index) => {
+                  if (!track) return null;
 
-                return (
-                  <div
-                    key={track.key || track.id || index}
-                    ref={isActive ? activeTrackRef : null}
-                    onClick={() => handlePlayClick(index)}
-                    className={`group relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 backdrop-blur-sm ${
-                      isActive
-                        ? "bg-gradient-to-r from-[#14b8a6]/20 via-[#0891b2]/10 to-[#14b8a6]/20 border border-[#14b8a6]/30 shadow-lg shadow-[#14b8a6]/20"
-                        : "hover:bg-white/[0.04] active:bg-white/[0.06] border border-white/5 hover:border-white/10"
-                    } ${
-                      isRemoving === index ? "opacity-0 translate-x-full" : ""
-                    }`}
-                  >
-                    {/* Track Number/Playing Indicator */}
-                    <div className="w-10 flex items-center justify-center">
-                      {isActive && isPlaying ? (
-                        <div className="flex items-center gap-[3px]">
-                          <div
-                            className="w-[3px] bg-[#14b8a6] rounded-full animate-scale-y"
-                            style={{
-                              height: "12px",
-                              animationDelay: "0s",
-                            }}
-                          />
-                          <div
-                            className="w-[3px] bg-[#14b8a6] rounded-full animate-scale-y"
-                            style={{
-                              height: "18px",
-                              animationDelay: "0.2s",
-                            }}
-                          />
-                          <div
-                            className="w-[3px] bg-[#14b8a6] rounded-full animate-scale-y"
-                            style={{
-                              height: "14px",
-                              animationDelay: "0.4s",
-                            }}
-                          />
+                  const isActive = currentIndex === index;
+                  const trackId = track.key || track.id || track.track_id;
+                  const isBeingRemoved = isRemoving[trackId];
+                  const animatedPosition = getAnimatedPosition(index);
+                  const isDraggedItem = mobileDragIndex === index;
+
+                  // Calculate dragged item position
+                  let draggedTransform = "";
+                  if (isDraggedItem && dragOffset.x && dragOffset.y) {
+                    const scrollTop = scrollRef.current?.scrollTop || 0;
+                    const containerRect = scrollRef.current?.getBoundingClientRect() || { top: 0 };
+                    const dragY = dragOffset.y - containerRect.top - initialTouchOffset.y + scrollTop;
+                    draggedTransform = `translate3d(0, ${dragY}px, 0) scale(1.05)`;
+                  }
+
+                  return (
+                    <div
+                      key={trackId || `track-${index}`}
+                      data-track-index={index}
+                      onTouchStart={(e) => handleTrackTouchStart(e, index, track)}
+                      onTouchMove={handleTrackTouchMove}
+                      onTouchEnd={(e) => handleTrackTouchEnd(e, track)}
+                      onTouchCancel={(e) => handleTrackTouchEnd(e, track)}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        transform: isDraggedItem ? draggedTransform : `translate3d(0, ${animatedPosition}px, 0)`,
+                        zIndex: isDraggedItem ? 1000 : 1,
+                        opacity: isBeingRemoved ? 0 : isDraggedItem ? 0.9 : 1,
+                        transition: isDraggedItem
+                          ? "none"
+                          : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease",
+                        touchAction: isDraggedItem ? "none" : "auto",
+                      }}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl h-[60px] ${
+                        isActive
+                          ? "bg-gradient-to-r from-[#14b8a6]/30 via-[#14b8a6]/20 to-transparent"
+                          : isDraggedItem
+                          ? "bg-[#2d2467] shadow-2xl shadow-black/50"
+                          : "bg-white/[0.03] hover:bg-white/[0.08]"
+                      }`}
+                    >
+                      {/* Drag Handle */}
+                      {canModify && (
+                        <div className="text-white/30">
+                          <RiDraggable className="w-5 h-5" />
                         </div>
-                      ) : (
-                        <span
-                          className={`text-sm tabular-nums ${
-                            isActive
-                              ? "text-[#14b8a6] font-bold text-base"
-                              : "text-white/40"
-                          }`}
-                        >
+                      )}
+
+                      {/* Track Number */}
+                      <div className="w-8 text-center">
+                        <span className={`text-sm font-medium ${isActive ? "text-[#14b8a6]" : "text-white/50"}`}>
                           {index + 1}
                         </span>
-                      )}
-                    </div>
+                      </div>
 
-                    {/* Album Art */}
-                    <div className="relative">
+                      {/* Album Art */}
                       <img
-                        src={track.images?.coverart || placeholderImage}
+                        src={track.images?.coverart || track.album?.images?.[0]?.url}
                         alt={track.title}
-                        className={`w-12 h-12 rounded-lg object-cover ${
-                          isActive
-                            ? "shadow-xl shadow-black/50 ring-1 ring-[#14b8a6]/50"
-                            : "shadow-md shadow-black/30"
-                        }`}
+                        className="w-12 h-12 rounded-lg object-cover shadow-md"
                       />
-                      {isActive && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6]/20 to-transparent rounded-lg" />
+
+                      {/* Track Info */}
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`font-medium truncate select-none ${
+                            isActive ? "text-[#14b8a6] drop-shadow-sm" : "text-white/90"
+                          }`}
+                        >
+                          {track.title}
+                        </p>
+                        <p
+                          className={`text-sm truncate select-none ${isActive ? "text-[#14b8a6]/70" : "text-white/60"}`}
+                        >
+                          {track.subtitle}
+                        </p>
+                      </div>
+
+                      {/* Remove Button */}
+                      {canModify && !isDraggedItem && (
+                        <button
+                          onClick={(e) => handleRemoveTrack(index, e)}
+                          className="p-2 rounded-full hover:bg-white/10 transition-all"
+                        >
+                          <HiX className="w-5 h-5 text-white/40 hover:text-white/60" />
+                        </button>
                       )}
                     </div>
-
-                    {/* Track Info */}
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`font-semibold truncate ${
-                          isActive
-                            ? "text-[#14b8a6] drop-shadow-sm"
-                            : "text-white/90"
-                        }`}
-                      >
-                        {track.title}
-                      </p>
-                      <p
-                        className={`text-sm truncate ${
-                          isActive ? "text-[#14b8a6]/70" : "text-white/60"
-                        }`}
-                      >
-                        {track.subtitle}
-                      </p>
-                    </div>
-
-                    {/* Remove Button */}
-                    {canModify && (
-                      <button
-                        onClick={(e) => handleRemoveTrack(index, e)}
-                        className="p-2 rounded-full hover:bg-white/10 transition-all"
-                      >
-                        <HiX className="w-5 h-5 text-white/40 hover:text-white/60" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
-        <ConfirmDialog
-          isOpen={showClearQueueDialog}
-          onClose={() => setShowClearQueueDialog(false)}
-          onConfirm={handleClearQueue}
-          title="Clear entire queue?"
-          message="This will remove all tracks from your queue. You'll need to add songs again to continue playing."
-          confirmText="Clear Queue"
-          cancelText="Cancel"
-          variant="warning"
-          icon={HiOutlineQueueList}
-          details={[
-            `${tracks.length} tracks will be removed`,
-            "Currently playing track will stop",
-            "This action cannot be undone",
-          ]}
-        />
       </div>
+
+      <ConfirmDialog
+        isOpen={showClearQueueDialog}
+        onClose={() => setShowClearQueueDialog(false)}
+        onConfirm={handleClearQueue}
+        title="Clear entire queue?"
+        message="This will remove all tracks from your queue. You'll need to add songs again to continue playing."
+        confirmText="Clear Queue"
+        cancelText="Cancel"
+        variant="warning"
+        icon={HiOutlineQueueList}
+        details={[
+          `${tracks.length} tracks will be removed`,
+          "Currently playing track will stop",
+          "This action cannot be undone",
+        ]}
+      />
     </>
   );
 };

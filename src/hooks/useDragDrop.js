@@ -26,7 +26,9 @@ export const useDragDrop = (activeContext) => {
 
   const handleDragEnter = useCallback(
     (e, index) => {
-      e.preventDefault();
+      if (e.dataTransfer) {
+        e.preventDefault();
+      }
       dragCounter.current++;
 
       // Don't show indicator at the position immediately below
@@ -49,13 +51,17 @@ export const useDragDrop = (activeContext) => {
   }, []);
 
   const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    if (e.dataTransfer) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
   }, []);
 
   const handleDrop = useCallback(
     (e, index) => {
-      e.preventDefault();
+      if (e.dataTransfer) {
+        e.preventDefault();
+      }
       e.stopPropagation();
 
       dragCounter.current = 0;
@@ -118,7 +124,7 @@ export const useDragDrop = (activeContext) => {
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-    }, 500);
+    }, 300);
 
     element.dataset.longPressTimer = longPressTimer;
     element.dataset.startY = touch.clientY;
@@ -133,7 +139,7 @@ export const useDragDrop = (activeContext) => {
       const startX = parseInt(element.dataset.startX || "0");
 
       // Cancel long press if moved too much
-      if (Math.abs(touch.clientY - startY) > 10 || Math.abs(touch.clientX - startX) > 10) {
+      if (!isDragging && (Math.abs(touch.clientY - startY) > 10 || Math.abs(touch.clientX - startX) > 10)) {
         const timer = element.dataset.longPressTimer;
         if (timer) {
           clearTimeout(parseInt(timer));
@@ -142,8 +148,6 @@ export const useDragDrop = (activeContext) => {
       }
 
       if (isDragging) {
-        e.preventDefault();
-
         // Find element under touch point
         const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
         if (elementBelow) {
