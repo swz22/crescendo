@@ -482,107 +482,136 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
             <div className="bg-gradient-to-b from-[#1a1848] to-[#0f0b2d] h-full rounded-2xl shadow-2xl overflow-hidden">
               <div className="h-full flex">
                 {/* Left Panel */}
-                <div className="w-[340px] p-6 border-r border-white/10 flex flex-col bg-gradient-to-b from-transparent to-black/20">
+                <div className="w-[340px] p-6 border-r border-white/10 flex flex-col bg-gradient-to-b from-transparent to-black/20 relative">
                   <button
                     onClick={handleClose}
-                    className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+                    className="absolute top-6 left-6 p-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all z-20 border border-white/10"
                   >
-                    <IoClose className="w-5 h-5 text-white" />
+                    <IoArrowBack className="w-5 h-5 text-white" />
                   </button>
 
-                  {/* Playlist Image */}
-                  <div className="relative w-48 h-48 rounded-xl overflow-hidden shadow-2xl mb-4 mx-auto">
-                    {tracks.length === 0 ? (
-                      <div className="w-full h-full bg-gradient-to-br from-[#2d2467]/60 to-[#1a1848]/80 flex items-center justify-center">
-                        <Icon icon="solar:playlist-minimalistic-2-bold-duotone" className="w-24 h-24 text-white/25" />
-                      </div>
-                    ) : mosaicImages.length === 4 ? (
-                      <div className="grid grid-cols-2 gap-0.5 w-full h-full">
-                        {mosaicImages.map((img, idx) => (
-                          <img key={idx} src={img} alt="" className="w-full h-full object-cover" />
-                        ))}
-                      </div>
-                    ) : (
-                      <img
-                        src={mosaicImages[0] || placeholderImage}
-                        alt={currentPlaylist.name}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-
-                  {/* Playlist Details */}
-                  <div className="text-center mb-4">
-                    {isEditingName ? (
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onBlur={handleSaveEdit}
-                        onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
-                        className="text-2xl font-bold text-white bg-white/10 rounded px-3 py-1 mb-2 mx-auto max-w-[250px]"
-                        autoFocus
-                      />
-                    ) : (
-                      <h1 className="text-2xl font-bold text-white mb-2">{currentPlaylist.name}</h1>
-                    )}
-                    <p className="text-gray-400 text-sm">
-                      {tracks.length} songs • {getTotalDuration()}
-                    </p>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-3 mb-4">
-                    <button
-                      onClick={() => handlePlayAll(false)}
-                      disabled={isLoading("play-all") || tracks.length === 0}
-                      className="flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all disabled:opacity-50"
-                    >
-                      {isLoading("play-all") ? (
-                        <LoadingState variant="button" text="Loading..." />
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                    {/* Playlist Image */}
+                    <div className="relative w-48 h-48 rounded-xl overflow-hidden shadow-2xl mb-4">
+                      {tracks.length === 0 ? (
+                        <div className="w-full h-full bg-gradient-to-br from-[#2d2467]/60 to-[#1a1848]/80 flex items-center justify-center">
+                          <Icon icon="solar:playlist-minimalistic-2-bold-duotone" className="w-24 h-24 text-white/25" />
+                        </div>
+                      ) : mosaicImages.length === 4 ? (
+                        <div className="grid grid-cols-2 gap-0.5 w-full h-full">
+                          {mosaicImages.map((img, idx) => (
+                            <img key={idx} src={img} alt="" className="w-full h-full object-cover" />
+                          ))}
+                        </div>
                       ) : (
-                        <>
-                          <BsFillPlayFill size={24} />
-                          <span>Play All</span>
-                        </>
+                        <img
+                          src={mosaicImages[0] || placeholderImage}
+                          alt={currentPlaylist.name}
+                          className="w-full h-full object-cover"
+                        />
                       )}
-                    </button>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handlePlayAll(true)}
-                        disabled={isLoading("shuffle-play") || tracks.length === 0}
-                        className={`flex-1 p-3 rounded-full transition-all ${
-                          shuffle ? "bg-[#14b8a6] text-white" : "bg-white/10 text-white hover:bg-white/20"
-                        } disabled:opacity-50`}
-                      >
-                        {isLoading("shuffle-play") ? <MusicLoadingSpinner size="sm" /> : <BsShuffle size={20} />}
-                      </button>
-                      <button
-                        onClick={handleAddAllToQueue}
-                        disabled={tracks.length === 0}
-                        className="flex-1 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all disabled:opacity-50"
-                      >
-                        <HiPlus size={20} />
-                      </button>
                     </div>
-                  </div>
 
-                  {/* Edit/Delete Buttons */}
-                  <div className="mt-auto flex gap-2">
-                    <button
-                      onClick={() => setIsEditingName(true)}
-                      className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all"
-                    >
-                      <HiOutlinePencil className="w-4 h-4" />
-                      <span className="text-sm">Edit</span>
-                    </button>
-                    <button
-                      onClick={() => setShowDeleteDialog(true)}
-                      className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-300 hover:text-red-400 transition-all"
-                    >
-                      <HiOutlineTrash className="w-4 h-4" />
-                      <span className="text-sm">Delete</span>
-                    </button>
+                    {/* Playlist Details */}
+                    <div className="text-center">
+                      <p className="text-sm text-[#14b8a6] font-semibold mb-3 tracking-wider uppercase">
+                        Your Playlist
+                      </p>
+                      {isEditingName ? (
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onBlur={handleSaveEdit}
+                          onKeyPress={(e) => e.key === "Enter" && handleSaveEdit()}
+                          className="text-3xl font-bold text-white bg-white/10 rounded px-3 py-2 mb-4 mx-auto max-w-[300px]"
+                          autoFocus
+                        />
+                      ) : (
+                        <h1 className="text-3xl font-bold text-white mb-5">{currentPlaylist.name}</h1>
+                      )}
+                      <div className="flex items-center justify-center gap-4 text-sm text-gray-300 mb-6">
+                        <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
+                          <BsMusicNoteBeamed className="text-[#14b8a6]" />
+                          <span>{tracks.length} songs</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
+                          <BsClock className="text-purple-400" />
+                          <span>{getTotalDuration()}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-col items-center gap-3">
+                        {/* Play All button */}
+                        <button
+                          onClick={() => handlePlayAll(false)}
+                          disabled={isLoading("play-all") || tracks.length === 0}
+                          className="flex items-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-2.5 px-5 rounded-full transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                          {isLoading("play-all") ? (
+                            <LoadingState variant="button" text="Loading..." />
+                          ) : (
+                            <>
+                              <BsFillPlayFill size={22} />
+                              <span>Play All</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Other buttons */}
+                        <div className="flex items-center gap-3">
+                          <div className="relative group">
+                            <button
+                              onClick={() => handlePlayAll(true)}
+                              disabled={isLoading("shuffle-play") || tracks.length === 0}
+                              className={`p-3 rounded-full transition-all ${
+                                shuffle ? "bg-white/10 text-[#14b8a6]" : "bg-white/10 text-white hover:bg-white/20"
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              {isLoading("shuffle-play") ? <MusicLoadingSpinner size="sm" /> : <BsShuffle size={15} />}
+                            </button>
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                              Shuffle Play
+                            </span>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={handleAddAllToQueue}
+                              disabled={tracks.length === 0}
+                              className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <HiPlus size={15} />
+                            </button>
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                              Add to Queue
+                            </span>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => setIsEditingName(true)}
+                              className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                            >
+                              <HiOutlinePencil size={15} />
+                            </button>
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                              Rename
+                            </span>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => setShowDeleteDialog(true)}
+                              className="p-3 rounded-full bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400 transition-all"
+                            >
+                              <HiOutlineTrash size={15} />
+                            </button>
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                              Delete Playlist
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -645,7 +674,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     </div>
                   ) : (
                     <div className="h-full overflow-y-auto custom-scrollbar" ref={scrollContainerRef}>
-                      <div className="p-4">
+                      <div className="p-4 pb-24">
                         {tracks.map((track, i) => {
                           const isActive = isTrackActive(track, i);
                           const trackId = getTrackId(track);
@@ -659,7 +688,13 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                 isActive ? "bg-white/10" : "hover:bg-white/5"
                               }`}
                             >
-                              <span className="w-8 text-sm text-gray-400 text-center">{i + 1}</span>
+                              <div
+                                className={`flex items-center justify-center w-7 h-7 rounded-lg
+    text-xs font-semibold transition-all duration-200
+    bg-white/[0.08] border border-white/10 text-white/70`}
+                              >
+                                {i + 1}
+                              </div>
 
                               <div className="relative w-12 h-12 rounded overflow-hidden bg-gray-800">
                                 {track.images?.coverart || track.album?.images?.[0]?.url ? (
@@ -713,6 +748,8 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   )}
                 </div>
               </div>
+              {/* Modal Player */}
+              {isTabletView && currentTrack && <ModalPlayer onOpenNowPlaying={() => setShowNowPlaying(true)} />}
             </div>
           </div>
         </div>
@@ -783,7 +820,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                   </div>
 
                   {/* Playlist Details */}
-                  <div className="text-center mt-8">
+                  <div className="text-center mt-6">
                     <p className="text-sm text-[#14b8a6] font-semibold mb-3 tracking-wider uppercase">Your Playlist</p>
                     {isEditingName ? (
                       <input
@@ -798,7 +835,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     ) : (
                       <h1 className="text-4xl font-bold text-white mb-6">{currentPlaylist.name}</h1>
                     )}
-                    <div className="flex items-center justify-center gap-5 text-sm text-gray-300 mb-8">
+                    <div className="flex items-center justify-center gap-5 text-sm text-gray-300 mb-6">
                       <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
                         <BsMusicNoteBeamed className="text-[#14b8a6]" />
                         <span>{tracks.length} songs</span>
@@ -810,11 +847,12 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-3 justify-center">
+                    <div className="flex flex-col items-center gap-3">
+                      {/* Play All button */}
                       <button
                         onClick={() => handlePlayAll(false)}
                         disabled={isLoading("play-all") || tracks.length === 0}
-                        className="flex items-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        className="flex items-center gap-2 mb-3 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold py-3 px-6 rounded-full transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       >
                         {isLoading("play-all") ? (
                           <LoadingState variant="button" text="Loading..." />
@@ -825,53 +863,57 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                           </>
                         )}
                       </button>
-                      <div className="relative group">
-                        <button
-                          onClick={() => handlePlayAll(true)}
-                          disabled={isLoading("shuffle-play") || tracks.length === 0}
-                          className={`p-3 rounded-full transition-all ${
-                            shuffle ? "bg-white/10 text-[#14b8a6]" : "bg-white/10 text-white hover:bg-white/20"
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          {isLoading("shuffle-play") ? <MusicLoadingSpinner size="sm" /> : <BsShuffle size={20} />}
-                        </button>
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                          Shuffle Play
-                        </span>
-                      </div>
-                      <div className="relative group">
-                        <button
-                          onClick={handleAddAllToQueue}
-                          disabled={tracks.length === 0}
-                          className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <HiPlus size={20} />
-                        </button>
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                          Add to Queue
-                        </span>
-                      </div>
-                      <div className="relative group">
-                        <button
-                          onClick={() => setIsEditingName(true)}
-                          className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-                        >
-                          <HiOutlinePencil size={20} />
-                        </button>
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                          Rename
-                        </span>
-                      </div>
-                      <div className="relative group">
-                        <button
-                          onClick={() => setShowDeleteDialog(true)}
-                          className="p-3 rounded-full bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400 transition-all"
-                        >
-                          <HiOutlineTrash size={20} />
-                        </button>
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                          Delete Playlist
-                        </span>
+
+                      {/* Other buttons */}
+                      <div className="flex items-center gap-3">
+                        <div className="relative group">
+                          <button
+                            onClick={() => handlePlayAll(true)}
+                            disabled={isLoading("shuffle-play") || tracks.length === 0}
+                            className={`p-3 rounded-full transition-all ${
+                              shuffle ? "bg-white/10 text-[#14b8a6]" : "bg-white/10 text-white hover:bg-white/20"
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {isLoading("shuffle-play") ? <MusicLoadingSpinner size="sm" /> : <BsShuffle size={15} />}
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            Shuffle Play
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={handleAddAllToQueue}
+                            disabled={tracks.length === 0}
+                            className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <HiPlus size={15} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            Add to Queue
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => setIsEditingName(true)}
+                            className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                          >
+                            <HiOutlinePencil size={15} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            Rename
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => setShowDeleteDialog(true)}
+                            className="p-3 rounded-full bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400 transition-all"
+                          >
+                            <HiOutlineTrash size={15} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            Delete Playlist
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -949,46 +991,53 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                               key={`${trackId}-${i}`}
                               ref={isActive ? activeTrackRef : null}
                               onClick={() => handlePlayClick(track, i)}
-                              className={`group grid grid-cols-[1fr_100px_140px] gap-4 p-4 rounded-lg cursor-pointer transition-all ${
+                              className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
                                 isActive ? "bg-white/10" : "hover:bg-white/5"
                               }`}
                             >
-                              {/* Track Info */}
-                              <div className="flex items-center gap-4 min-w-0">
-                                <span className="w-12 text-sm text-gray-400 text-center">{i + 1}</span>
-
-                                <div className="relative w-12 h-12 rounded overflow-hidden bg-gray-800 flex-shrink-0">
-                                  {track.images?.coverart || track.album?.images?.[0]?.url ? (
-                                    <img
-                                      src={track.images?.coverart || track.album?.images?.[0]?.url}
-                                      alt={track.title}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
-                                      <BsMusicNoteBeamed className="w-6 h-6 text-gray-600" />
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="min-w-0">
-                                  <p
-                                    className={`font-medium truncate ${
-                                      isActive ? "text-[#14b8a6]" : "text-white group-hover:text-[#14b8a6]"
-                                    }`}
-                                  >
-                                    {track.title}
-                                  </p>
-                                  <p className="text-gray-400 text-sm truncate">{track.subtitle}</p>
-                                </div>
+                              {/* Track Number with Border */}
+                              <div
+                                className={`flex items-center justify-center w-7 h-7 rounded-lg
+    text-xs font-semibold transition-all duration-200
+    bg-white/[0.08] border border-white/10 text-white/70`}
+                              >
+                                {i + 1}
                               </div>
 
-                              <span className="text-gray-400 text-sm tabular-nums text-center">
+                              {/* Album Art */}
+                              <div className="relative w-12 h-12 rounded overflow-hidden bg-gray-800 flex-shrink-0">
+                                {track.images?.coverart || track.album?.images?.[0]?.url ? (
+                                  <img
+                                    src={track.images?.coverart || track.album?.images?.[0]?.url}
+                                    alt={track.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
+                                    <BsMusicNoteBeamed className="w-6 h-6 text-gray-600" />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Track Info */}
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className={`font-medium truncate ${
+                                    isActive ? "text-[#14b8a6]" : "text-white group-hover:text-[#14b8a6]"
+                                  }`}
+                                >
+                                  {track.title}
+                                </p>
+                                <p className="text-gray-400 text-sm truncate">{track.subtitle}</p>
+                              </div>
+
+                              {/* Duration */}
+                              <span className="text-gray-400 text-sm tabular-nums mr-2">
                                 {formatDuration(track.duration_ms)}
                               </span>
 
                               {/* Actions */}
-                              <div className="flex items-center gap-3 justify-end">
+                              <div className="flex items-center gap-3 mr-6">
                                 <div onClick={(e) => e.stopPropagation()}>
                                   <SongMenu
                                     song={track}
@@ -1002,7 +1051,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                                     song={track}
                                     handlePause={handlePauseClick}
                                     handlePlay={() => handlePlayClick(track, i)}
-                                    size={40}
+                                    size={35}
                                     isLoading={isLoading(`track-${getTrackId(track)}`)}
                                   />
                                 </div>
