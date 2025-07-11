@@ -36,10 +36,8 @@ const OnboardingModal = () => {
   const stepTimeoutRef = useRef(null);
 
   useEffect(() => {
-    // Check if user has seen onboarding
     const hasSeenOnboarding = localStorage.getItem(StorageKeys.ONBOARDING);
     if (!hasSeenOnboarding) {
-      // Small delay for better UX
       openTimeoutRef.current = setTimeout(() => setIsOpen(true), 800);
     }
 
@@ -53,7 +51,6 @@ const OnboardingModal = () => {
 
     return () => {
       window.removeEventListener(SHOW_ONBOARDING_EVENT, handleShowEvent);
-      // Clear any pending timeouts
       if (openTimeoutRef.current) {
         clearTimeout(openTimeoutRef.current);
         openTimeoutRef.current = null;
@@ -68,6 +65,9 @@ const OnboardingModal = () => {
   // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
+
+    // Disable music keyboard shortcuts when modal is open
+    window.musicShortcutsDisabled = true;
 
     const handleKeyPress = (e) => {
       switch (e.key) {
@@ -87,7 +87,11 @@ const OnboardingModal = () => {
     };
 
     window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+      // Re-enable music keyboard shortcuts
+      window.musicShortcutsDisabled = false;
+    };
   }, [isOpen, currentStep]);
 
   const handleClose = () => {

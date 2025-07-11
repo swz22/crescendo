@@ -3,11 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { playPause, setVolume } from "../redux/features/playerSlice";
 import { useSongNavigation } from "./useSongNavigation";
 
+// Global flag to disable music shortcuts
+window.musicShortcutsDisabled = false;
+
 export const useKeyboardShortcuts = () => {
   const dispatch = useDispatch();
-  const { isPlaying, volume, currentTrack } = useSelector(
-    (state) => state.player
-  );
+  const { isPlaying, volume, currentTrack } = useSelector((state) => state.player);
   const { handleNextSong, handlePrevSong } = useSongNavigation();
 
   // Store previous volume for mute toggle
@@ -20,32 +21,18 @@ export const useKeyboardShortcuts = () => {
       const tagName = target.tagName.toLowerCase();
 
       // Don't trigger shortcuts when typing in inputs
-      if (
-        tagName === "input" ||
-        tagName === "textarea" ||
-        target.contentEditable === "true"
-      ) {
+      if (tagName === "input" || tagName === "textarea" || target.contentEditable === "true") {
         return;
       }
 
-      // Prevent default for our shortcuts
-      switch (e.key) {
-        case " ":
-        case "ArrowRight":
-        case "ArrowLeft":
-        case "ArrowUp":
-        case "ArrowDown":
-        case "m":
-        case "M":
-          e.preventDefault();
-          break;
-        default:
-          return;
+      if (window.musicShortcutsDisabled) {
+        return;
       }
 
       // Handle shortcuts
       switch (e.key) {
         case " ": // Space - Play/Pause
+          e.preventDefault();
           if (currentTrack) {
             dispatch(playPause(!isPlaying));
           }
@@ -53,17 +40,20 @@ export const useKeyboardShortcuts = () => {
 
         case "ArrowRight": // Next track
           if (currentTrack) {
+            e.preventDefault();
             handleNextSong();
           }
           break;
 
         case "ArrowLeft": // Previous track
           if (currentTrack) {
+            e.preventDefault();
             handlePrevSong();
           }
           break;
 
         case "ArrowUp": // Volume up
+          e.preventDefault();
           const newVolumeUp = Math.min(volume + 0.1, 1);
           dispatch(setVolume(newVolumeUp));
           if (newVolumeUp > 0) {
@@ -72,6 +62,7 @@ export const useKeyboardShortcuts = () => {
           break;
 
         case "ArrowDown": // Volume down
+          e.preventDefault();
           const newVolumeDown = Math.max(volume - 0.1, 0);
           dispatch(setVolume(newVolumeDown));
           if (newVolumeDown > 0) {
@@ -81,6 +72,7 @@ export const useKeyboardShortcuts = () => {
 
         case "m":
         case "M": // Mute/Unmute toggle
+          e.preventDefault();
           if (volume > 0) {
             // Mute
             previousVolumeRef.current = volume;
@@ -99,14 +91,7 @@ export const useKeyboardShortcuts = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [
-    dispatch,
-    isPlaying,
-    volume,
-    currentTrack,
-    handleNextSong,
-    handlePrevSong,
-  ]);
+  }, [dispatch, isPlaying, volume, currentTrack, handleNextSong, handlePrevSong]);
 
   return {
     isPlaying,
