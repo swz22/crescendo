@@ -13,52 +13,44 @@ const PlaylistHeroSection = ({ stats, onCreatePlaylist }) => {
 
   return (
     <div className="bg-gradient-to-r from-[#14b8a6]/10 via-purple-600/10 to-[#14b8a6]/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-white/10">
-      <div className="flex flex-col items-center gap-4 lg:gap-6">
+      <div className="flex flex-col items-center gap-4 lg:gap-5">
         {/* Title  */}
         <h2 className="text-lg sm:text-lg lg:text-2xl font-bold text-white text-center">Your Music Collection</h2>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4 w-full max-w-lg mx-auto">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6 w-full max-w-2xl mx-auto">
           {/* Playlists Count */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-lg lg:rounded-xl p-2.5 sm:p-3 lg:p-4 border border-white/10">
-            <div className="flex items-center gap-2 lg:gap-3">
-              <div className="p-1.5 lg:p-2 rounded-lg bg-gradient-to-br from-[#14b8a6]/20 to-cyan-500/20 flex-shrink-0">
-                <RiFolderMusicLine className="w-4 h-4 lg:w-5 lg:h-5 text-[#14b8a6]" />
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg lg:rounded-xl p-3 sm:p-4 lg:p-5 border border-white/10">
+            <div className="flex flex-col items-center justify-center text-center h-full">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-[#14b8a6]/20 to-cyan-500/20 mb-2">
+                <RiFolderMusicLine className="w-5 h-5 lg:w-6 lg:h-6 text-[#14b8a6]" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] lg:text-xs text-gray-400">Playlists</p>
-                <p className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-white">
-                  {stats.playlistCount}
-                </p>
-              </div>
+              <p className="text-[11px] sm:text-xs lg:text-sm text-gray-400 whitespace-nowrap">Playlists</p>
+              <p className="text-xl sm:text-xl lg:text-2xl xl:text-2xl font-bold text-white">{stats.playlistCount}</p>
             </div>
           </div>
 
           {/* Total Tracks */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-lg lg:rounded-xl p-2.5 sm:p-3 lg:p-4 border border-white/10">
-            <div className="flex items-center gap-2 lg:gap-3">
-              <div className="p-1.5 lg:p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex-shrink-0">
-                <BsMusicNoteList className="w-4 h-4 lg:w-5 lg:h-5 text-purple-400" />
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg lg:rounded-xl p-3 sm:p-4 lg:p-5 border border-white/10">
+            <div className="flex flex-col items-center justify-center text-center h-full">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 mb-2">
+                <BsMusicNoteList className="w-5 h-5 lg:w-6 lg:h-6 text-purple-400" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] lg:text-xs text-gray-400">Total Tracks</p>
-                <p className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-white">{stats.totalTracks}</p>
-              </div>
+              <p className="text-[11px] sm:text-xs lg:text-sm text-gray-400 whitespace-nowrap">Total Tracks</p>
+              <p className="text-xl sm:text-xl lg:text-2xl xl:text-2xl font-bold text-white">{stats.totalTracks}</p>
             </div>
           </div>
 
           {/* Total Duration */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-lg lg:rounded-xl p-2.5 sm:p-3 lg:p-4 border border-white/10">
-            <div className="flex items-center gap-2 lg:gap-3">
-              <div className="p-1.5 lg:p-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 flex-shrink-0">
-                <BsClock className="w-4 h-4 lg:w-5 lg:h-5 text-orange-400" />
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg lg:rounded-xl p-3 sm:p-4 lg:p-5 border border-white/10">
+            <div className="flex flex-col items-center justify-center text-center h-full">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 mb-2">
+                <BsClock className="w-5 h-5 lg:w-6 lg:h-6 text-orange-400" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] lg:text-xs text-gray-400">Total Time</p>
-                <p className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-white">
-                  {formatDuration(stats.totalDuration)}
-                </p>
-              </div>
+              <p className="text-[11px] sm:text-xs lg:text-sm text-gray-400 whitespace-nowrap">Total Time</p>
+              <p className="text-xl sm:text-xl lg:text-2xl xl:text-2xl font-bold text-white whitespace-nowrap">
+                {formatDuration(stats.totalDuration)}
+              </p>
             </div>
           </div>
         </div>
