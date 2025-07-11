@@ -549,11 +549,11 @@ const NowPlaying = ({ isOpen, onClose }) => {
   const getContextIcon = (icon) => {
     switch (icon) {
       case "queue":
-        return <HiOutlineQueueList className="w-3.5 h-3.5 text-white/70" />;
+        return <HiOutlineQueueList className="w-3 h-3 text-white/70" />;
       case "clock":
-        return <HiOutlineClock className="w-3.5 h-3.5 text-white/70" />;
+        return <HiOutlineClock className="w-3 h-3 text-white/70" />;
       default:
-        return <BsMusicNoteList className="w-3.5 h-3.5 text-white/70" />;
+        return <BsMusicNoteList className="w-3 h-3 text-white/70" />;
     }
   };
 
@@ -608,14 +608,14 @@ const NowPlaying = ({ isOpen, onClose }) => {
             <div className="relative">
               <button
                 onClick={() => setShowContextMenu(!showContextMenu)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full"
+                className="flex items-center gap-1.5 px-2.5 py-0.5 bg-white/10 rounded-full"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {getContextIcon(allContexts.find((c) => c.id === activeContext)?.icon)}
-                  <span className="text-sm font-medium text-white">{contextName}</span>
+                  <span className="text-xs font-medium text-white">{contextName}</span>
                 </div>
                 <HiChevronDown
-                  className={`w-4 h-4 text-white/70 transition-transform ${showContextMenu ? "rotate-180" : ""}`}
+                  className={`w-3.5 h-3.5 text-white/70 transition-transform ${showContextMenu ? "rotate-180" : ""}`}
                 />
               </button>
 
@@ -654,13 +654,13 @@ const NowPlaying = ({ isOpen, onClose }) => {
 
         {/* Current Track Info */}
         {currentTrack && (
-          <div className="px-6 py-4">
-            <div className="bg-white/5 rounded-2xl p-4">
-              <div className="flex items-center gap-4 mb-3">
+          <div className="px-4 py-3">
+            <div className="bg-white/5 rounded-2xl p-3">
+              <div className="flex items-center gap-3 mb-2">
                 <img
                   src={currentTrack.images?.coverart || currentTrack.album?.images?.[0]?.url}
                   alt={currentTrack.title}
-                  className="w-16 h-16 rounded-xl shadow-lg object-cover"
+                  className="w-14 h-14 rounded-lg shadow-lg object-cover"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-lg truncate">{currentTrack.title}</p>
@@ -683,7 +683,7 @@ const NowPlaying = ({ isOpen, onClose }) => {
               </div>
 
               {/* Control Buttons */}
-              <div className="flex items-center justify-center gap-3 mt-4">
+              <div className="flex items-center justify-center gap-3 mt-3">
                 <button
                   onClick={() => dispatch(toggleRepeat())}
                   className={`p-2 rounded-lg transition-all ${
@@ -697,20 +697,20 @@ const NowPlaying = ({ isOpen, onClose }) => {
                   disabled={isNavigating}
                   className="p-2 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95 disabled:opacity-50"
                 >
-                  <MdSkipPrevious className="w-7 h-7" />
+                  <MdSkipPrevious className="w-6 h-6" />
                 </button>
                 <button
                   onClick={handlePlayPause}
-                  className="p-3.5 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full text-white shadow-xl shadow-[#14b8a6]/30 hover:shadow-[#14b8a6]/50 transition-all hover:scale-110 active:scale-95"
+                  className="p-3 bg-gradient-to-r from-[#14b8a6] to-[#0891b2] rounded-full text-white shadow-xl shadow-[#14b8a6]/30 hover:shadow-[#14b8a6]/50 transition-all hover:scale-110 active:scale-95"
                 >
-                  {isPlaying ? <BsFillPauseFill className="w-7 h-7" /> : <BsFillPlayFill className="w-7 h-7" />}
+                  {isPlaying ? <BsFillPauseFill className="w-6 h-6" /> : <BsFillPlayFill className="w-6 h-6" />}
                 </button>
                 <button
                   onClick={handleNextSong}
                   disabled={isNavigating}
                   className="p-2 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95 disabled:opacity-50"
                 >
-                  <MdSkipNext className="w-7 h-7" />
+                  <MdSkipNext className="w-6 h-6" />
                 </button>
                 <button
                   onClick={() => dispatch(toggleShuffle())}
