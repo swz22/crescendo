@@ -225,7 +225,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
         {/* Playlist Info */}
         <div onClick={!isEditing ? onClick : undefined} className="flex-1 cursor-pointer">
           {isEditing ? (
-            <div className="relative mb-1.5">
+            <div className="mb-1.5 relative">
               <input
                 ref={inputRef}
                 type="text"
@@ -235,11 +235,33 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                   if (e.key === "Enter") handleSaveEdit();
                   if (e.key === "Escape") handleCancelEdit();
                 }}
-                className="w-full bg-white/10 text-white px-2 py-1 pr-20 rounded text-sm
+                className="w-full bg-white/10 text-white px-2 py-1 sm:pr-20 rounded text-sm
                   border border-white/20 focus:border-[#14b8a6] focus:outline-none"
                 onClick={(e) => e.stopPropagation()}
               />
-              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10">
+              {/* Checkmark and X buttons for rename - Mobile*/}
+              <div className="flex items-center justify-end gap-1 mt-0.5 sm:hidden">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSaveEdit();
+                  }}
+                  className="p-0 hover:opacity-80 transition-opacity flex items-center justify-center"
+                >
+                  <HiCheck className="w-4 h-4 text-[#14b8a6]" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancelEdit();
+                  }}
+                  className="p-0 hover:opacity-80 transition-opacity flex items-center justify-center"
+                >
+                  <HiX className="w-4 h-4 text-red-500 mt-[1px]" />
+                </button>
+              </div>
+              {/* Checkmark and X buttons for rename - Desktop*/}
+              <div className="hidden sm:flex absolute right-1 top-1/2 -translate-y-1/2 items-center gap-1 z-10">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -296,7 +318,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
           ref={menuRef}
           style={{
             position: "fixed",
-            top: menuButtonRef.current.getBoundingClientRect().bottom + 8,
+            bottom: window.innerHeight - menuButtonRef.current.getBoundingClientRect().top + 8,
             left: menuButtonRef.current.getBoundingClientRect().right - 144,
             zIndex: 100,
           }}
