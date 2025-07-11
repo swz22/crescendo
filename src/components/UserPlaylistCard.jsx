@@ -210,15 +210,13 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                 e.stopPropagation();
                 handlePlayClick(e);
               }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2.5 bg-[#14b8a6]/90 rounded-full shadow-lg shadow-black/25
-    opacity-100 scale-100
-    transition-all duration-300 hover:scale-110 hover:bg-[#0d9488]/90 z-10"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2.5 bg-[#14b8a6]/90 rounded-full shadow-lg shadow-black/25 opacity-100 scale-100 transition-all duration-300 hover:scale-110 hover:bg-[#0d9488]/90 z-10 flex items-center justify-center"
               aria-label="Play playlist"
             >
               {isPlaylistPlaying ? (
-                <BsPauseFill className="w-4 h-4 text-white ml-0.5" />
+                <BsPauseFill className="w-5 h-5 text-white" />
               ) : (
-                <BsPlayFill className="w-4 h-4 text-white ml-0.5" />
+                <BsPlayFill className="w-5 h-5 text-white" style={{ marginLeft: "2px" }} />
               )}
             </button>
           )}
