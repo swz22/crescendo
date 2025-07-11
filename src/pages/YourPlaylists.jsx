@@ -144,7 +144,7 @@ const YourPlaylists = () => {
           {/* Playlists Grid - Fixed responsive breakpoints */}
           <div className="px-4 sm:px-6 md:px-8 pb-8 sm:pb-12">
             {filteredAndSortedPlaylists.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 xl:gap-6">
                 {filteredAndSortedPlaylists.map((playlist) => (
                   <UserPlaylistCard
                     key={playlist.id}
