@@ -19,6 +19,7 @@ import {
 import { StorageKeys } from "../utils/storageManager";
 import { BsMusicNoteBeamed, BsShuffle, BsSpeedometer2 } from "react-icons/bs";
 import { IoMdTime } from "react-icons/io";
+import { RiDragDropLine } from "react-icons/ri";
 
 // Create a custom event for triggering the modal
 export const SHOW_ONBOARDING_EVENT = "showOnboardingModal";
@@ -64,6 +65,31 @@ const OnboardingModal = () => {
     };
   }, []);
 
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyPress = (e) => {
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          prevStep();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          nextStep();
+          break;
+        case "Escape":
+          e.preventDefault();
+          handleClose();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [isOpen, currentStep]);
+
   const handleClose = () => {
     setIsOpen(false);
     localStorage.setItem(StorageKeys.ONBOARDING, "true");
@@ -107,11 +133,12 @@ const OnboardingModal = () => {
       icon: HiOutlineSparkles,
       title: "Welcome to Crescendo",
       description:
-        "A premium music streaming experience built to showcase modern web development. Let me show you the hidden features that make this portfolio stand out.",
+        "A premium music streaming experience showcasing modern web development. Let me show you what makes this app stand out.",
       highlights: [
         "30-second Spotify previews - no login required",
         "Built with React, Redux, and Tailwind CSS",
-        "Real-time audio caching for instant playback",
+        "100% responsive design with adaptive layouts",
+        "Real-time performance monitoring built-in",
       ],
       color: "from-[#14b8a6] to-[#0891b2]",
       glow: "shadow-[#14b8a6]/50",
@@ -120,66 +147,81 @@ const OnboardingModal = () => {
       icon: HiOutlineLightningBolt,
       title: "Performance Optimizations",
       description:
-        "Notice how fast everything loads? Every interaction is optimized for speed:",
+        "Built with performance in mind. The app pre-caches data intelligently and handles errors gracefully to provide a smooth experience.",
       highlights: [
-        "Smart preview URL caching system",
-        "Audio preloading on hover",
-        "Instant playlist switching (<50ms)",
-        "Try spam-clicking next/prev - no delays!",
+        "Preview URL caching reduces load times",
+        "Audio preloading on hover when possible",
+        "Request deduplication prevents API spam",
+        "Performance monitor shows real-time metrics",
       ],
       color: "from-[#0891b2] to-[#0d9488]",
       glow: "shadow-[#0891b2]/50",
     },
     {
-      icon: BsShuffle,
-      title: "Smart Queue Management",
+      icon: RiDragDropLine,
+      title: "Queue Management",
       description:
-        "Your music, your way. The queue system adapts to how you listen:",
+        "A fully-featured queue system with drag & drop support. Reorder your music on any device with smooth animations.",
       highlights: [
-        "Drag & drop queue reordering",
-        "Smart shuffle that avoids repeats",
-        "Context-aware playback (queue, album, playlist)",
-        "Your queue persists across sessions",
+        "Drag & drop reordering (mouse + touch)",
+        "Multiple contexts: Queue, Albums, Playlists",
+        "Context switching with dropdown menu",
+        "Queue persists across browser sessions",
       ],
-      color: "from-[#0d9488] to-[#10b981]",
-      glow: "shadow-[#0d9488]/50",
+      color: "from-[#6366f1] to-[#8b5cf6]",
+      glow: "shadow-[#6366f1]/50",
     },
     {
       icon: BsMusicNoteBeamed,
-      title: "Advanced Playlist Features",
-      description: "Create and manage playlists like never before:",
+      title: "Playlist Features",
+      description:
+        "Create and manage your own playlists with a polished interface. Each playlist automatically generates unique artwork.",
       highlights: [
-        "50+ track playlists load seamlessly",
-        "Custom mosaic artwork for each playlist",
-        "Smooth playlist modal with search",
-        "Try spam-clicking next/prev - no delays!",
+        "Dynamic 4-image mosaic artwork",
+        "Inline rename & delete with confirmations",
+        "Full-screen playlist modal on mobile",
+        "Add entire playlists to queue",
       ],
-      color: "from-[#155e75] to-[#1e40af]",
-      glow: "shadow-[#155e75]/50",
+      color: "from-[#ec4899] to-[#f43f5e]",
+      glow: "shadow-[#ec4899]/50",
+    },
+    {
+      icon: HiOutlineCursorClick,
+      title: "Power User Features",
+      description: "Keyboard shortcuts and developer-friendly features make the app feel professional and polished.",
+      highlights: [
+        "Keyboard navigation (Space, Arrows, M)",
+        "Real-time performance monitoring",
+        "Toast notifications with progress bars",
+        "Error boundaries for stability",
+      ],
+      color: "from-[#fb923c] to-[#dc2626]",
+      glow: "shadow-[#fb923c]/50",
     },
     {
       icon: HiOutlineGlobeAlt,
-      title: "Global Discovery Features",
-      description: "Explore music from around the world with smart filtering:",
+      title: "Music Discovery",
+      description:
+        "Explore music from around the world with smart filtering and responsive layouts that adapt to any screen size.",
       highlights: [
-        "Genre selector with 20+ categories",
-        "Top Artists by country (15 regions)",
-        "New album releases updated daily",
-        "Search works across songs, artists, albums",
+        "16+ genre categories with custom icons",
+        "Top Artists/Albums from 15+ countries",
+        "Community playlists from Spotify",
+        "Search across songs, artists, and albums",
       ],
-      color: "from-[#1e40af] to-[#7c3aed]",
-      glow: "shadow-[#1e40af]/50",
+      color: "from-[#3b82f6] to-[#1d4ed8]",
+      glow: "shadow-[#3b82f6]/50",
     },
     {
       icon: BsSpeedometer2,
-      title: "Technical Achievements",
-      description: "Built with modern best practices and attention to detail:",
+      title: "Technical Implementation",
+      description:
+        "Built with modern React patterns and production-ready code structure. The Performance Monitor lets you peek under the hood.",
       highlights: [
-        "Custom audio preloading system",
-        "Spotify Web API with preview workaround",
-        "Redux state management",
-        "Responsive design (try resizing!)",
-        "60fps animations throughout",
+        "20+ custom React hooks for reusability",
+        "Redux with persistence & selectors",
+        "Portal-based modals & dropdowns",
+        "Spotify API with preview workaround",
       ],
       color: "from-[#7c3aed] to-[#a855f7]",
       glow: "shadow-[#7c3aed]/50",
@@ -193,10 +235,7 @@ const OnboardingModal = () => {
   return createPortal(
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       {/* Backdrop with blur */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
-        onClick={handleClose}
-      />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={handleClose} />
 
       {/* Animated background gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -208,9 +247,7 @@ const OnboardingModal = () => {
       {/* Modal */}
       <div
         className={`relative w-full max-w-2xl bg-gradient-to-br from-[#1e1b4b]/98 to-[#0f172a]/98 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden transition-all duration-500 ${
-          animateStep
-            ? "scale-100 opacity-100"
-            : "scale-95 opacity-0 pointer-events-none"
+          animateStep ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
         }`}
       >
         {/* Gradient border effect */}
@@ -233,10 +270,7 @@ const OnboardingModal = () => {
                 />
               ))}
             </div>
-            <button
-              onClick={handleClose}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors group"
-            >
+            <button onClick={handleClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors group">
               <HiX className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
             </button>
           </div>
@@ -251,12 +285,8 @@ const OnboardingModal = () => {
             </div>
 
             {/* Title and Description */}
-            <h2 className="text-3xl font-bold text-white mb-3">
-              {currentFeature.title}
-            </h2>
-            <p className="text-gray-300 text-lg leading-relaxed mb-6">
-              {currentFeature.description}
-            </p>
+            <h2 className="text-3xl font-bold text-white mb-3">{currentFeature.title}</h2>
+            <p className="text-gray-300 text-lg leading-relaxed mb-6">{currentFeature.description}</p>
 
             {/* Highlights */}
             <div className="space-y-3">
@@ -264,9 +294,7 @@ const OnboardingModal = () => {
                 <div
                   key={index}
                   className={`flex items-start gap-3 transition-all duration-500 ${
-                    animateStep
-                      ? "translate-x-0 opacity-100"
-                      : "translate-x-4 opacity-0"
+                    animateStep ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0"
                   }`}
                   style={{ transitionDelay: `${index * 100}ms` }}
                 >
@@ -286,25 +314,28 @@ const OnboardingModal = () => {
             <button
               onClick={prevStep}
               disabled={currentStep === 0}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all transform hover:scale-105 ${
                 currentStep === 0
-                  ? "text-gray-500 cursor-not-allowed"
-                  : "text-white hover:bg-white/10"
+                  ? "bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700"
+                  : `bg-gradient-to-r ${currentFeature.color} text-white hover:shadow-lg ${currentFeature.glow} hover:shadow-xl`
               }`}
             >
               <HiOutlineChevronLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Previous</span>
+              <span>Previous</span>
             </button>
+
+            {/* Keyboard hints */}
+            <div className="hidden sm:flex items-center gap-2 text-s text-gray-500">
+              <span>← → to Navigate</span>
+              <span className="text-gray-600">•</span>
+              <span>ESC to Close</span>
+            </div>
 
             <button
               onClick={nextStep}
               className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r ${currentFeature.color} text-white hover:shadow-lg ${currentFeature.glow} hover:shadow-xl transform hover:scale-105`}
             >
-              <span>
-                {currentStep === features.length - 1
-                  ? "Get Started"
-                  : "Next Feature"}
-              </span>
+              <span>{currentStep === features.length - 1 ? "Get Started" : "Next Feature"}</span>
               <HiOutlineChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -312,9 +343,7 @@ const OnboardingModal = () => {
           {/* Actions */}
           {currentStep === features.length - 1 && (
             <div className="mt-6 pt-6 border-t border-white/10">
-              <p className="text-center text-gray-400 mb-4">
-                Want to see this tour again?
-              </p>
+              <p className="text-center text-gray-400 mb-4">Want to see this tour again?</p>
               <div className="flex justify-center gap-4">
                 <button
                   onClick={() => {
@@ -326,10 +355,7 @@ const OnboardingModal = () => {
                   Reset and show on next visit
                 </button>
                 <span className="text-gray-600">•</span>
-                <button
-                  onClick={handleClose}
-                  className="text-sm text-gray-400 hover:text-white transition-colors"
-                >
+                <button onClick={handleClose} className="text-sm text-gray-400 hover:text-white transition-colors">
                   Don't show again
                 </button>
               </div>
