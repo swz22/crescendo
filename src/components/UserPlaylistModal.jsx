@@ -347,7 +347,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
         <div className="flex-1 overflow-y-auto custom-scrollbar pb-24" ref={scrollContainerRef}>
           {tracks.length === 0 ? (
             // Empty Playlist State
-            <div className="flex items-center justify-center p-8 min-h-[400px]">
+            <div className="flex items-center justify-center p-8 min-h-[300px]">
               <div className="text-center max-w-md mx-auto">
                 <div className="mb-6 relative inline-block">
                   <div className="absolute inset-0 bg-[#14b8a6]/10 blur-3xl scale-150 animate-pulse-glow"></div>
@@ -358,9 +358,8 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                 </div>
 
                 <h3 className="text-2xl font-bold text-white mb-3">Your playlist is empty</h3>
-                <p className="text-gray-400 mb-8 leading-relaxed">
-                  Start building your collection by adding songs from anywhere in the app. Just tap the menu (⋮) on any
-                  track.
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  Start building your collection by adding songs from anywhere in the app.
                 </p>
 
                 <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
@@ -630,9 +629,8 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
                         </div>
 
                         <h3 className="text-2xl font-bold text-white mb-3">Your playlist is empty</h3>
-                        <p className="text-gray-400 mb-8 leading-relaxed">
-                          Start building your collection by adding songs from anywhere in the app. Just click the menu
-                          (⋮) on any track.
+                        <p className="text-gray-400 mb-6 leading-relaxed">
+                          Start building your collection by adding songs from anywhere in the app.
                         </p>
 
                         <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
@@ -936,8 +934,7 @@ const UserPlaylistModal = ({ playlist, initialMosaicImages, onClose }) => {
 
                       <h3 className="text-2xl font-bold text-white mb-3">Your playlist is empty</h3>
                       <p className="text-gray-400 mb-8 leading-relaxed">
-                        Start building your collection by adding songs from anywhere in the app. Just click the menu (⋮)
-                        on any track.
+                        Start building your collection by adding songs from anywhere in the app.
                       </p>
 
                       <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
