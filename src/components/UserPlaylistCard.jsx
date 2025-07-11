@@ -156,7 +156,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
     <>
       <div
         onClick={!isEditing ? onClick : undefined}
-        className={`group relative flex flex-col p-4 rounded-xl bg-white/[0.03] backdrop-blur-sm 
+        className={`group relative flex flex-col p-3 rounded-xl bg-white/[0.03] backdrop-blur-sm 
           hover:bg-white/[0.08] border border-white/10 hover:border-white/20 
           transition-all duration-300 cursor-pointer hover:shadow-xl hover:shadow-black/20
           hover:transform hover:scale-[1.02] ${isEmpty ? "opacity-90" : ""}`}
@@ -164,12 +164,12 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
         {/* Playlist Image */}
         <div
           onClick={!isEditing ? onClick : undefined}
-          className="relative aspect-square rounded-lg overflow-hidden mb-4 bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer"
+          className="relative aspect-square rounded-lg overflow-hidden mb-2.5 bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer"
         >
           {isEmpty ? (
             // Empty Playlist Design
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2d2467]/40 to-[#1a1848]/60">
-              <Icon icon="solar:playlist-minimalistic-2-bold-duotone" className="w-20 h-20 text-white/20" />
+              <Icon icon="solar:playlist-minimalistic-2-bold-duotone" className="w-16 h-16 text-white/20" />
             </div>
           ) : mosaicImages.length === 4 ? (
             // 4-image mosaic
@@ -199,7 +199,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
           ) : (
             // Fallback if no images
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-              <BsMusicNoteList className="w-16 h-16 text-white/20" />
+              <BsMusicNoteList className="w-14 h-14 text-white/20" />
             </div>
           )}
 
@@ -210,15 +210,15 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                 e.stopPropagation();
                 handlePlayClick(e);
               }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-3 bg-[#14b8a6]/90 rounded-full shadow-lg shadow-black/25
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2.5 bg-[#14b8a6]/90 rounded-full shadow-lg shadow-black/25
     opacity-100 scale-100
     transition-all duration-300 hover:scale-110 hover:bg-[#0d9488]/90 z-10"
               aria-label="Play playlist"
             >
               {isPlaylistPlaying ? (
-                <BsPauseFill className="w-5 h-5 text-white ml-0.5" />
+                <BsPauseFill className="w-4 h-4 text-white ml-0.5" />
               ) : (
-                <BsPlayFill className="w-5 h-5 text-white ml-0.5" />
+                <BsPlayFill className="w-4 h-4 text-white ml-0.5" />
               )}
             </button>
           )}
@@ -227,7 +227,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
         {/* Playlist Info */}
         <div onClick={!isEditing ? onClick : undefined} className="flex-1 cursor-pointer">
           {isEditing ? (
-            <div className="relative mb-2">
+            <div className="relative mb-1.5">
               <input
                 ref={inputRef}
                 type="text"
@@ -249,7 +249,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                   }}
                   className="p-1 hover:bg-white/10 rounded transition-colors"
                 >
-                  <HiCheck className="w-4 h-4 text-[#14b8a6]" />
+                  <HiCheck className="w-3.5 h-3.5 text-[#14b8a6]" />
                 </button>
                 <button
                   onClick={(e) => {
@@ -258,22 +258,22 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                   }}
                   className="p-1 hover:bg-white/10 rounded transition-colors"
                 >
-                  <HiX className="w-4 h-4 text-red-500" />
+                  <HiX className="w-3.5 h-3.5 text-red-500" />
                 </button>
               </div>
             </div>
           ) : (
-            <h3 className="font-semibold text-white truncate mb-1 group-hover:text-[#14b8a6] transition-colors">
+            <h3 className="font-semibold text-white truncate mb-0.5 group-hover:text-[#14b8a6] transition-colors text-sm">
               {playlist.name}
             </h3>
           )}
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-gray-400">
+              <p className="text-xs text-gray-400 leading-tight">
                 {playlist.tracks.length} {playlist.tracks.length === 1 ? "track" : "tracks"}
               </p>
-              <p className="text-xs text-gray-500 mt-1">{formatDate(playlist.createdAt)}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">{formatDate(playlist.createdAt)}</p>
             </div>
 
             {/* Menu Button */}
@@ -283,10 +283,10 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
                 e.stopPropagation();
                 setShowMenu(!showMenu);
               }}
-              className="p-2 -mr-2 -mb-2 rounded-full hover:bg-white/10 transition-colors"
+              className="p-2 -mt-1 -mr-3.5 sm:-mr-2 md:-mr-1.5 lg:-mr-1 rounded-full sm:hover:bg-white/10 transition-colors flex items-center justify-center"
               aria-label="Playlist menu"
             >
-              <HiDotsVertical className="w-4 h-4 text-gray-400 hover:text-white" />
+              <HiDotsVertical className="w-5 h-5 text-gray-400 hover:text-white ml-0.5" />
             </button>
           </div>
         </div>
@@ -299,7 +299,7 @@ const UserPlaylistCard = ({ playlist, onClick }) => {
           style={{
             position: "fixed",
             top: menuButtonRef.current.getBoundingClientRect().bottom + 8,
-            left: menuButtonRef.current.getBoundingClientRect().left - 120,
+            left: menuButtonRef.current.getBoundingClientRect().right - 144,
             zIndex: 100,
           }}
           className="w-36 bg-[#1a1848] rounded-lg shadow-xl border border-white/10 overflow-hidden"
