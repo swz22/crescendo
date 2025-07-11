@@ -237,36 +237,38 @@ const NowPlaying = ({ isOpen, onClose }) => {
         }
       }
 
-      // Improved auto-scroll with continuous scrolling
-      const edgeZoneSize = 100;
-      const maxScrollSpeed = 16;
+      // Auto-scroll
+      const topEdgeZone = 120;
+      const bottomEdgeZone = 180;
+      const maxScrollSpeed = 18;
       const minSpeedRatio = 0.2;
+      const isMobile = window.innerWidth < 768;
+      const bottomSpeedMultiplier = isMobile ? 1.5 : 1.2;
       let currentZone = null;
       let scrollSpeed = 0;
 
-      if (touch.clientY < containerRect.top + edgeZoneSize) {
-        // Top edge - scroll up
+      if (touch.clientY < containerRect.top + topEdgeZone) {
+        // Top edge
         currentZone = "top";
         const distanceFromEdge = touch.clientY - containerRect.top;
-        const speedRatio = 1 - Math.max(0, distanceFromEdge) / edgeZoneSize;
+        const speedRatio = 1 - Math.max(0, distanceFromEdge) / topEdgeZone;
         const adjustedRatio = minSpeedRatio + speedRatio * (1 - minSpeedRatio);
         scrollSpeed = -Math.round(maxScrollSpeed * adjustedRatio);
-      } else if (touch.clientY > containerRect.bottom - edgeZoneSize) {
-        // Bottom edge - scroll down
+      } else if (touch.clientY > containerRect.bottom - bottomEdgeZone) {
+        // Bottom edge
         currentZone = "bottom";
         const distanceFromEdge = containerRect.bottom - touch.clientY;
-        const speedRatio = 1 - Math.max(0, distanceFromEdge) / edgeZoneSize;
-        const adjustedRatio = minSpeedRatio + speedRatio * (1 - minSpeedRatio);
-        scrollSpeed = Math.round(maxScrollSpeed * adjustedRatio);
+        const speedRatio = 1 - Math.max(0, distanceFromEdge) / bottomEdgeZone;
+        const exponentialRatio = Math.pow(speedRatio, 0.75);
+        const adjustedRatio = minSpeedRatio + exponentialRatio * (1 - minSpeedRatio);
+        scrollSpeed = Math.round(maxScrollSpeed * adjustedRatio * bottomSpeedMultiplier);
       }
 
-      // Start or stop continuous scrolling based on zone
       if (currentZone && currentZone !== autoScrollZoneRef.current) {
         if (scrollIntervalRef.current) {
           cancelAnimationFrame(scrollIntervalRef.current);
         }
 
-        // Start new scroll interval
         const smoothScroll = () => {
           if (container && scrollSpeed !== 0) {
             const currentScroll = container.scrollTop;
@@ -345,12 +347,8 @@ const NowPlaying = ({ isOpen, onClose }) => {
     setMouseStartTime(Date.now());
     setDragOffset({ x: e.clientX, y: e.clientY });
     setIsMouseDragging(true);
-
-    // Start drag immediately for mouse
     setMobileDragIndex(index);
     setMobileDragOverIndex(index);
-
-    // Prevent text selection
     e.preventDefault();
   };
 
@@ -372,23 +370,25 @@ const NowPlaying = ({ isOpen, onClose }) => {
       }
 
       // Auto-scroll for mouse
-      const edgeZoneSize = 100;
+      const topEdgeZone = 100;
+      const bottomEdgeZone = 120;
       const maxScrollSpeed = 16;
       const minSpeedRatio = 0.2;
       let currentZone = null;
       let scrollSpeed = 0;
 
-      if (e.clientY < containerRect.top + edgeZoneSize) {
+      if (e.clientY < containerRect.top + topEdgeZone) {
         currentZone = "top";
         const distanceFromEdge = e.clientY - containerRect.top;
-        const speedRatio = 1 - Math.max(0, distanceFromEdge) / edgeZoneSize;
+        const speedRatio = 1 - Math.max(0, distanceFromEdge) / topEdgeZone;
         const adjustedRatio = minSpeedRatio + speedRatio * (1 - minSpeedRatio);
         scrollSpeed = -Math.round(maxScrollSpeed * adjustedRatio);
-      } else if (e.clientY > containerRect.bottom - edgeZoneSize) {
+      } else if (e.clientY > containerRect.bottom - bottomEdgeZone) {
         currentZone = "bottom";
         const distanceFromEdge = containerRect.bottom - e.clientY;
-        const speedRatio = 1 - Math.max(0, distanceFromEdge) / edgeZoneSize;
-        const adjustedRatio = minSpeedRatio + speedRatio * (1 - minSpeedRatio);
+        const speedRatio = 1 - Math.max(0, distanceFromEdge) / bottomEdgeZone;
+        const exponentialRatio = Math.pow(speedRatio, 0.8);
+        const adjustedRatio = minSpeedRatio + exponentialRatio * (1 - minSpeedRatio);
         scrollSpeed = Math.round(maxScrollSpeed * adjustedRatio);
       }
 
@@ -805,7 +805,9 @@ const NowPlaying = ({ isOpen, onClose }) => {
 
                       {/* Track Number */}
                       <div className="w-8 text-center">
-                        <span className={`text-sm font-medium ${isActive ? "text-[#14b8a6]" : "text-white/50"}`}>
+                        <span
+                          className={`text-sm font-medium select-none ${isActive ? "text-[#14b8a6]" : "text-white/50"}`}
+                        >
                           {index + 1}
                         </span>
                       </div>
